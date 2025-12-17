@@ -38,29 +38,37 @@ class PurchaseResource extends Resource
                     ->searchable()
                     ->required(),
 
+                // --- PERBAIKAN DI SINI (Quantity) ---
                 \Filament\Forms\Components\TextInput::make('quantity')
                     ->label('Jumlah (Qty)')
                     ->numeric()
                     ->required()
-                    ->reactive() // Biar bisa hitung otomatis
-                    ->afterStateUpdated(fn ($state, callable $set, $get) => 
-                        $set('total_spend', $state * $get('buy_price_per_unit'))
-                    ),
+                    ->live(debounce: 500) // Tunda 500ms agar tidak lag saat ketik cepat
+                    ->afterStateUpdated(function ($state, callable $set, callable $get) {
+                        $price = (int) $get('buy_price_per_unit');
+                        $qty = (int) $state;
+                        $set('total_spend', $price * $qty);
+                    }),
 
+                // --- PERBAIKAN DI SINI (Harga) ---
                 \Filament\Forms\Components\TextInput::make('buy_price_per_unit')
                     ->label('Harga Beli Satuan')
                     ->numeric()
                     ->required()
-                    ->reactive()
-                    ->afterStateUpdated(fn ($state, callable $set, $get) => 
-                        $set('total_spend', $state * $get('quantity'))
-                    ),
+                    ->live(debounce: 500) // Tunda 500ms
+                    ->afterStateUpdated(function ($state, callable $set, callable $get) {
+                        $qty = (int) $get('quantity');
+                        $price = (int) $state;
+                        $set('total_spend', $price * $qty);
+                    }),
 
                 \Filament\Forms\Components\TextInput::make('total_spend')
                     ->label('Total Modal Keluar')
                     ->numeric()
-                    ->readOnly() // Jangan diedit manual
-                    ->prefix('Rp'),
+                    ->readOnly()
+                    ->prefix('Rp')
+                    // Tambahkan 'dehydrated' agar nilai readOnly tetap terkirim ke database saat save
+                    ->dehydrated(), 
             ]);
     }
 
