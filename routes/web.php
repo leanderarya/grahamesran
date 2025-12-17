@@ -25,16 +25,14 @@ Route::get('/', function () {
     return redirect()->route('transactions.create'); // Kasir ke Toko
 });
 
-// Tambahkan di routes/web.php (di luar group middleware boleh)
-Route::get('/logout', function () {
-    // Gunakan Auth::guard('web') agar editor tahu ini Session Guard (Stateful)
+Route::post('/logout', function () {
     Auth::guard('web')->logout();
 
     request()->session()->invalidate();
     request()->session()->regenerateToken();
 
     return redirect('/login');
-})->name('logout'); // Saya ganti namanya jadi 'logout' biar standar (tadi logout.get)
+})->name('logout');
 
 Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/dashboard', function () {
