@@ -27,6 +27,11 @@ class Transaction extends Model
         return $this->belongsTo(User::class);
     }
 
+    public function transactionItems()
+    {
+        return $this->hasMany(TransactionItem::class);
+    }
+
     // Relasi: Nota ini berisi item apa saja?
     public function items(): HasMany
     {
