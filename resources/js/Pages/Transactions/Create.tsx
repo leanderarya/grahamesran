@@ -24,11 +24,15 @@ const STORE_CONFIG = {
     qrisUrl: 'assets/img/qris.jpg',
 };
 
+// --- small helper ---
+const cx = (...arr) => arr.filter(Boolean).join(' ');
+const formatRupiah = (num) => new Intl.NumberFormat('id-ID').format(num);
+
 // --- ICONS ---
 const Icons = {
     Search: () => (
         <svg
-            className="h-6 w-6"
+            className="h-5 w-5"
             fill="none"
             stroke="currentColor"
             viewBox="0 0 24 24"
@@ -43,7 +47,7 @@ const Icons = {
     ),
     Scan: () => (
         <svg
-            className="h-6 w-6"
+            className="h-5 w-5"
             fill="none"
             stroke="currentColor"
             viewBox="0 0 24 24"
@@ -73,7 +77,7 @@ const Icons = {
     ),
     Cash: () => (
         <svg
-            className="h-8 w-8"
+            className="h-7 w-7"
             fill="none"
             stroke="currentColor"
             viewBox="0 0 24 24"
@@ -88,7 +92,7 @@ const Icons = {
     ),
     Qris: () => (
         <svg
-            className="h-8 w-8"
+            className="h-7 w-7"
             fill="none"
             stroke="currentColor"
             viewBox="0 0 24 24"
@@ -103,7 +107,7 @@ const Icons = {
     ),
     Card: () => (
         <svg
-            className="h-8 w-8"
+            className="h-7 w-7"
             fill="none"
             stroke="currentColor"
             viewBox="0 0 24 24"
@@ -133,7 +137,7 @@ const Icons = {
     ),
     Cart: () => (
         <svg
-            className="h-6 w-6"
+            className="h-5 w-5"
             fill="none"
             stroke="currentColor"
             viewBox="0 0 24 24"
@@ -148,7 +152,7 @@ const Icons = {
     ),
     Close: () => (
         <svg
-            className="h-6 w-6"
+            className="h-5 w-5"
             fill="none"
             stroke="currentColor"
             viewBox="0 0 24 24"
@@ -163,7 +167,7 @@ const Icons = {
     ),
     Back: () => (
         <svg
-            className="h-6 w-6"
+            className="h-5 w-5"
             fill="none"
             stroke="currentColor"
             viewBox="0 0 24 24"
@@ -223,8 +227,6 @@ const Icons = {
     ),
 };
 
-const formatRupiah = (num) => new Intl.NumberFormat('id-ID').format(num);
-
 // --- COMPONENT: PRODUCT CARD ---
 const ProductCard = ({ product, onAdd, customerType }) => {
     const isOutOfStock = (Number(product.stock) || 0) <= 0;
@@ -240,26 +242,33 @@ const ProductCard = ({ product, onAdd, customerType }) => {
             : sellPrice;
 
     return (
-        <div
+        <button
+            type="button"
             onClick={() => !isOutOfStock && onAdd(product)}
-            className={`relative flex touch-manipulation flex-col justify-between rounded-2xl border bg-white p-4 shadow-sm transition will-change-transform select-none ${
+            className={cx(
+                'group relative flex w-full flex-col justify-between rounded-2xl border p-4 text-left shadow-sm transition',
+                'bg-white/90 backdrop-blur supports-[backdrop-filter]:bg-white/70',
+                'focus:ring-2 focus:ring-slate-300 focus:ring-offset-2 focus:outline-none',
                 isOutOfStock
-                    ? 'border-slate-200 bg-slate-50 opacity-50 grayscale'
-                    : 'border-slate-200 hover:-translate-y-[1px] hover:shadow-md active:scale-95'
-            }`}
+                    ? 'cursor-not-allowed border-slate-200 bg-slate-50 opacity-50 grayscale'
+                    : 'border-slate-200 hover:-translate-y-[1px] hover:shadow-md active:translate-y-0 active:scale-[0.99]',
+            )}
         >
-            <div className="mb-2 flex items-start justify-between">
-                <span className="rounded-md bg-slate-100 px-2 py-1 text-[10px] font-bold text-slate-600">
+            {/* top meta */}
+            <div className="mb-3 flex items-start justify-between gap-2">
+                <span className="inline-flex items-center rounded-lg bg-slate-100 px-2 py-1 text-[10px] font-extrabold tracking-wide text-slate-600">
                     {product.sku || 'NOSKU'}
                 </span>
+
                 <span
-                    className={`rounded-full px-2 py-1 text-[10px] font-bold ${
+                    className={cx(
+                        'inline-flex items-center rounded-full px-2 py-1 text-[10px] font-extrabold',
                         isOutOfStock
                             ? 'bg-red-100 text-red-600'
                             : isLowStock
                               ? 'bg-orange-100 text-orange-700'
-                              : 'bg-green-100 text-green-700'
-                    }`}
+                              : 'bg-emerald-100 text-emerald-700',
+                    )}
                 >
                     {isOutOfStock
                         ? 'HABIS'
@@ -269,12 +278,14 @@ const ProductCard = ({ product, onAdd, customerType }) => {
                 </span>
             </div>
 
-            <div className="mb-3 flex-1">
-                <h3 className="line-clamp-2 min-h-[2.5rem] text-sm leading-snug font-bold text-slate-900">
+            {/* name + vehicles */}
+            <div className="flex-1">
+                <h3 className="line-clamp-2 min-h-[2.5rem] text-sm leading-snug font-black text-slate-900">
                     {product.name}
                 </h3>
+
                 {product.vehicles?.length > 0 && (
-                    <div className="mt-1 flex w-fit max-w-full items-center gap-1 rounded bg-blue-50 px-2 py-1 text-[10px] text-blue-700">
+                    <div className="mt-2 inline-flex max-w-full items-center gap-1 rounded-lg bg-slate-50 px-2 py-1 text-[10px] font-semibold text-slate-600">
                         <Icons.Box />
                         <span className="truncate">
                             {product.vehicles.map((v) => v.model).join(', ')}
@@ -283,26 +294,35 @@ const ProductCard = ({ product, onAdd, customerType }) => {
                 )}
             </div>
 
-            {customerType === 'workshop' && workshopPrice > 0 && (
-                <div className="mb-1 flex items-center gap-1 text-[10px] font-bold text-orange-600">
-                    <Icons.Tag />
-                    <span>Harga Bengkel</span>
+            {/* price */}
+            <div className="mt-4 flex items-end justify-between border-t border-slate-100 pt-3">
+                <div className="space-y-1">
+                    {customerType === 'workshop' && workshopPrice > 0 && (
+                        <div className="inline-flex items-center gap-1 rounded-md bg-orange-50 px-2 py-0.5 text-[10px] font-extrabold text-orange-700">
+                            <Icons.Tag />
+                            Harga Bengkel
+                        </div>
+                    )}
+                    <div className="text-[11px] font-semibold text-slate-400">
+                        Harga
+                    </div>
                 </div>
-            )}
 
-            <div className="mt-auto flex items-center justify-between border-t border-slate-100 pt-2">
-                <span className="text-xs text-slate-400">Harga</span>
-                <span
-                    className={`text-base font-black ${
+                <div
+                    className={cx(
+                        'text-base font-black tracking-tight',
                         customerType === 'workshop'
                             ? 'text-orange-600'
-                            : 'text-slate-800'
-                    }`}
+                            : 'text-slate-900',
+                    )}
                 >
                     Rp {formatRupiah(activePrice)}
-                </span>
+                </div>
             </div>
-        </div>
+
+            {/* subtle hover accent */}
+            <div className="pointer-events-none absolute inset-0 rounded-2xl ring-1 ring-transparent transition group-hover:ring-slate-200" />
+        </button>
     );
 };
 
@@ -319,11 +339,12 @@ const Numpad = ({ onInput, onClear, onBackspace }) => {
                         else if (btn === '⌫') onBackspace();
                         else onInput(btn);
                     }}
-                    className={`flex min-h-[60px] items-center justify-center rounded-2xl text-2xl font-bold shadow-sm transition-all active:scale-95 ${
+                    className={cx(
+                        'flex min-h-[58px] items-center justify-center rounded-2xl text-2xl font-black shadow-sm transition active:scale-[0.98]',
                         typeof btn === 'number'
                             ? 'border border-slate-200 bg-white text-slate-800 hover:bg-slate-50'
-                            : 'bg-slate-200 text-slate-600 hover:bg-slate-300'
-                    }`}
+                            : 'bg-slate-200 text-slate-700 hover:bg-slate-300',
+                    )}
                 >
                     {btn}
                 </button>
@@ -351,6 +372,8 @@ export default function TabletPOS({ products }) {
 
     const { data, setData, reset } = useForm({ cart: [] });
 
+    const isWorkshop = customerType === 'workshop';
+
     // --- PERF: INDEX PRODUCTS BY ID ---
     const productById = useMemo(() => {
         const m = new Map();
@@ -363,7 +386,6 @@ export default function TabletPOS({ products }) {
         (product) => {
             const sellPrice = parseFloat(product?.sell_price) || 0;
             const workshopPrice = parseFloat(product?.workshop_price) || 0;
-
             if (customerType === 'workshop' && workshopPrice > 0)
                 return workshopPrice;
             return sellPrice;
@@ -387,7 +409,6 @@ export default function TabletPOS({ products }) {
                       ) ??
                           false),
               );
-
         return base.slice(0, 30);
     }, [products, deferredSearch]);
 
@@ -403,7 +424,6 @@ export default function TabletPOS({ products }) {
                 customerType === 'workshop' && workshopPrice > 0
                     ? workshopPrice
                     : sellPrice;
-
             return sum + price * (Number(item.qty) || 0);
         }, 0);
     }, [data.cart, productById, customerType]);
@@ -526,9 +546,10 @@ export default function TabletPOS({ products }) {
         setData('cart', []);
     }, [data.cart.length, setData]);
 
-    const handleNumpadInput = useCallback((num) => {
-        setCashReceived((prev) => prev + num.toString());
-    }, []);
+    const handleNumpadInput = useCallback(
+        (num) => setCashReceived((prev) => prev + num.toString()),
+        [],
+    );
     const handleNumpadClear = useCallback(() => setCashReceived(''), []);
     const handleNumpadBackspace = useCallback(
         () => setCashReceived((prev) => prev.slice(0, -1)),
@@ -545,22 +566,22 @@ export default function TabletPOS({ products }) {
     const payStyle = useMemo(
         () => ({
             cash: {
-                border: 'border-green-500',
-                ring: 'ring-green-200',
-                iconBg: 'bg-green-100',
-                iconText: 'text-green-600',
+                border: 'border-emerald-500',
+                ring: 'ring-emerald-200',
+                iconBg: 'bg-emerald-100',
+                iconText: 'text-emerald-700',
             },
             qris: {
                 border: 'border-slate-500',
                 ring: 'ring-slate-200',
                 iconBg: 'bg-slate-100',
-                iconText: 'text-slate-600',
+                iconText: 'text-slate-700',
             },
             bank: {
                 border: 'border-blue-500',
                 ring: 'ring-blue-200',
                 iconBg: 'bg-blue-100',
-                iconText: 'text-blue-600',
+                iconText: 'text-blue-700',
             },
         }),
         [],
@@ -644,8 +665,6 @@ export default function TabletPOS({ products }) {
         reset,
     ]);
 
-    const isWorkshop = customerType === 'workshop';
-
     // --- STATE SCANNER ---
     const [scanToast, setScanToast] = useState(null);
     const [isScannerOpen, setIsScannerOpen] = useState(false);
@@ -660,7 +679,6 @@ export default function TabletPOS({ products }) {
     );
 
     const playBeep = () => {
-        // PERBAIKAN: Gunakan 'beepAudio.current', BUKAN 'audioRef.current'
         if (beepAudio.current) {
             beepAudio.current.currentTime = 0;
             beepAudio.current
@@ -670,13 +688,9 @@ export default function TabletPOS({ products }) {
     };
 
     const onScanSuccess = useCallback(
-        (decodedText, decodedResult) => {
+        (decodedText) => {
             const scannedOriginal = String(decodedText).trim().toUpperCase();
-
-            // Cek Ref (Cegah Double Scan Instan)
             if (lastScannedRef.current === scannedOriginal) return;
-
-            // Kunci sementara
             lastScannedRef.current = scannedOriginal;
 
             const scannedNoZero = scannedOriginal.replace(/^0+/, '');
@@ -689,46 +703,32 @@ export default function TabletPOS({ products }) {
             });
 
             if (product) {
-                // === SUKSES ===
                 playBeep();
                 addToCart(product);
-
-                // 1. TAMPILKAN POPUP BERHASIL
                 setScanToast(`Berhasil: ${product.name}`);
+                setTimeout(() => setScanToast(null), 1800);
 
-                // 2. Hilangkan popup setelah 2 detik
-                setTimeout(() => setScanToast(null), 2000);
-
-                // 3. JANGAN panggil setIsScannerOpen(false) agar kamera tetap nyala!
-
-                // Cooldown scan
                 if (navigator.vibrate) navigator.vibrate(50);
                 setTimeout(() => {
                     lastScannedRef.current = null;
-                }, 1500);
+                }, 1200);
             } else {
-                // === GAGAL ===
                 playBeep();
-
-                // Tampilkan pesan gagal di popup juga (biar gak pakai alert yg mengganggu)
                 setScanToast(`❌ Barang tidak ditemukan: ${scannedOriginal}`);
-                setTimeout(() => setScanToast(null), 3000);
+                setTimeout(() => setScanToast(null), 2600);
 
                 setTimeout(() => {
                     lastScannedRef.current = null;
-                }, 2000);
+                }, 1600);
             }
         },
         [products, addToCart],
     );
 
-    // Efek untuk Menyalakan/Mematikan Kamera
-    // 1. Update Ref setiap kali logika scan berubah (tanpa mematikan kamera)
     useEffect(() => {
         scanCallbackRef.current = onScanSuccess;
     }, [onScanSuccess]);
 
-    // 2. Efek Kamera Utama (Hanya restart jika Modal dibuka/tutup)
     useEffect(() => {
         let isMounted = true;
 
@@ -736,16 +736,15 @@ export default function TabletPOS({ products }) {
             const timer = setTimeout(() => {
                 if (!isMounted) return;
                 if (!document.getElementById('reader')) return;
-                if (scannerRef.current) return; // Jangan start kalau sudah jalan
+                if (scannerRef.current) return;
 
                 const html5QrCode = new Html5Qrcode('reader', false);
                 scannerRef.current = html5QrCode;
 
                 const config = {
                     fps: 10,
-                    // Config dinamis mencegah crash resolusi
                     qrbox: (viewfinderWidth, viewfinderHeight) => {
-                        const minEdgePercentage = 0.7;
+                        const minEdgePercentage = 0.72;
                         const minDim = Math.min(
                             viewfinderWidth,
                             viewfinderHeight,
@@ -761,16 +760,9 @@ export default function TabletPOS({ products }) {
                     .start(
                         { facingMode: 'environment' },
                         config,
-                        // DISINI KUNCINYA:
-                        // Kita panggil fungsi lewat Ref, bukan langsung.
-                        // Jadi scanner tidak peduli jika 'onScanSuccess' berubah di background.
-                        (decodedText, decodedResult) => {
-                            if (scanCallbackRef.current) {
-                                scanCallbackRef.current(
-                                    decodedText,
-                                    decodedResult,
-                                );
-                            }
+                        (decodedText) => {
+                            if (scanCallbackRef.current)
+                                scanCallbackRef.current(decodedText);
                         },
                     )
                     .catch((err) => {
@@ -787,11 +779,10 @@ export default function TabletPOS({ products }) {
                             setIsScannerOpen(false);
                         }
                     });
-            }, 500);
+            }, 350);
 
             return () => clearTimeout(timer);
         } else {
-            // CLEANUP: Stop kamera hanya saat modal DITUTUP (isScannerOpen = false)
             if (scannerRef.current) {
                 scannerRef.current
                     .stop()
@@ -799,8 +790,7 @@ export default function TabletPOS({ products }) {
                         scannerRef.current.clear();
                         scannerRef.current = null;
                     })
-                    .catch((err) => {
-                        // Ignore error stop
+                    .catch(() => {
                         scannerRef.current = null;
                     });
             }
@@ -809,236 +799,492 @@ export default function TabletPOS({ products }) {
         return () => {
             isMounted = false;
         };
-
-        // PERHATIKAN: Dependency CUMA 'isScannerOpen'.
-        // 'onScanSuccess' DIHAPUS dari sini agar kamera tidak restart saat cart update.
     }, [isScannerOpen]);
+
+    // --- accents ---
+    const accentBg = isWorkshop ? 'bg-orange-600' : 'bg-blue-600';
+    const accentSoft = isWorkshop ? 'bg-orange-50' : 'bg-slate-50';
+    const accentRing = isWorkshop
+        ? 'focus:ring-orange-500'
+        : 'focus:ring-blue-500';
+    const accentText = isWorkshop ? 'text-orange-600' : 'text-blue-600';
 
     return (
         <div
-            className={`flex h-screen w-full flex-col overflow-hidden font-sans text-slate-800 transition-colors duration-300 ${
-                isWorkshop ? 'bg-orange-50' : 'bg-slate-100'
-            }`}
+            className={cx(
+                'h-screen w-full overflow-hidden font-sans text-slate-900',
+                isWorkshop ? 'bg-orange-50' : 'bg-slate-100',
+            )}
         >
             <Head title="Kasir - Graha Mesran" />
 
-            {/* --- HEADER --- */}
-            <div className="z-20 flex h-16 shrink-0 items-center gap-3 bg-white px-4 py-3 shadow-sm print:hidden">
-                <div
-                    className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl text-white shadow-lg transition-colors ${
-                        isWorkshop
-                            ? 'bg-orange-500 shadow-orange-200'
-                            : 'bg-blue-600 shadow-blue-200'
-                    }`}
-                >
-                    <svg
-                        className="h-6 w-6"
-                        fill="none"
-                        stroke="currentColor"
-                        viewBox="0 0 24 24"
-                    >
-                        <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            strokeWidth="2"
-                            d="M13 10V3L4 14h7v7l9-11h-7z"
-                        />
-                    </svg>
-                </div>
-
-                <div className="relative flex flex-1 gap-2">
-                    {' '}
-                    {/* Ubah flex-1 jadi flex container */}
-                    <div className="relative flex-1">
-                        <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3 text-slate-400">
-                            <Icons.Search />
+            {/* --- TOP BAR (cleaner + premium) --- */}
+            <div className="sticky top-0 z-40 border-b border-slate-200/70 bg-white/80 backdrop-blur-md print:hidden">
+                <div className="mx-auto flex h-16 w-full max-w-[1600px] items-center gap-3 px-4">
+                    {/* brand */}
+                    <div className="flex items-center gap-3">
+                        <div
+                            className={cx(
+                                'flex h-10 w-10 items-center justify-center rounded-2xl text-white shadow-lg',
+                                accentBg,
+                            )}
+                        >
+                            <svg
+                                className="h-6 w-6"
+                                fill="none"
+                                stroke="currentColor"
+                                viewBox="0 0 24 24"
+                            >
+                                <path
+                                    strokeLinecap="round"
+                                    strokeLinejoin="round"
+                                    strokeWidth="2"
+                                    d="M13 10V3L4 14h7v7l9-11h-7z"
+                                />
+                            </svg>
                         </div>
-                        <input
-                            type="text"
-                            value={search}
-                            onChange={(e) => setSearch(e.target.value)}
-                            placeholder="Cari Barang / SKU / Motor..."
-                            className={`w-full rounded-xl border-none py-3 pr-4 pl-10 font-bold text-slate-800 placeholder-slate-400 shadow-inner transition-all focus:ring-2 ${
-                                isWorkshop
-                                    ? 'bg-orange-50 focus:bg-white focus:ring-orange-500'
-                                    : 'bg-slate-100 focus:bg-white focus:ring-blue-500'
-                            }`}
-                        />
+                        <div className="hidden sm:block">
+                            <div className="text-sm leading-tight font-black">
+                                {STORE_CONFIG.name}
+                            </div>
+                            <div className="text-[11px] font-semibold text-slate-500">
+                                {auth?.user?.name}
+                            </div>
+                        </div>
                     </div>
-                    {/* --- TOMBOL SCAN BARU --- */}
+
+                    {/* search */}
+                    <div className="flex flex-1 items-center gap-2">
+                        <div className="relative flex-1">
+                            <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3 text-slate-400">
+                                <Icons.Search />
+                            </div>
+                            <input
+                                type="text"
+                                value={search}
+                                onChange={(e) => setSearch(e.target.value)}
+                                placeholder="Cari Barang / SKU / Motor..."
+                                className={cx(
+                                    'w-full rounded-2xl border border-slate-200 bg-white px-10 py-3 text-sm font-bold text-slate-900 shadow-sm',
+                                    'placeholder:text-slate-400 focus:border-transparent focus:ring-2',
+                                    accentRing,
+                                )}
+                            />
+                            {search?.length > 0 && (
+                                <button
+                                    onClick={() => setSearch('')}
+                                    className="absolute inset-y-0 right-2 my-auto rounded-xl px-2 text-slate-400 hover:bg-slate-100 hover:text-slate-700"
+                                >
+                                    <Icons.Close />
+                                </button>
+                            )}
+                        </div>
+
+                        <button
+                            onClick={() => setIsScannerOpen(true)}
+                            className={cx(
+                                'hidden items-center gap-2 rounded-2xl px-4 py-3 text-sm font-black text-white shadow-lg transition active:scale-[0.99] md:flex',
+                                isWorkshop
+                                    ? 'bg-orange-700 hover:bg-orange-800'
+                                    : 'bg-slate-900 hover:bg-black',
+                            )}
+                        >
+                            <Icons.Scan />
+                            Scan
+                        </button>
+                    </div>
+
+                    {/* mode */}
+                    <div className="hidden rounded-2xl bg-slate-100 p-1 md:flex">
+                        <button
+                            onClick={() => setCustomerType('general')}
+                            className={cx(
+                                'rounded-2xl px-4 py-2 text-xs font-black transition',
+                                !isWorkshop
+                                    ? 'bg-white text-slate-900 shadow-sm'
+                                    : 'text-slate-500 hover:text-slate-800',
+                            )}
+                        >
+                            UMUM
+                        </button>
+                        <button
+                            onClick={() => setCustomerType('workshop')}
+                            className={cx(
+                                'flex items-center gap-1 rounded-2xl px-4 py-2 text-xs font-black transition',
+                                isWorkshop
+                                    ? 'bg-orange-600 text-white shadow-sm'
+                                    : 'text-slate-500 hover:text-slate-800',
+                            )}
+                        >
+                            <Icons.Tag />
+                            BENGKEL
+                        </button>
+                    </div>
+
+                    {/* actions */}
                     <button
                         onClick={() => setIsScannerOpen(true)}
-                        className="flex items-center justify-center rounded-xl bg-slate-800 px-4 text-white shadow-lg transition-transform active:scale-95"
+                        className={cx(
+                            'flex items-center justify-center rounded-2xl border border-slate-200 bg-white p-3 shadow-sm md:hidden',
+                            'active:scale-[0.99]',
+                        )}
                     >
                         <Icons.Scan />
-                        <span className="ml-2 hidden text-sm font-bold md:inline">
-                            Scan
-                        </span>
+                    </button>
+
+                    <button
+                        onClick={() => setShowCartMobile(!showCartMobile)}
+                        className="relative rounded-2xl border border-slate-200 bg-white p-3 shadow-sm active:scale-[0.99] lg:hidden"
+                    >
+                        <Icons.Cart />
+                        {data.cart.length > 0 && (
+                            <span className="absolute -top-1 -right-1 flex h-5 min-w-[20px] items-center justify-center rounded-full bg-red-500 px-1 text-[10px] font-black text-white">
+                                {data.cart.length}
+                            </span>
+                        )}
+                    </button>
+
+                    <button
+                        onClick={() => setIsLogoutModalOpen(true)}
+                        className="rounded-2xl p-3 text-red-500 transition hover:bg-red-50 active:scale-[0.99]"
+                        title="Keluar"
+                    >
+                        <svg
+                            className="h-5 w-5"
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
+                        >
+                            <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                strokeWidth="2"
+                                d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"
+                            />
+                        </svg>
                     </button>
                 </div>
 
-                <div className="flex rounded-xl bg-slate-100 p-1">
+                {/* mobile mode toggle */}
+                <div className="mx-auto flex max-w-[1600px] gap-2 px-4 pb-3 md:hidden">
                     <button
                         onClick={() => setCustomerType('general')}
-                        className={`rounded-lg px-3 py-2 text-xs font-bold transition-all ${
+                        className={cx(
+                            'flex-1 rounded-2xl border px-4 py-2 text-xs font-black',
                             !isWorkshop
-                                ? 'bg-white text-slate-800 shadow-sm'
-                                : 'text-slate-400 hover:text-slate-600'
-                        }`}
+                                ? 'border-slate-300 bg-white text-slate-900 shadow-sm'
+                                : 'border-slate-200 bg-slate-50 text-slate-600',
+                        )}
                     >
                         UMUM
                     </button>
                     <button
                         onClick={() => setCustomerType('workshop')}
-                        className={`flex items-center gap-1 rounded-lg px-3 py-2 text-xs font-bold transition-all ${
+                        className={cx(
+                            'flex flex-1 items-center justify-center gap-1 rounded-2xl border px-4 py-2 text-xs font-black',
                             isWorkshop
-                                ? 'bg-orange-500 text-white shadow-sm'
-                                : 'text-slate-400 hover:text-slate-600'
-                        }`}
+                                ? 'border-orange-300 bg-orange-600 text-white shadow-sm'
+                                : 'border-slate-200 bg-slate-50 text-slate-600',
+                        )}
                     >
                         <Icons.Tag />
                         BENGKEL
                     </button>
                 </div>
-
-                <button
-                    onClick={() => setShowCartMobile(!showCartMobile)}
-                    className="relative rounded-xl bg-slate-100 p-3 text-slate-700 active:bg-slate-200 lg:hidden"
-                >
-                    <Icons.Cart />
-                    {data.cart.length > 0 && (
-                        <span className="absolute top-1 right-1 h-3 w-3 rounded-full border-2 border-white bg-red-500"></span>
-                    )}
-                </button>
-
-                <button
-                    onClick={() => setIsLogoutModalOpen(true)}
-                    className="rounded-xl p-3 text-red-500 transition-transform hover:bg-red-50 active:scale-95"
-                >
-                    <svg
-                        className="h-6 w-6"
-                        fill="none"
-                        stroke="currentColor"
-                        viewBox="0 0 24 24"
-                    >
-                        <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            strokeWidth="2"
-                            d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"
-                        />
-                    </svg>
-                </button>
             </div>
 
-            {/* --- BODY --- */}
-            <div className="relative flex flex-1 overflow-hidden print:hidden">
-                {/* PRODUCT GRID */}
+            {/* --- MAIN SHELL --- */}
+            <div className="mx-auto flex h-[calc(100vh-4rem)] max-w-[1600px] overflow-hidden print:hidden">
+                {/* PRODUCTS */}
                 <div
-                    className={`flex-1 overflow-y-auto p-4 transition-colors md:p-6 ${
-                        isWorkshop ? 'bg-orange-50' : 'bg-slate-100'
-                    }`}
-                    style={{ WebkitOverflowScrolling: 'touch' }}
-                >
-                    {!!deferredSearch?.trim() && (
-                        <div className="mb-3 text-xs font-bold text-slate-500">
-                            Menampilkan {filteredProducts.length} hasil (maks
-                            30)
-                        </div>
+                    className={cx(
+                        'flex-1 overflow-y-auto p-4 md:p-6',
+                        isWorkshop ? 'bg-orange-50' : 'bg-slate-100',
                     )}
+                >
+                    {/* subtle header row */}
+                    <div className="mb-4 flex items-center justify-between">
+                        <div className="text-sm font-black text-slate-900">
+                            Produk
+                            {deferredSearch?.trim() && (
+                                <span className="ml-2 text-xs font-semibold text-slate-500">
+                                    ({filteredProducts.length} hasil • max 30)
+                                </span>
+                            )}
+                        </div>
+                        <div
+                            className={cx(
+                                'rounded-2xl px-3 py-1 text-xs font-black',
+                                isWorkshop
+                                    ? 'bg-orange-100 text-orange-700'
+                                    : 'bg-slate-200 text-slate-700',
+                            )}
+                        >
+                            {isWorkshop ? 'MODE: HARGA BENGKEL' : 'MODE: UMUM'}
+                        </div>
+                    </div>
 
                     {filteredProducts.length === 0 ? (
-                        <div className="flex h-full flex-col items-center justify-center opacity-40">
+                        <div className="flex h-[60vh] flex-col items-center justify-center text-slate-400">
                             <Icons.Search />
-                            <p className="mt-2 font-bold">
+                            <p className="mt-3 text-sm font-bold">
                                 Barang tidak ditemukan
+                            </p>
+                            <p className="mt-1 text-xs">
+                                Coba cari pakai SKU atau model motor.
                             </p>
                         </div>
                     ) : (
-                        <div
-                            className="grid gap-4 pb-24 md:pb-6 lg:pb-4"
-                            style={{
-                                gridTemplateColumns:
-                                    'repeat(2, minmax(0, 1fr))',
-                            }}
-                        >
-                            {/* Responsive grid columns via CSS media queries using Tailwind breakpoints */}
-                            <style>{`
-                                @media (min-width: 768px) {
-                                  .pos-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
-                                }
-                                @media (min-width: 1280px) {
-                                  .pos-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); }
-                                }
-                                @media (min-width: 1536px) {
-                                  .pos-grid { grid-template-columns: repeat(5, minmax(0, 1fr)); }
-                                }
-                            `}</style>
-
-                            <div
-                                className="pos-grid grid gap-4"
-                                style={{ gridTemplateColumns: 'inherit' }}
-                            >
-                                {filteredProducts.map((product) => (
-                                    <ProductCard
-                                        key={product.id}
-                                        product={product}
-                                        onAdd={addToCart}
-                                        customerType={customerType}
-                                    />
-                                ))}
-                            </div>
+                        <div className="grid grid-cols-2 gap-4 pb-28 md:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5">
+                            {filteredProducts.map((product) => (
+                                <ProductCard
+                                    key={product.id}
+                                    product={product}
+                                    onAdd={addToCart}
+                                    customerType={customerType}
+                                />
+                            ))}
                         </div>
                     )}
                 </div>
 
-                {/* CART SIDEBAR */}
+                {/* CART (desktop) */}
+                <div className="relative hidden w-[420px] shrink-0 border-l border-slate-200 bg-white lg:flex lg:flex-col">
+                    {/* cart header */}
+                    <div
+                        className={cx(
+                            'border-b p-5',
+                            isWorkshop
+                                ? 'border-orange-100 bg-orange-50/40'
+                                : 'border-slate-100 bg-slate-50/50',
+                        )}
+                    >
+                        <div className="flex items-start justify-between">
+                            <div>
+                                <div className="text-lg font-black text-slate-900">
+                                    Keranjang
+                                </div>
+                                <div className="mt-1 text-xs font-semibold text-slate-500">
+                                    {data.cart.length} item •{' '}
+                                    {isWorkshop ? (
+                                        <span
+                                            className={cx(
+                                                'font-black',
+                                                accentText,
+                                            )}
+                                        >
+                                            harga bengkel aktif
+                                        </span>
+                                    ) : (
+                                        'siap dibayar'
+                                    )}
+                                </div>
+                            </div>
+                            <button
+                                onClick={clearCart}
+                                className="rounded-2xl bg-red-50 px-3 py-2 text-xs font-black text-red-600 transition hover:bg-red-100 active:scale-[0.99]"
+                            >
+                                Hapus
+                            </button>
+                        </div>
+                    </div>
+
+                    {/* cart list */}
+                    <div className="flex-1 overflow-y-auto p-5">
+                        {data.cart.length === 0 ? (
+                            <div className="flex h-full flex-col items-center justify-center text-slate-300">
+                                <Icons.Cart />
+                                <p className="mt-3 text-sm font-bold">
+                                    Keranjang Kosong
+                                </p>
+                                <p className="mt-1 text-xs">
+                                    Tap produk untuk menambahkan.
+                                </p>
+                            </div>
+                        ) : (
+                            <div className="space-y-4">
+                                {data.cart.map((item, idx) => {
+                                    const product = productById.get(item.id);
+                                    const currentPrice = product
+                                        ? getProductPrice(product)
+                                        : parseFloat(item.sell_price) || 0;
+                                    const displayQty =
+                                        item.qty === '' ? '' : item.qty;
+
+                                    return (
+                                        <div
+                                            key={idx}
+                                            className={cx(
+                                                'rounded-2xl border p-4 shadow-sm',
+                                                isWorkshop
+                                                    ? 'border-orange-100'
+                                                    : 'border-slate-200',
+                                            )}
+                                        >
+                                            <div className="flex items-start justify-between gap-3">
+                                                <div className="min-w-0">
+                                                    <div className="line-clamp-2 text-sm font-black text-slate-900">
+                                                        {item.name}
+                                                    </div>
+                                                    <div className="mt-1 text-xs font-semibold text-slate-500">
+                                                        @ Rp{' '}
+                                                        {formatRupiah(
+                                                            currentPrice,
+                                                        )}
+                                                    </div>
+                                                </div>
+                                                <button
+                                                    onClick={() =>
+                                                        removeItem(item.id)
+                                                    }
+                                                    className="rounded-2xl p-2 text-slate-300 transition hover:bg-red-50 hover:text-red-600 active:scale-[0.99]"
+                                                    title="Hapus item"
+                                                >
+                                                    <Icons.Trash />
+                                                </button>
+                                            </div>
+
+                                            <div className="mt-4 flex items-end justify-between">
+                                                <div className="flex items-center overflow-hidden rounded-2xl border border-slate-200 bg-slate-50">
+                                                    <button
+                                                        onClick={() =>
+                                                            updateQty(
+                                                                item.id,
+                                                                -1,
+                                                            )
+                                                        }
+                                                        disabled={
+                                                            (Number(item.qty) ||
+                                                                1) <= 1
+                                                        }
+                                                        className="flex h-11 w-12 items-center justify-center font-black text-slate-600 active:bg-slate-200 disabled:opacity-40"
+                                                    >
+                                                        −
+                                                    </button>
+                                                    <input
+                                                        type="text"
+                                                        inputMode="numeric"
+                                                        pattern="[0-9]*"
+                                                        className="h-11 w-14 border-0 bg-transparent p-0 text-center text-lg font-black text-slate-900 focus:ring-0"
+                                                        value={displayQty}
+                                                        onChange={(e) =>
+                                                            handleManualQtyChange(
+                                                                item.id,
+                                                                e.target.value,
+                                                            )
+                                                        }
+                                                        onBlur={(e) =>
+                                                            handleManualQtyBlur(
+                                                                item.id,
+                                                                e.target.value,
+                                                            )
+                                                        }
+                                                    />
+                                                    <button
+                                                        onClick={() =>
+                                                            updateQty(
+                                                                item.id,
+                                                                1,
+                                                            )
+                                                        }
+                                                        className={cx(
+                                                            'flex h-11 w-12 items-center justify-center font-black active:bg-blue-100',
+                                                            accentText,
+                                                        )}
+                                                    >
+                                                        +
+                                                    </button>
+                                                </div>
+
+                                                <div
+                                                    className={cx(
+                                                        'text-lg font-black tracking-tight',
+                                                        isWorkshop
+                                                            ? 'text-orange-600'
+                                                            : 'text-slate-900',
+                                                    )}
+                                                >
+                                                    Rp{' '}
+                                                    {formatRupiah(
+                                                        currentPrice *
+                                                            (Number(item.qty) ||
+                                                                0),
+                                                    )}
+                                                </div>
+                                            </div>
+                                        </div>
+                                    );
+                                })}
+                            </div>
+                        )}
+                    </div>
+
+                    {/* cart footer */}
+                    <div className="border-t border-slate-100 p-5 shadow-[0_-10px_30px_rgba(0,0,0,0.06)]">
+                        <div className="flex items-end justify-between">
+                            <div className="text-xs font-bold tracking-widest text-slate-400 uppercase">
+                                Total
+                            </div>
+                            <div
+                                className={cx(
+                                    'text-3xl font-black tracking-tight',
+                                    isWorkshop
+                                        ? 'text-orange-600'
+                                        : 'text-slate-900',
+                                )}
+                            >
+                                Rp {formatRupiah(totalAmount)}
+                            </div>
+                        </div>
+
+                        <button
+                            onClick={() =>
+                                data.cart.length > 0 && setPaymentOpen(true)
+                            }
+                            disabled={data.cart.length === 0}
+                            className={cx(
+                                'mt-4 w-full rounded-2xl py-4 text-base font-black text-white shadow-xl transition active:scale-[0.99] disabled:opacity-50',
+                                data.cart.length === 0
+                                    ? 'bg-slate-300'
+                                    : isWorkshop
+                                      ? 'bg-orange-600 shadow-orange-600/25 hover:bg-orange-700'
+                                      : 'bg-blue-600 shadow-blue-600/25 hover:bg-blue-700',
+                            )}
+                        >
+                            Bayar Sekarang
+                        </button>
+                    </div>
+                </div>
+
+                {/* CART (mobile slide over) */}
                 <div
-                    className={`fixed inset-0 z-30 flex transform flex-col bg-white shadow-2xl transition-transform duration-300 lg:relative lg:sticky lg:top-16 lg:z-10 lg:h-[calc(100vh-4rem)] lg:w-[380px] lg:translate-x-0 lg:overflow-hidden lg:border-l lg:border-slate-200 lg:shadow-none ${showCartMobile ? 'translate-x-0' : 'translate-x-full'}`}
+                    className={cx(
+                        'fixed inset-0 z-50 flex transform flex-col bg-white transition-transform duration-300 lg:hidden',
+                        showCartMobile ? 'translate-x-0' : 'translate-x-full',
+                    )}
                 >
-                    <div className="flex items-center justify-between border-b border-slate-100 bg-slate-50 p-4 lg:hidden">
-                        <h2 className="text-lg font-bold">Keranjang</h2>
+                    <div className="flex items-center justify-between border-b border-slate-100 bg-white p-4">
+                        <div>
+                            <div className="text-lg font-black">Keranjang</div>
+                            <div className="text-xs font-semibold text-slate-500">
+                                {data.cart.length} item
+                            </div>
+                        </div>
                         <button
                             onClick={() => setShowCartMobile(false)}
-                            className="rounded-full bg-white p-2 shadow-sm"
+                            className="rounded-2xl bg-slate-100 p-2 text-slate-600"
                         >
                             <Icons.Close />
                         </button>
                     </div>
 
-                    <div
-                        className={`hidden items-center justify-between border-b p-4 lg:flex ${
-                            isWorkshop
-                                ? 'border-orange-100 bg-orange-50/50'
-                                : 'border-slate-100 bg-slate-50/50'
-                        }`}
-                    >
-                        <div>
-                            <h2 className="text-lg font-black text-slate-800">
-                                Keranjang
-                            </h2>
-                            <p
-                                className={`text-xs ${isWorkshop ? 'font-bold text-orange-600' : 'text-slate-500'}`}
-                            >
-                                {isWorkshop
-                                    ? 'MODE: HARGA BENGKEL'
-                                    : `${data.cart.length} Item Ditambahkan`}
-                            </p>
-                        </div>
-                        <button
-                            onClick={clearCart}
-                            className="rounded-lg bg-red-50 px-3 py-1.5 text-xs font-bold text-red-500 hover:bg-red-100 active:scale-95"
-                        >
-                            HAPUS
-                        </button>
-                    </div>
-
-                    {/* Cart list scroll area */}
-                    <div className="flex-1 overflow-y-auto bg-white p-4">
+                    <div className="flex-1 overflow-y-auto p-4">
                         {data.cart.length === 0 ? (
                             <div className="flex h-full flex-col items-center justify-center text-slate-300">
                                 <Icons.Cart />
-                                <p className="mt-2 text-sm">Keranjang Kosong</p>
+                                <p className="mt-2 text-sm font-bold">
+                                    Keranjang Kosong
+                                </p>
                             </div>
                         ) : (
                             <div className="space-y-3">
@@ -1053,34 +1299,82 @@ export default function TabletPOS({ products }) {
                                     return (
                                         <div
                                             key={idx}
-                                            className={`flex flex-col rounded-2xl border bg-white p-3 shadow-sm ${
-                                                isWorkshop
-                                                    ? 'border-orange-100'
-                                                    : 'border-slate-100'
-                                            }`}
+                                            className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm"
                                         >
-                                            <div className="mb-2 flex items-start justify-between">
-                                                <h4 className="line-clamp-2 w-3/4 text-sm leading-tight font-bold text-slate-800">
-                                                    {item.name}
-                                                </h4>
+                                            <div className="flex items-start justify-between gap-3">
+                                                <div className="min-w-0">
+                                                    <div className="line-clamp-2 text-sm font-black text-slate-900">
+                                                        {item.name}
+                                                    </div>
+                                                    <div className="mt-1 text-xs font-semibold text-slate-500">
+                                                        @ Rp{' '}
+                                                        {formatRupiah(
+                                                            currentPrice,
+                                                        )}
+                                                    </div>
+                                                </div>
                                                 <button
                                                     onClick={() =>
                                                         removeItem(item.id)
                                                     }
-                                                    className="rounded-lg p-2 text-slate-300 hover:bg-red-50 hover:text-red-500 active:scale-95"
+                                                    className="rounded-2xl p-2 text-slate-300 hover:bg-red-50 hover:text-red-600"
                                                 >
                                                     <Icons.Trash />
                                                 </button>
                                             </div>
 
-                                            <div className="flex items-end justify-between">
-                                                <div className="text-xs text-slate-500">
-                                                    @ Rp{' '}
-                                                    {formatRupiah(currentPrice)}
+                                            <div className="mt-3 flex items-end justify-between">
+                                                <div className="flex items-center overflow-hidden rounded-2xl border border-slate-200 bg-slate-50">
+                                                    <button
+                                                        onClick={() =>
+                                                            updateQty(
+                                                                item.id,
+                                                                -1,
+                                                            )
+                                                        }
+                                                        disabled={
+                                                            (Number(item.qty) ||
+                                                                1) <= 1
+                                                        }
+                                                        className="flex h-11 w-12 items-center justify-center font-black text-slate-600 active:bg-slate-200 disabled:opacity-40"
+                                                    >
+                                                        −
+                                                    </button>
+                                                    <input
+                                                        type="text"
+                                                        inputMode="numeric"
+                                                        pattern="[0-9]*"
+                                                        className="h-11 w-14 border-0 bg-transparent p-0 text-center text-lg font-black text-slate-900 focus:ring-0"
+                                                        value={displayQty}
+                                                        onChange={(e) =>
+                                                            handleManualQtyChange(
+                                                                item.id,
+                                                                e.target.value,
+                                                            )
+                                                        }
+                                                        onBlur={(e) =>
+                                                            handleManualQtyBlur(
+                                                                item.id,
+                                                                e.target.value,
+                                                            )
+                                                        }
+                                                    />
+                                                    <button
+                                                        onClick={() =>
+                                                            updateQty(
+                                                                item.id,
+                                                                1,
+                                                            )
+                                                        }
+                                                        className={cx(
+                                                            'flex h-11 w-12 items-center justify-center font-black active:bg-blue-100',
+                                                            accentText,
+                                                        )}
+                                                    >
+                                                        +
+                                                    </button>
                                                 </div>
-                                                <div
-                                                    className={`font-black ${isWorkshop ? 'text-orange-600' : 'text-slate-800'}`}
-                                                >
+                                                <div className="text-lg font-black text-slate-900">
                                                     Rp{' '}
                                                     {formatRupiah(
                                                         currentPrice *
@@ -1089,48 +1383,6 @@ export default function TabletPOS({ products }) {
                                                     )}
                                                 </div>
                                             </div>
-
-                                            <div className="mt-3 flex items-center overflow-hidden rounded-xl border border-slate-200 bg-slate-50">
-                                                <button
-                                                    onClick={() =>
-                                                        updateQty(item.id, -1)
-                                                    }
-                                                    disabled={
-                                                        (Number(item.qty) ||
-                                                            1) <= 1
-                                                    }
-                                                    className="flex h-11 flex-1 items-center justify-center font-bold text-slate-500 active:bg-slate-200 disabled:opacity-40"
-                                                >
-                                                    -
-                                                </button>
-                                                <input
-                                                    type="text"
-                                                    inputMode="numeric"
-                                                    pattern="[0-9]*"
-                                                    className="h-11 w-16 border-0 bg-transparent p-0 text-center text-lg font-black text-slate-800 focus:ring-0"
-                                                    value={displayQty}
-                                                    onChange={(e) =>
-                                                        handleManualQtyChange(
-                                                            item.id,
-                                                            e.target.value,
-                                                        )
-                                                    }
-                                                    onBlur={(e) =>
-                                                        handleManualQtyBlur(
-                                                            item.id,
-                                                            e.target.value,
-                                                        )
-                                                    }
-                                                />
-                                                <button
-                                                    onClick={() =>
-                                                        updateQty(item.id, 1)
-                                                    }
-                                                    className="flex h-11 flex-1 items-center justify-center font-bold text-blue-600 active:bg-blue-100"
-                                                >
-                                                    +
-                                                </button>
-                                            </div>
                                         </div>
                                     );
                                 })}
@@ -1138,30 +1390,28 @@ export default function TabletPOS({ products }) {
                         )}
                     </div>
 
-                    {/* Cart footer sticky-like */}
-                    <div className="shrink-0 border-t border-slate-100 bg-white p-4 shadow-[0_-4px_20px_rgba(0,0,0,0.05)]">
-                        <div className="mb-4 flex items-end justify-between">
-                            <span className="text-sm font-bold text-slate-500">
+                    <div className="border-t border-slate-100 p-4 shadow-[0_-10px_30px_rgba(0,0,0,0.06)]">
+                        <div className="flex items-end justify-between">
+                            <div className="text-xs font-bold tracking-widest text-slate-400 uppercase">
                                 Total
-                            </span>
-                            <span
-                                className={`text-3xl font-black tracking-tight ${isWorkshop ? 'text-orange-600' : 'text-slate-900'}`}
-                            >
+                            </div>
+                            <div className="text-2xl font-black text-slate-900">
                                 Rp {formatRupiah(totalAmount)}
-                            </span>
+                            </div>
                         </div>
                         <button
-                            onClick={() => {
-                                if (data.cart.length > 0) setPaymentOpen(true);
-                            }}
+                            onClick={() =>
+                                data.cart.length > 0 && setPaymentOpen(true)
+                            }
                             disabled={data.cart.length === 0}
-                            className={`w-full rounded-2xl py-4 text-lg font-bold shadow-xl transition-all active:scale-[0.98] ${
+                            className={cx(
+                                'mt-4 w-full rounded-2xl py-4 text-base font-black text-white shadow-xl transition active:scale-[0.99] disabled:opacity-50',
                                 data.cart.length === 0
-                                    ? 'bg-slate-200 text-slate-400'
+                                    ? 'bg-slate-300'
                                     : isWorkshop
-                                      ? 'bg-orange-500 text-white shadow-orange-500/30'
-                                      : 'bg-blue-600 text-white shadow-blue-500/30'
-                            }`}
+                                      ? 'bg-orange-600 hover:bg-orange-700'
+                                      : 'bg-blue-600 hover:bg-blue-700',
+                            )}
                         >
                             Bayar Sekarang
                         </button>
@@ -1171,50 +1421,48 @@ export default function TabletPOS({ products }) {
 
             {/* --- PAYMENT MODAL --- */}
             {isPaymentOpen && (
-                <div className="fixed inset-0 z-50 flex flex-col bg-white md:flex-row print:hidden">
+                <div className="fixed inset-0 z-[60] flex flex-col bg-white md:flex-row print:hidden">
                     <div className="flex items-center justify-between border-b border-slate-100 p-4 md:hidden">
                         <button
                             onClick={() => setPaymentOpen(false)}
-                            className="flex items-center gap-2 font-bold text-slate-500"
+                            className="flex items-center gap-2 text-sm font-black text-slate-600"
                         >
                             <Icons.Back /> Kembali
                         </button>
-                        <h3 className="text-lg font-bold">Pembayaran</h3>
+                        <h3 className="text-base font-black">Pembayaran</h3>
                     </div>
 
-                    <div className="flex w-full flex-col overflow-y-auto bg-slate-50 p-6 md:w-5/12">
-                        <div className="mb-6 hidden md:block">
+                    {/* left summary */}
+                    <div className="w-full bg-slate-50 p-6 md:w-[420px] md:border-r md:border-slate-100 md:p-8">
+                        <div className="hidden md:block">
                             <button
                                 onClick={() => setPaymentOpen(false)}
-                                className="flex items-center gap-2 font-bold text-slate-500 transition-colors hover:text-slate-800"
+                                className="flex items-center gap-2 text-sm font-black text-slate-600 hover:text-slate-900"
                             >
-                                <Icons.Back /> Kembali ke Menu
+                                <Icons.Back /> Kembali
                             </button>
                         </div>
 
-                        <div className="mb-6">
-                            <div className="mb-2 flex items-center justify-between">
-                                <p className="text-sm font-bold tracking-widest text-slate-400 uppercase">
+                        <div className="mt-6 rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
+                            <div className="flex items-center justify-between">
+                                <div className="text-xs font-black tracking-widest text-slate-400 uppercase">
                                     Total Tagihan
-                                </p>
+                                </div>
                                 {isWorkshop && (
-                                    <span className="rounded bg-orange-100 px-2 py-1 text-[10px] font-bold text-orange-600">
+                                    <div className="rounded-xl bg-orange-100 px-3 py-1 text-[10px] font-black text-orange-700">
                                         HARGA BENGKEL
-                                    </span>
+                                    </div>
                                 )}
                             </div>
-                            <p className="my-2 text-5xl font-black tracking-tighter text-slate-900">
-                                <span className="mr-1 text-2xl font-medium text-slate-400">
-                                    Rp
-                                </span>
-                                {formatRupiah(totalAmount)}
-                            </p>
+                            <div className="mt-3 text-4xl font-black tracking-tight text-slate-900">
+                                Rp {formatRupiah(totalAmount)}
+                            </div>
                         </div>
 
-                        <div className="space-y-3">
-                            <p className="font-bold text-slate-700">
-                                Pilih Metode Bayar
-                            </p>
+                        <div className="mt-6 space-y-3">
+                            <div className="text-sm font-black text-slate-700">
+                                Metode Bayar
+                            </div>
 
                             {[
                                 {
@@ -1241,44 +1489,48 @@ export default function TabletPOS({ products }) {
                                             setPaymentMethod(m.id);
                                             setCashReceived('');
                                         }}
-                                        className={`flex w-full items-center rounded-2xl border-2 p-4 transition-all active:scale-[0.99] ${
+                                        className={cx(
+                                            'flex w-full items-center rounded-3xl border-2 p-4 transition active:scale-[0.99]',
                                             paymentMethod === m.id
                                                 ? `${s.border} bg-white shadow-md ring-1 ${s.ring}`
-                                                : 'border-slate-200 bg-white hover:border-slate-300'
-                                        }`}
+                                                : 'border-slate-200 bg-white hover:border-slate-300',
+                                        )}
                                     >
                                         <div
-                                            className={`mr-4 rounded-xl p-2 ${
+                                            className={cx(
+                                                'mr-4 rounded-2xl p-2',
                                                 paymentMethod === m.id
                                                     ? `${s.iconBg} ${s.iconText}`
-                                                    : 'bg-slate-100 text-slate-400'
-                                            }`}
+                                                    : 'bg-slate-100 text-slate-400',
+                                            )}
                                         >
                                             <m.icon />
                                         </div>
-                                        <span
-                                            className={`text-lg font-bold ${
+                                        <div
+                                            className={cx(
+                                                'text-base font-black',
                                                 paymentMethod === m.id
                                                     ? 'text-slate-900'
-                                                    : 'text-slate-500'
-                                            }`}
+                                                    : 'text-slate-600',
+                                            )}
                                         >
                                             {m.label}
-                                        </span>
+                                        </div>
                                     </button>
                                 );
                             })}
                         </div>
                     </div>
 
-                    <div className="flex flex-1 flex-col bg-white p-6 md:p-10">
+                    {/* right content */}
+                    <div className="flex flex-1 flex-col p-6 md:p-10">
                         {paymentMethod === 'cash' && (
                             <div className="mx-auto flex w-full max-w-lg flex-1 flex-col">
-                                <div className="mb-6 text-center">
-                                    <p className="mb-1 font-medium text-slate-500">
+                                <div className="mb-6 rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
+                                    <div className="text-xs font-black tracking-widest text-slate-400 uppercase">
                                         Uang Diterima
-                                    </p>
-                                    <div className="inline-block min-w-[220px] border-b-2 border-blue-500 pb-2 text-4xl font-black text-slate-800">
+                                    </div>
+                                    <div className="mt-3 text-4xl font-black tracking-tight text-slate-900">
                                         {cashReceived ? (
                                             `Rp ${formatRupiah(parseInt(cashReceived))}`
                                         ) : (
@@ -1288,11 +1540,12 @@ export default function TabletPOS({ products }) {
                                         )}
                                     </div>
                                     <div
-                                        className={`mt-4 inline-block rounded-xl px-4 py-2 font-bold transition-colors ${
+                                        className={cx(
+                                            'mt-4 inline-flex rounded-2xl px-4 py-2 text-sm font-black',
                                             change < 0
-                                                ? 'bg-red-100 text-red-600'
-                                                : 'bg-green-100 text-green-700'
-                                        }`}
+                                                ? 'bg-red-100 text-red-700'
+                                                : 'bg-emerald-100 text-emerald-800',
+                                        )}
                                     >
                                         {change < 0
                                             ? `Kurang: Rp ${formatRupiah(Math.abs(change))}`
@@ -1307,13 +1560,13 @@ export default function TabletPOS({ products }) {
                                                 totalAmount.toString(),
                                             )
                                         }
-                                        className="rounded-2xl bg-blue-50 py-3 font-bold text-blue-700 active:bg-blue-100"
+                                        className="rounded-3xl bg-blue-50 py-3 text-sm font-black text-blue-800 active:bg-blue-100"
                                     >
                                         Uang Pas
                                     </button>
                                     <button
                                         onClick={() => setCashReceived('50000')}
-                                        className="rounded-2xl bg-slate-50 py-3 font-bold text-slate-700 active:bg-slate-200"
+                                        className="rounded-3xl bg-slate-50 py-3 text-sm font-black text-slate-800 active:bg-slate-200"
                                     >
                                         50.000
                                     </button>
@@ -1321,7 +1574,7 @@ export default function TabletPOS({ products }) {
                                         onClick={() =>
                                             setCashReceived('100000')
                                         }
-                                        className="rounded-2xl bg-slate-50 py-3 font-bold text-slate-700 active:bg-slate-200"
+                                        className="rounded-3xl bg-slate-50 py-3 text-sm font-black text-slate-800 active:bg-slate-200"
                                     >
                                         100.000
                                     </button>
@@ -1335,7 +1588,7 @@ export default function TabletPOS({ products }) {
                                                 ).toString(),
                                             )
                                         }
-                                        className="rounded-2xl bg-slate-50 py-3 font-bold text-slate-700 active:bg-slate-200"
+                                        className="rounded-3xl bg-slate-50 py-3 text-sm font-black text-slate-800 active:bg-slate-200"
                                     >
                                         Next 50k
                                     </button>
@@ -1352,58 +1605,60 @@ export default function TabletPOS({ products }) {
                         )}
 
                         {paymentMethod === 'qris' && (
-                            <div className="flex flex-1 flex-col items-center justify-center p-4 text-center">
-                                <div className="mb-6 rounded-2xl border border-slate-200 bg-white p-4 shadow-xl">
+                            <div className="flex flex-1 flex-col items-center justify-center text-center">
+                                <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-xl">
                                     <img
                                         src={STORE_CONFIG.qrisUrl}
                                         alt="QRIS Code"
-                                        className="mx-auto h-64 w-64 object-contain"
+                                        className="mx-auto h-64 w-64 rounded-2xl object-contain"
                                         onError={(e) => {
                                             e.target.onerror = null;
                                             e.target.src = `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=Pembayaran%20Graha%20Mesran%20Rp${totalAmount}`;
                                         }}
                                     />
-                                    <p className="mt-2 font-bold text-slate-800">
+                                    <div className="mt-3 text-base font-black text-slate-900">
                                         Scan QRIS
-                                    </p>
-                                    <p className="text-xs text-slate-500">
+                                    </div>
+                                    <div className="text-xs font-semibold text-slate-500">
                                         NMID: GRAHA MESRAN
-                                    </p>
+                                    </div>
                                 </div>
-                                <div className="rounded-2xl bg-blue-50 px-6 py-3 text-blue-800">
-                                    <p className="animate-pulse font-bold">
-                                        Menunggu Pembayaran...
-                                    </p>
-                                    <p className="text-sm">
+
+                                <div className="mt-6 rounded-3xl bg-blue-50 px-6 py-4 text-blue-900">
+                                    <div className="text-sm font-black">
+                                        Menunggu Pembayaran…
+                                    </div>
+                                    <div className="mt-1 text-sm">
                                         Nominal:{' '}
-                                        <strong>
+                                        <span className="font-black">
                                             Rp {formatRupiah(totalAmount)}
-                                        </strong>
-                                    </p>
+                                        </span>
+                                    </div>
                                 </div>
                             </div>
                         )}
 
                         {paymentMethod === 'bank' && (
-                            <div className="mx-auto flex w-full max-w-md flex-1 flex-col items-center justify-center p-4 text-center">
-                                <div className="relative mb-8 w-full overflow-hidden rounded-2xl bg-gradient-to-br from-blue-600 to-blue-800 p-6 text-white shadow-xl">
-                                    <div className="absolute top-0 right-0 -mt-4 -mr-4 h-24 w-24 rounded-full bg-white opacity-10"></div>
-                                    <div className="mb-8 flex items-start justify-between">
-                                        <span className="text-2xl font-black tracking-tighter italic">
+                            <div className="mx-auto flex w-full max-w-md flex-1 flex-col items-center justify-center text-center">
+                                <div className="relative w-full overflow-hidden rounded-3xl bg-gradient-to-br from-blue-600 to-blue-900 p-6 text-white shadow-xl">
+                                    <div className="absolute -top-10 -right-10 h-28 w-28 rounded-full bg-white/10" />
+                                    <div className="flex items-start justify-between">
+                                        <div className="text-2xl font-black italic">
                                             BCA
-                                        </span>
-                                        <span className="font-mono text-xs opacity-80">
+                                        </div>
+                                        <div className="text-xs font-bold opacity-80">
                                             DEBIT / TF
-                                        </span>
+                                        </div>
                                     </div>
-                                    <div className="mb-2 text-left">
-                                        <p className="text-xs tracking-widest uppercase opacity-70">
+
+                                    <div className="mt-8 text-left">
+                                        <div className="text-xs font-black tracking-widest uppercase opacity-70">
                                             Nomor Rekening
-                                        </p>
-                                        <div className="flex items-center gap-2">
-                                            <p className="font-mono text-3xl font-bold tracking-widest">
+                                        </div>
+                                        <div className="mt-2 flex items-center gap-2">
+                                            <div className="font-mono text-3xl font-black tracking-widest">
                                                 {STORE_CONFIG.bank.number}
-                                            </p>
+                                            </div>
                                             <button
                                                 onClick={() =>
                                                     copyToClipboard(
@@ -1411,7 +1666,7 @@ export default function TabletPOS({ products }) {
                                                             .number,
                                                     )
                                                 }
-                                                className="rounded-xl bg-white/20 p-2 backdrop-blur-sm transition-colors hover:bg-white/30 active:scale-95"
+                                                className="rounded-2xl bg-white/20 p-2 backdrop-blur transition hover:bg-white/30 active:scale-[0.99]"
                                             >
                                                 {copied ? (
                                                     <Icons.Check />
@@ -1421,23 +1676,24 @@ export default function TabletPOS({ products }) {
                                             </button>
                                         </div>
                                     </div>
-                                    <div className="mt-4 border-t border-white/20 pt-4 text-left">
-                                        <p className="text-xs uppercase opacity-70">
+
+                                    <div className="mt-6 border-t border-white/20 pt-4 text-left">
+                                        <div className="text-xs font-black tracking-widest uppercase opacity-70">
                                             Atas Nama
-                                        </p>
-                                        <p className="truncate text-lg font-bold">
+                                        </div>
+                                        <div className="mt-1 truncate text-lg font-black">
                                             {STORE_CONFIG.bank.holder}
-                                        </p>
+                                        </div>
                                     </div>
                                 </div>
 
-                                <div className="w-full rounded-2xl border border-slate-200 bg-slate-50 p-4">
-                                    <p className="mb-1 text-sm text-slate-500">
-                                        Transfer Total:
-                                    </p>
-                                    <p className="text-2xl font-black text-slate-900">
+                                <div className="mt-6 w-full rounded-3xl border border-slate-200 bg-slate-50 p-5">
+                                    <div className="text-xs font-black tracking-widest text-slate-400 uppercase">
+                                        Transfer Total
+                                    </div>
+                                    <div className="mt-2 text-2xl font-black text-slate-900">
                                         Rp {formatRupiah(totalAmount)}
-                                    </p>
+                                    </div>
                                 </div>
                             </div>
                         )}
@@ -1448,7 +1704,7 @@ export default function TabletPOS({ products }) {
                                 isProcessing ||
                                 (paymentMethod === 'cash' && change < 0)
                             }
-                            className="mt-6 w-full rounded-2xl bg-slate-900 py-5 text-xl font-bold text-white shadow-xl shadow-slate-900/20 transition-all active:scale-[0.98] disabled:opacity-50"
+                            className="mt-6 w-full rounded-3xl bg-slate-900 py-5 text-base font-black text-white shadow-xl shadow-slate-900/20 transition active:scale-[0.99] disabled:opacity-50"
                         >
                             {isProcessing
                                 ? 'MEMPROSES...'
@@ -1460,87 +1716,98 @@ export default function TabletPOS({ products }) {
 
             {/* --- SCANNER MODAL --- */}
             {isScannerOpen && (
-                <div className="fixed inset-0 z-[60] flex items-center justify-center bg-slate-900/90 backdrop-blur-sm">
-                    <div className="relative w-full max-w-md overflow-hidden rounded-2xl bg-white p-4 shadow-2xl">
-                        {/* HEADER MODAL */}
-                        <div className="mb-4 flex items-center justify-between">
-                            <h3 className="text-lg font-bold text-slate-800">
+                <div className="fixed inset-0 z-[70] flex items-center justify-center bg-slate-900/70 backdrop-blur-sm">
+                    <div className="relative w-full max-w-md overflow-hidden rounded-3xl border border-white/10 bg-white p-4 shadow-2xl">
+                        <div className="flex items-center justify-between px-1 py-2">
+                            <div className="text-base font-black text-slate-900">
                                 Scan Barcode
-                            </h3>
+                            </div>
                             <button
                                 onClick={() => setIsScannerOpen(false)}
-                                className="rounded-full bg-slate-100 p-2 text-slate-500 hover:bg-red-100 hover:text-red-500"
+                                className="rounded-2xl bg-slate-100 p-2 text-slate-600 hover:bg-red-100 hover:text-red-600"
                             >
                                 <Icons.Close />
                             </button>
                         </div>
 
-                        {/* --- INI POPUP NOTIFIKASI (TOAST) --- */}
+                        {/* toast */}
                         {scanToast && (
                             <div
-                                className={`absolute top-16 right-4 left-4 z-10 transform animate-bounce rounded-xl p-3 text-center font-bold text-white shadow-lg transition-all ${
+                                className={cx(
+                                    'absolute top-16 right-4 left-4 z-10 rounded-2xl px-4 py-3 text-center text-sm font-black text-white shadow-lg',
+                                    'animate-[toastIn_.18s_ease-out]',
                                     scanToast.includes('❌')
-                                        ? 'bg-red-500'
-                                        : 'bg-green-500'
-                                }`}
+                                        ? 'bg-red-600'
+                                        : 'bg-emerald-600',
+                                )}
                             >
                                 {scanToast}
                             </div>
                         )}
 
-                        {/* AREA KAMERA */}
-                        <div className="relative overflow-hidden rounded-xl bg-black">
-                            {/* Tambahkan min-h agar tidak gepeng */}
+                        <style>{`
+                          @keyframes toastIn {
+                            from { transform: translateY(-8px); opacity: 0; }
+                            to { transform: translateY(0); opacity: 1; }
+                          }
+                        `}</style>
+
+                        <div className="relative mt-3 overflow-hidden rounded-2xl bg-black">
                             <div
                                 id="reader"
-                                className="min-h-[300px] w-full bg-black"
-                            ></div>
-
-                            {/* Garis Merah Laser (Pemanis Visual) */}
-                            <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
-                                <div className="h-0.5 w-3/4 bg-red-500 opacity-50 shadow-[0_0_10px_red]"></div>
+                                className="min-h-[320px] w-full bg-black"
+                            />
+                            {/* modern reticle */}
+                            <div className="pointer-events-none absolute inset-0 grid place-items-center">
+                                <div className="relative h-56 w-56 rounded-3xl border border-white/40">
+                                    <div className="absolute top-0 left-0 h-5 w-5 rounded-tl-2xl border-t-4 border-l-4 border-white/80" />
+                                    <div className="absolute top-0 right-0 h-5 w-5 rounded-tr-2xl border-t-4 border-r-4 border-white/80" />
+                                    <div className="absolute bottom-0 left-0 h-5 w-5 rounded-bl-2xl border-b-4 border-l-4 border-white/80" />
+                                    <div className="absolute right-0 bottom-0 h-5 w-5 rounded-br-2xl border-r-4 border-b-4 border-white/80" />
+                                    <div className="absolute inset-x-0 top-1/2 h-[2px] -translate-y-1/2 bg-rose-500/70 shadow-[0_0_18px_rgba(244,63,94,0.8)]" />
+                                </div>
                             </div>
                         </div>
 
-                        <p className="mt-4 text-center text-sm text-slate-500">
-                            Arahkan kamera ke barcode barang. <br />
+                        <div className="mt-4 text-center text-sm font-semibold text-slate-500">
+                            Arahkan kamera ke barcode. <br />
                             Otomatis lanjut scan barang berikutnya.
-                        </p>
+                        </div>
                     </div>
                 </div>
             )}
 
             {/* --- LOGOUT CONFIRMATION MODAL --- */}
             {isLogoutModalOpen && (
-                <div className="fixed inset-0 z-[70] flex items-center justify-center bg-slate-900/50 backdrop-blur-sm">
-                    <div className="w-full max-w-sm rounded-2xl bg-white p-6 shadow-2xl">
-                        <div className="mb-4 flex items-center justify-center">
-                            <div className="flex h-12 w-12 items-center justify-center rounded-full bg-red-100 text-red-500">
-                                <svg
-                                    className="h-6 w-6"
-                                    fill="none"
-                                    stroke="currentColor"
-                                    viewBox="0 0 24 24"
-                                >
-                                    <path
-                                        strokeLinecap="round"
-                                        strokeLinejoin="round"
-                                        strokeWidth="2"
-                                        d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"
-                                    />
-                                </svg>
-                            </div>
+                <div className="fixed inset-0 z-[80] flex items-center justify-center bg-slate-900/50 backdrop-blur-sm">
+                    <div className="w-full max-w-sm rounded-3xl bg-white p-6 shadow-2xl">
+                        <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-red-100 text-red-600">
+                            <svg
+                                className="h-6 w-6"
+                                fill="none"
+                                stroke="currentColor"
+                                viewBox="0 0 24 24"
+                            >
+                                <path
+                                    strokeLinecap="round"
+                                    strokeLinejoin="round"
+                                    strokeWidth="2"
+                                    d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"
+                                />
+                            </svg>
                         </div>
-                        <h3 className="mb-2 text-center text-xl font-bold text-slate-800">
+
+                        <div className="mt-4 text-center text-xl font-black text-slate-900">
                             Konfirmasi Keluar
-                        </h3>
-                        <p className="mb-6 text-center text-sm text-slate-500">
+                        </div>
+                        <div className="mt-2 text-center text-sm font-semibold text-slate-500">
                             Apakah Anda yakin ingin mengakhiri sesi kasir ini?
-                        </p>
-                        <div className="flex gap-3">
+                        </div>
+
+                        <div className="mt-6 flex gap-3">
                             <button
                                 onClick={() => setIsLogoutModalOpen(false)}
-                                className="flex-1 rounded-2xl border border-slate-200 bg-white py-3 font-bold text-slate-600 hover:bg-slate-50 active:scale-95"
+                                className="flex-1 rounded-3xl border border-slate-200 bg-white py-3 font-black text-slate-700 hover:bg-slate-50 active:scale-[0.99]"
                             >
                                 Batal
                             </button>
@@ -1548,7 +1815,7 @@ export default function TabletPOS({ products }) {
                                 href={route('logout')}
                                 method="post"
                                 as="button"
-                                className="flex-1 rounded-2xl bg-red-500 py-3 font-bold text-white shadow-lg shadow-red-500/30 transition-all hover:bg-red-600 active:scale-95"
+                                className="flex-1 rounded-3xl bg-red-600 py-3 font-black text-white shadow-lg shadow-red-600/25 hover:bg-red-700 active:scale-[0.99]"
                             >
                                 Ya, Keluar
                             </Link>
@@ -1571,7 +1838,7 @@ export default function TabletPOS({ products }) {
                         <p>{STORE_CONFIG.address}</p>
                         <p>{STORE_CONFIG.phone}</p>
                     </div>
-                    <div className="mb-2 border-b border-dashed border-black"></div>
+                    <div className="mb-2 border-b border-dashed border-black" />
                     <div className="mb-2">
                         <div className="flex justify-between">
                             <span>No: {receiptData?.invoice}</span>
@@ -1586,7 +1853,7 @@ export default function TabletPOS({ products }) {
                             <span>Plg: {receiptData?.customerType}</span>
                         </div>
                     </div>
-                    <div className="mb-2 border-b border-dashed border-black"></div>
+                    <div className="mb-2 border-b border-dashed border-black" />
                     <div className="mb-2 space-y-1">
                         {receiptData?.items.map((item, i) => (
                             <div key={i}>
@@ -1607,7 +1874,7 @@ export default function TabletPOS({ products }) {
                             </div>
                         ))}
                     </div>
-                    <div className="mb-2 border-b border-dashed border-black"></div>
+                    <div className="mb-2 border-b border-dashed border-black" />
                     <div className="mb-1 flex justify-between text-xs font-bold">
                         <span>TOTAL</span>
                         <span>
