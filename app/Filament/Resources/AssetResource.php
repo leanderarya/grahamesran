@@ -14,8 +14,7 @@ class AssetResource extends Resource
 {
     protected static ?string $model = Asset::class;
 
-    protected static ?string $navigationIcon = 'heroicon-o-building-office-2'; 
-    protected static ?string $navigationGroup = 'Keuangan';
+    protected static ?string $navigationIcon = 'heroicon-o-building-office-2';
     protected static ?int $navigationSort = 3;
 
     public static function form(Form $form): Form
