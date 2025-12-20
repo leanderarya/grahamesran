@@ -1,76 +1,76 @@
 # 🔧 Graha Mesran POS (Point of Sales)
 
-![Graha Mesran Banner](docs/images/GrahaMesran.png)
+![Banner Graha Mesran](docs/images/GrahaMesran.png)
 
 [![Laravel](https://img.shields.io/badge/Laravel-11-FF2D20?style=for-the-badge&logo=laravel&logoColor=white)](https://laravel.com)
 [![Filament](https://img.shields.io/badge/Filament-v3-F28D1A?style=for-the-badge&logo=filament&logoColor=white)](https://filamentphp.com)
 [![React](https://img.shields.io/badge/React-18-61DAFB?style=for-the-badge&logo=react&logoColor=black)](https://reactjs.org)
 [![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-38B2AC?style=for-the-badge&logo=tailwind-css&logoColor=white)](https://tailwindcss.com)
 
-## 📖 About The Project
+## 📖 Tentang Proyek
 
-**Graha Mesran POS** is a comprehensive, modern Point of Sale system specifically engineered for automotive shops specializing in spare parts and Pertamina lubricants.
+**Graha Mesran POS** adalah sistem Point of Sale (Kasir) modern dan komprehensif yang dirancang khusus untuk toko otomotif yang berfokus pada penjualan suku cadang (sparepart) dan pelumas Pertamina.
 
-Unlike generic POS systems, this application focuses on **Inventory Health** and **Financial Intelligence**. It solves the common chaos in auto-shops: lost inventory ("tuyul"), confusing cash flow between assets vs. expenses, and untracked profit margins.
+Berbeda dengan sistem kasir pada umumnya, aplikasi ini berfokus pada **Kesehatan Inventaris** dan **Kecerdasan Finansial**. Sistem ini dibangun untuk mengatasi kekacauan yang sering terjadi di bengkel: stok hilang ("tuyul"), arus kas yang tercampur antara pembelian aset vs biaya operasional, dan margin keuntungan yang tidak terpantau.
 
-Built with a **Hybrid Architecture**:
-* **Backend & Admin Panel:** Laravel Filament (for robust reporting & management).
-* **Frontend Cashier:** React.js via Inertia (for a snappy, SPA-like cashier experience).
-
----
-
-## 🔥 Key Features
-
-### 💰 Financial Intelligence (Admin Panel)
-* **Real-time Dashboard:** Instantly view Net Profit, Gross Revenue, and Warehouse Asset Value.
-* **Auto-Expense Logic:** Purchasing assets (e.g., shelving) automatically adjusts cash flow without double-entry.
-* **Profit Tracking:** Calculates margin per transaction based on dynamic Capital Price (HPP).
-* **Excel Export:** Full audit-ready reports for monthly closing.
-
-### 📦 Inventory Control
-* **Stock Opname (Audit):** Specialized module to record physical vs. system stock discrepancies (Loss/Damage/Correction).
-* **Asset Management:** Track store equipment value separate from merchandise.
-* **Product Logic:** Handle fast-moving consumer goods (Oils) and slow-moving spare parts.
-
-### 🛒 Modern Cashier Experience (POS)
-* **Fast Checkout:** React-based interface optimized for speed.
-* **PWA Ready:** Installable on Android/iOS tablets as a native-like app.
-* **Dual Mode Branding:** Interface adapts to Light/Dark mode environments automatically.
-* **Thermal Printing:** Optimized receipt layout for standard 58mm/80mm printers.
+Dibangun dengan **Arsitektur Hybrid**:
+* **Backend & Panel Admin:** Laravel Filament (untuk pelaporan & manajemen data yang kuat).
+* **Frontend Kasir:** React.js via Inertia (untuk pengalaman kasir yang cepat, responsif, layaknya aplikasi native).
 
 ---
 
-## 📸 Screenshots
+## 🔥 Fitur Unggulan
 
-| Admin Dashboard | Stock Opname |
+### 💰 Kecerdasan Finansial (Panel Admin)
+* **Dashboard Real-time:** Pantau Profit Bersih, Omset Kotor, dan Nilai Aset Gudang secara instan dalam satu layar.
+* **Logika Pengeluaran Otomatis:** Pembelian aset (seperti etalase) otomatis tercatat dan menyesuaikan saldo kas tanpa perlu input ganda (double-entry).
+* **Pelacakan Profit:** Menghitung margin keuntungan per transaksi secara otomatis berdasarkan Harga Modal (HPP) yang dinamis.
+* **Ekspor Excel:** Laporan lengkap siap audit untuk kebutuhan tutup buku bulanan.
+
+### 📦 Kontrol Inventaris (Gudang)
+* **Stock Opname (Audit):** Modul khusus untuk mencatat selisih stok fisik vs sistem (Hilang/Rusak/Koreksi) dengan validasi warna.
+* **Manajemen Aset:** Memisahkan nilai peralatan toko (inventaris) dari nilai barang dagangan agar valuasi bisnis akurat.
+* **Logika Produk:** Menangani karakteristik barang *fast-moving* (Oli) dan *slow-moving* (Sparepart).
+
+### 🛒 Pengalaman Kasir Modern (POS)
+* **Checkout Cepat:** Antarmuka berbasis React yang dioptimalkan untuk kecepatan input transaksi.
+* **Siap PWA (Mobile):** Dapat diinstal di tablet Android/iOS layaknya aplikasi native dengan dukungan icon dan splash screen.
+* **Branding Mode Ganda:** Antarmuka otomatis beradaptasi dengan Mode Terang (Siang) dan Mode Gelap (Malam).
+* **Cetak Termal:** Tata letak struk yang presisi untuk printer standar 58mm/80mm.
+
+---
+
+## 📸 Tangkapan Layar
+
+| Dashboard Admin | Stock Opname |
 |:---:|:---:|
 | ![Admin Dashboard](docs/images/dashboard-admin.png) | ![Stock Opname](docs/images/stock-opname.png) |
 
-| Cashier Interface | Payment Option |
+| Antarmuka Kasir | Opsi Pembayaran |
 |:---:|:---:|
 | ![Cashier POS](docs/images/pos-cashier.png) | ![Mobile View](docs/images/bayar.png) |
 
-*(Note: Images are for demonstration purposes)*
+*(Catatan: Gambar di atas adalah data dummy untuk keperluan demonstrasi)*
 
 ---
 
-## 🛠️ Tech Stack
+## 🛠️ Teknologi yang Digunakan
 
 * **Framework:** Laravel 11
-* **Admin Panel:** FilamentPHP v3
+* **Panel Admin:** FilamentPHP v3
 * **Frontend:** React.js (Inertia.js)
 * **Styling:** Tailwind CSS
 * **Database:** MySQL
-* **Deployment:** Hostinger (Shared Hosting Compatible)
+* **Deployment:** Hostinger (Kompatibel dengan Shared Hosting)
 
 ---
 
-## 🚀 Installation (Local Development)
+## 🚀 Instalasi (Development Lokal)
 
-1.  **Clone the repository**
+1.  **Clone repositori ini**
     ```bash
     git clone [https://github.com/leanderarya/grahamesran.git](https://github.com/leanderarya/grahamesran.git)
-    cd graha-mesran-pos
+    cd grahamesran
     ```
 
 2.  **Install Dependencies**
@@ -79,46 +79,45 @@ Built with a **Hybrid Architecture**:
     npm install
     ```
 
-3.  **Environment Setup**
+3.  **Pengaturan Environment**
     ```bash
     cp .env.example .env
     php artisan key:generate
     ```
-    *Configure your database credentials in `.env` file.*
+    *Sesuaikan kredensial database Anda di file `.env`.*
 
-4.  **Database Migration & Seeding**
+4.  **Migrasi Database & Seeder**
     ```bash
     php artisan migrate --seed
     ```
-    *This will create a Super Admin account.*
+    *Perintah ini akan membuat akun Super Admin default.*
 
-5.  **Build Assets & Run**
+5.  **Build Aset & Jalankan**
     ```bash
     npm run build
     php artisan serve
     ```
 
-6.  **Access the App**
-    * Admin Panel: `http://127.0.0.1:8000/admin`
-    * Cashier POS: `http://127.0.0.1:8000/`
+6.  **Akses Aplikasi**
+    * Panel Admin: `http://127.0.0.1:8000/admin`
+    * Kasir POS: `http://127.0.0.1:8000/`
 
 ---
 
-## 🔮 Future Roadmap
+## 🔮 Peta Jalan Pengembangan (Roadmap)
 
-* [ ] **V1.1:** Barcode Scanner Integration & Hold Transaction.
-* [ ] **V1.2:** Supplier Database & Average Costing (HPP).
-* [ ] **V1.3:** Customer Loyalty & Service History (Vehicle Records).
+* [ ] **V1.1:** Integrasi Barcode Scanner & Fitur "Hold Transaction" (Simpan Sementara).
+* [ ] **V1.2:** Database Supplier & Perhitungan HPP Rata-rata (Average Costing).
+* [ ] **V1.3:** Loyalitas Pelanggan & Riwayat Servis (Rekam Jejak Kendaraan).
 
 ---
 
-## 📝 License
+## 📝 Lisensi
 
-This project is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+Proyek ini adalah perangkat lunak open-source yang dilisensikan di bawah [lisensi MIT](https://opensource.org/licenses/MIT).
 
 ---
 
 <p align="center">
-  Built with ❤️ by Arya Ajisadda Haryanto for Graha Mesran
+  Dibuat dengan ❤️ oleh Arya Ajisadda Haryanto untuk Graha Mesran
 </p>
-
