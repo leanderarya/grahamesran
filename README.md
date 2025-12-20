@@ -1,6 +1,6 @@
 # 🔧 Graha Mesran POS (Point of Sales)
 
-![Graha Mesran Banner](public/GrahaMesran-light.png)
+![Graha Mesran Banner](docs/images/GrahaMesran.png)
 
 [![Laravel](https://img.shields.io/badge/Laravel-11-FF2D20?style=for-the-badge&logo=laravel&logoColor=white)](https://laravel.com)
 [![Filament](https://img.shields.io/badge/Filament-v3-F28D1A?style=for-the-badge&logo=filament&logoColor=white)](https://filamentphp.com)
@@ -69,7 +69,7 @@ Built with a **Hybrid Architecture**:
 
 1.  **Clone the repository**
     ```bash
-    git clone [https://github.com/username/grahamesran.git](https://github.com/username/grahamesran.git)
+    git clone [https://github.com/leanderarya/grahamesran.git](https://github.com/leanderarya/grahamesran.git)
     cd graha-mesran-pos
     ```
 
