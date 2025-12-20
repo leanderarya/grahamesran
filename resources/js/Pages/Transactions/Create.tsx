@@ -823,26 +823,16 @@ export default function TabletPOS({ products }) {
                 <div className="mx-auto flex h-16 w-full max-w-[1600px] items-center gap-3 px-4">
                     {/* brand */}
                     <div className="flex items-center gap-3">
-                        <div
-                            className={cx(
-                                'flex h-10 w-10 items-center justify-center rounded-2xl text-white shadow-lg',
-                                accentBg,
-                            )}
-                        >
-                            <svg
-                                className="h-6 w-6"
-                                fill="none"
-                                stroke="currentColor"
-                                viewBox="0 0 24 24"
-                            >
-                                <path
-                                    strokeLinecap="round"
-                                    strokeLinejoin="round"
-                                    strokeWidth="2"
-                                    d="M13 10V3L4 14h7v7l9-11h-7z"
-                                />
-                            </svg>
+                        {/* BAGIAN INI YANG DIUBAH: Ganti Icon Petir jadi Gambar Logo */}
+                        <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-white p-1 shadow-lg">
+                            <img
+                                src="/GrahaMesran-light.png"
+                                alt="Graha Mesran"
+                                className="h-full w-full object-contain"
+                            />
                         </div>
+
+                        {/* Bagian Teks (Tetap Sama) */}
                         <div className="hidden sm:block">
                             <div className="text-sm leading-tight font-black">
                                 {STORE_CONFIG.name}

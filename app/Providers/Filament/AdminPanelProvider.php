@@ -18,6 +18,8 @@ use Illuminate\Routing\Middleware\SubstituteBindings;
 use Illuminate\Session\Middleware\StartSession;
 use Illuminate\View\Middleware\ShareErrorsFromSession;
 use Filament\Navigation\MenuItem;
+use Illuminate\Support\Facades\Blade; // <-- Jangan lupa Import ini
+use Illuminate\Support\HtmlString;
 
 class AdminPanelProvider extends PanelProvider
 {
@@ -29,9 +31,21 @@ class AdminPanelProvider extends PanelProvider
             ->path('admin')
             
             // --- 1. BRANDING PROFESIONAL ---
-            ->brandName('Graha Mesran Admin') // Ganti tulisan Filament
+            ->brandName('Graha Mesran') // Ganti tulisan Filament
+            ->brandLogo(asset('GrahaMesran-light.png'))
+            ->darkModeBrandLogo(asset('GrahaMesran-dark.png'))
+            ->brandLogoHeight('4rem')
             // ->brandLogo(asset('images/logo.png')) // (Opsional) Kalau ada logo gambar
             ->favicon(asset('favicon.ico')) // (Opsional) Icon di tab browser
+            ->renderHook(
+                'panels::head.end',
+                fn (): string => Blade::render(<<<HTML
+                    <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
+                    <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+                    <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
+                    <link rel="manifest" href="/site.webmanifest">
+                HTML)
+            )
             
             // --- 2. GANTI TEMA WARNA ---
             ->colors([
