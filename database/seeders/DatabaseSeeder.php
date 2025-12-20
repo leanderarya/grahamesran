@@ -2,8 +2,9 @@
 
 namespace Database\Seeders;
 
-use App\Models\User;
-// use Illuminate\Database\Console\Seeds\WithoutModelEvents;
+// Jangan lupa import class Seeder yang baru dibuat
+use Database\Seeders\AdminSeeder;
+use Database\Seeders\VehicleSeeder; 
 use Illuminate\Database\Seeder;
 
 class DatabaseSeeder extends Seeder
@@ -13,15 +14,10 @@ class DatabaseSeeder extends Seeder
      */
     public function run(): void
     {
-        // User::factory(10)->create();
-
-        // User::firstOrCreate(
-        //     ['email' => 'test@example.com'],
-        //     [
-        //         'name' => 'Test User',
-        //         'password' => 'password',
-        //         'email_verified_at' => now(),
-        //     ]
-        // );
+        // Masukkan daftar seeder di dalam array ini
+        $this->call([
+            AdminSeeder::class,
+            VehicleSeeder::class,
+        ]);
     }
 }

@@ -40,6 +40,7 @@ class ExpenseResource extends Resource
                         'Listrik' => 'Listrik & Air',
                         'Sewa' => 'Sewa Tempat',
                         'Perlengkapan' => 'Perlengkapan Toko (Plastik/ATK)',
+                        'asset' => 'Pembelian Aset (Inventaris)',
                         'Lainnya' => 'Lain-lain',
                     ])
                     ->required(),
