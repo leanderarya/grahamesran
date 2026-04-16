@@ -13,11 +13,15 @@ use Filament\Tables\Table;
 class StockAdjustmentResource extends Resource
 {
     protected static ?string $model = StockAdjustment::class;
-    
+
     // Icon Timbangan / Clipboard
-    protected static ?string $navigationIcon = 'heroicon-o-clipboard-document-check'; 
+    protected static ?string $navigationIcon = 'heroicon-o-clipboard-document-check';
+
     protected static ?string $navigationLabel = 'Stock Opname';
-    protected static ?string $navigationGroup = 'Gudang';
+
+    protected static ?string $navigationGroup = 'Inventaris';
+
+    protected static ?int $navigationSort = 3;
 
     public static function form(Form $form): Form
     {
@@ -91,12 +95,12 @@ class StockAdjustmentResource extends Resource
                             ])
                             ->default('correction')
                             ->required(),
-                            
+
                         Forms\Components\Textarea::make('note')
                             ->label('Catatan')
                             ->placeholder('Contoh: Ditemukan pecah di gudang belakang')
                             ->columnSpanFull(),
-                            
+
                         // Hidden field user_id (Otomatis isi user login)
                         Forms\Components\Hidden::make('user_id')
                             ->default(fn () => auth()->id()),
@@ -111,10 +115,10 @@ class StockAdjustmentResource extends Resource
             ->columns([
                 Tables\Columns\TextColumn::make('adjustment_date')->date()->label('Tanggal')->sortable(),
                 Tables\Columns\TextColumn::make('product.name')->label('Produk')->searchable()->weight('bold'),
-                
+
                 Tables\Columns\TextColumn::make('system_stock')->label('Sistem')->alignCenter()->color('gray'),
                 Tables\Columns\TextColumn::make('physical_stock')->label('Fisik')->alignCenter()->weight('bold'),
-                
+
                 Tables\Columns\TextColumn::make('difference')
                     ->label('Selisih')
                     ->alignCenter()
@@ -124,7 +128,7 @@ class StockAdjustmentResource extends Resource
                         $state > 0 => 'success',
                         default => 'gray',
                     }),
-                    
+
                 Tables\Columns\TextColumn::make('type')
                     ->label('Alasan')
                     ->badge()
@@ -138,7 +142,7 @@ class StockAdjustmentResource extends Resource
             ])
             ->defaultSort('created_at', 'desc');
     }
-    
+
     // Matikan fitur Edit. Audit itu jejak sejarah, tidak boleh diedit setelah disimpan!
     public static function getPages(): array
     {

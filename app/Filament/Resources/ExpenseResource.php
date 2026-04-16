@@ -3,21 +3,22 @@
 namespace App\Filament\Resources;
 
 use App\Filament\Resources\ExpenseResource\Pages;
-use App\Filament\Resources\ExpenseResource\RelationManagers;
 use App\Models\Expense;
-use Filament\Forms;
 use Filament\Forms\Form;
 use Filament\Resources\Resource;
-use Filament\Tables;
 use Filament\Tables\Table;
-use Illuminate\Database\Eloquent\Builder;
-use Illuminate\Database\Eloquent\SoftDeletingScope;
 
 class ExpenseResource extends Resource
 {
     protected static ?string $model = Expense::class;
 
     protected static ?string $navigationIcon = 'heroicon-o-rectangle-stack';
+
+    protected static ?string $navigationLabel = 'Pengeluaran';
+
+    protected static ?string $navigationGroup = 'Operasional';
+
+    protected static ?int $navigationSort = 2;
 
     public static function form(Form $form): Form
     {
@@ -50,7 +51,7 @@ class ExpenseResource extends Resource
                     ->numeric()
                     ->prefix('Rp')
                     ->required(),
-                    
+
                 \Filament\Forms\Components\Textarea::make('notes')
                     ->label('Catatan Tambahan')
                     ->columnSpanFull(),

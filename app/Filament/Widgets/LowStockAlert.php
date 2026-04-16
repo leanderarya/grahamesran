@@ -9,8 +9,9 @@ use Filament\Widgets\TableWidget as BaseWidget;
 
 class LowStockAlert extends BaseWidget
 {
-    protected static ?int $sort = 2; // Taruh di bawah StatsOverview
-    protected int | string | array $columnSpan = 'full';
+    protected static ?int $sort = 5; // Taruh di bawah grafik utama
+
+    protected int|string|array $columnSpan = 1;
 
     public function table(Table $table): Table
     {
@@ -21,7 +22,7 @@ class LowStockAlert extends BaseWidget
                     ->orderBy('stock', 'asc') // Yang paling sedikit di atas
                     ->limit(5)
             )
-            ->heading('⚠️ Peringatan: Stok Menipis!')
+            ->heading('Peringatan Stok Menipis')
             ->columns([
                 Tables\Columns\TextColumn::make('name')
                     ->label('Barang')
@@ -32,7 +33,7 @@ class LowStockAlert extends BaseWidget
                     ->badge()
                     ->color('danger') // Merah menyala
                     ->icon('heroicon-m-exclamation-triangle'),
-                
+
                 Tables\Columns\TextColumn::make('cost_price')
                     ->label('HPP')
                     ->money('IDR'),

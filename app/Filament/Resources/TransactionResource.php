@@ -4,18 +4,27 @@ namespace App\Filament\Resources;
 
 use App\Filament\Resources\TransactionResource\Pages;
 use App\Models\Transaction;
-use Filament\Forms;
+use App\Services\MonthlyReportService;
+use Carbon\Carbon;
+use Filament\Forms\Components\DatePicker;
+use Filament\Forms\Components\DateTimePicker;
+use Filament\Forms\Components\Repeater;
+use Filament\Forms\Components\Section;
+use Filament\Forms\Components\Select;
+use Filament\Forms\Components\TextInput;
 use Filament\Forms\Form;
+use Filament\Notifications\Notification;
 use Filament\Resources\Resource;
 use Filament\Tables;
-use Filament\Tables\Table;
-use Filament\Tables\Columns\TextColumn;
+use Filament\Tables\Actions\BulkAction;
 use Filament\Tables\Columns\Summarizers\Sum;
+use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\Filter;
 use Filament\Tables\Filters\SelectFilter;
-use Filament\Forms\Components\DatePicker;
+use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
-use pxlrbt\FilamentExcel\Actions\Tables\ExportBulkAction; // <-- PENTING: Class Export
+use Illuminate\Database\Eloquent\Collection;
+use pxlrbt\FilamentExcel\Actions\Tables\ExportBulkAction;
 
 class TransactionResource extends Resource
 {
@@ -23,103 +32,128 @@ class TransactionResource extends Resource
 
     // Ganti icon jadi 'uang' biar lebih relevan, atau biarkan stack
     protected static ?string $navigationIcon = 'heroicon-o-banknotes';
+
     protected static ?string $navigationLabel = 'Laporan Transaksi';
+
+    protected static ?string $navigationGroup = 'Operasional';
+
     protected static ?int $navigationSort = 1;
 
     public static function form(Form $form): Form
     {
         return $form
             ->schema([
-                // --- SECTION 1: INFORMASI UTAMA ---
-                \Filament\Forms\Components\Section::make('Informasi Transaksi')
+                Section::make('Informasi Transaksi')
                     ->columns(2)
                     ->schema([
-                        \Filament\Forms\Components\TextInput::make('invoice_number')
+                        TextInput::make('invoice_number')
                             ->label('No. Invoice')
-                            ->default('INV-' . random_int(100000, 999999)), // Dummy default
+                            ->required()
+                            ->disabled(fn (?Transaction $record, string $operation): bool => $operation === 'view' || static::isLocked($record)),
 
-                        \Filament\Forms\Components\TextInput::make('created_at')
+                        DateTimePicker::make('created_at')
                             ->label('Waktu Transaksi')
-                            ->formatStateUsing(fn ($state) => $state ? \Carbon\Carbon::parse($state)->format('d M Y, H:i') : now()->format('d M Y, H:i')),
+                            ->required()
+                            ->seconds(false)
+                            ->disabled(fn (?Transaction $record, string $operation): bool => $operation === 'view' || static::isLocked($record)),
 
-                        \Filament\Forms\Components\Select::make('user_id')
+                        Select::make('user_id')
                             ->relationship('user', 'name')
-                            ->label('Kasir'),
+                            ->label('Kasir')
+                            ->required()
+                            ->disabled(fn (?Transaction $record, string $operation): bool => $operation === 'view' || static::isLocked($record)),
 
-                        \Filament\Forms\Components\TextInput::make('payment_method')
+                        Select::make('payment_method')
                             ->label('Metode Bayar')
-                            ->formatStateUsing(fn (string $state): string => strtoupper($state)),
-                    ])
-                    ->disabled(), // KUNCI MATI (Read Only)
+                            ->options([
+                                'cash' => 'Cash',
+                                'qris' => 'QRIS',
+                                'bca' => 'BCA',
+                                'mandiri' => 'Mandiri',
+                                'import_excel' => 'Import Excel',
+                            ])
+                            ->required()
+                            ->disabled(fn (?Transaction $record, string $operation): bool => $operation === 'view' || static::isLocked($record)),
+                    ]),
 
-                // --- SECTION 2: DAFTAR BARANG (ITEMS) ---
-                \Filament\Forms\Components\Section::make('Detail Barang Belanjaan')
+                Section::make('Detail Barang Belanjaan')
                     ->schema([
-                        \Filament\Forms\Components\Repeater::make('transactionItems')
+                        Repeater::make('transactionItems')
                             ->relationship()
+                            ->disabled(fn (?Transaction $record, string $operation): bool => $operation === 'view' || static::isLocked($record))
                             ->schema([
-                                // 1. NAMA PRODUK
-                                // Kita pakai 'product_id' sebagai dasar, tapi tampilannya kita ubah jadi Nama
-                                \Filament\Forms\Components\TextInput::make('product_id') 
+                                Select::make('product_id')
                                     ->label('Nama Produk')
-                                    ->formatStateUsing(fn ($state, $record) => $record?->product?->name ?? 'Produk Dihapus')
-                                    ->disabled() // Pastikan disabled agar tidak jadi dropdown
-                                    ->dehydrated(false), // Jangan kirim balik ke DB
+                                    ->relationship('product', 'name')
+                                    ->searchable()
+                                    ->preload()
+                                    ->required(),
 
-                                // 2. QUANTITY (Sesuai DB)
-                                \Filament\Forms\Components\TextInput::make('quantity')
+                                TextInput::make('quantity')
                                     ->label('Qty')
-                                    ->numeric(),
+                                    ->numeric()
+                                    ->required()
+                                    ->minValue(1),
 
-                                // 3. HARGA SATUAN (Sesuaikan dengan kolom DB: price_at_time)
-                                \Filament\Forms\Components\TextInput::make('price_at_time')
+                                TextInput::make('cost_at_time')
+                                    ->label('Modal')
+                                    ->prefix('Rp')
+                                    ->numeric()
+                                    ->required(),
+
+                                TextInput::make('price_at_time')
                                     ->label('Harga Satuan')
                                     ->prefix('Rp')
                                     ->numeric()
-                                    // Format angka jadi Rupiah (opsional, biar cantik)
-                                    ->formatStateUsing(fn ($state) => number_format($state, 0, ',', '.')),
+                                    ->required(),
 
-                                // 4. SUBTOTAL (Hitungan Manual)
-                                // Karena kolom total tidak ada di DB, kita hitung on-the-fly
-                                \Filament\Forms\Components\TextInput::make('total_calculated') 
+                                TextInput::make('total_calculated')
                                     ->label('Subtotal')
                                     ->prefix('Rp')
                                     ->formatStateUsing(function ($record) {
-                                        // Rumus: Qty * Harga Saat Itu
                                         $total = ($record->quantity ?? 0) * ($record->price_at_time ?? 0);
+
                                         return number_format($total, 0, ',', '.');
                                     })
-                                    ->dehydrated(false), // Jangan simpan ke DB karena kolom ini fiktif
+                                    ->disabled()
+                                    ->dehydrated(false),
                             ])
                             ->columns(4)
-                            ->addable(false)
-                            ->deletable(false)
-                            ->reorderable(false)
-                            ->disabled(),
+                            ->addable(fn (?Transaction $record, string $operation): bool => $operation !== 'view' && ! static::isLocked($record))
+                            ->deletable(fn (?Transaction $record, string $operation): bool => $operation !== 'view' && ! static::isLocked($record))
+                            ->reorderable(false),
                     ]),
 
-                // --- SECTION 3: RINGKASAN UANG ---
-                \Filament\Forms\Components\Section::make('Ringkasan Keuangan')
+                Section::make('Ringkasan Keuangan')
                     ->columns(3)
                     ->schema([
-                        \Filament\Forms\Components\TextInput::make('amount_paid')
+                        TextInput::make('amount_paid')
                             ->label('Uang Diterima')
                             ->prefix('Rp')
-                            ->numeric(),
+                            ->numeric()
+                            ->disabled(fn (?Transaction $record, string $operation): bool => $operation === 'view' || static::isLocked($record)),
 
-                        \Filament\Forms\Components\TextInput::make('total_amount')
+                        TextInput::make('total_amount')
                             ->label('Total Belanja')
                             ->prefix('Rp')
                             ->numeric()
+                            ->disabled()
                             ->extraInputAttributes(['class' => 'text-xl font-bold']),
 
-                        \Filament\Forms\Components\TextInput::make('change_amount')
+                        TextInput::make('total_profit')
+                            ->label('Total Profit')
+                            ->prefix('Rp')
+                            ->numeric()
+                            ->disabled()
+                            ->extraInputAttributes(['class' => 'text-green-600 font-bold']),
+
+                        TextInput::make('change_amount')
                             ->label('Kembalian')
                             ->prefix('Rp')
                             ->numeric()
+                            ->disabled()
                             ->extraInputAttributes(['class' => 'text-green-600 font-bold']),
-                    ])
-                    ->disabled(), // KUNCI MATI
+                    ]),
             ]);
     }
 
@@ -156,6 +190,7 @@ class TransactionResource extends Resource
                         'qris' => 'info',       // Biru
                         'bca' => 'primary',     // Biru Tua
                         'mandiri' => 'warning', // Kuning
+                        'import_excel' => 'gray',
                         default => 'gray',
                     })
                     ->formatStateUsing(fn (string $state): string => strtoupper($state))
@@ -168,7 +203,7 @@ class TransactionResource extends Resource
                     ->sortable()
                     ->alignRight()
                     // Summarize: Menjumlahkan apa yang tampil di layar (setelah filter)
-                    ->summarize(Sum::make()->label('Total Pendapatan')), 
+                    ->summarize(Sum::make()->label('Total Pendapatan')),
 
                 // 6. MARGIN / PROFIT
                 TextColumn::make('total_profit')
@@ -178,12 +213,38 @@ class TransactionResource extends Resource
                     ->weight('bold')
                     ->alignRight()
                     ->sortable()
-                    ->summarize(Sum::make()->label('Total Bersih')), 
+                    ->summarize(Sum::make()->label('Total Bersih')),
             ])
             ->defaultSort('created_at', 'desc')
-            
+
             // --- BAGIAN BARU: FILTERS ---
             ->filters([
+                SelectFilter::make('month')
+                    ->label('Bulan')
+                    ->options(function (): array {
+                        return Transaction::query()
+                            ->selectRaw("DATE_FORMAT(created_at, '%Y-%m') as month_key")
+                            ->distinct()
+                            ->orderByRaw("DATE_FORMAT(created_at, '%Y-%m') desc")
+                            ->pluck('month_key')
+                            ->filter()
+                            ->mapWithKeys(function (string $monthKey): array {
+                                $label = Carbon::createFromFormat('Y-m', $monthKey)
+                                    ->locale('id')
+                                    ->translatedFormat('F Y');
+
+                                return [$monthKey => ucfirst($label)];
+                            })
+                            ->all();
+                    })
+                    ->query(function (Builder $query, array $data): Builder {
+                        if (blank($data['value'] ?? null)) {
+                            return $query;
+                        }
+
+                        return $query->whereRaw("DATE_FORMAT(created_at, '%Y-%m') = ?", [$data['value']]);
+                    }),
+
                 // A. Filter Rentang Tanggal (Wajib buat Laporan Bulanan)
                 Filter::make('created_at')
                     ->form([
@@ -209,20 +270,48 @@ class TransactionResource extends Resource
                         'cash' => 'Tunai',
                         'qris' => 'QRIS',
                         'bank' => 'Transfer Bank',
+                        'import_excel' => 'Import Excel',
                     ]),
             ])
-            
+
             // --- BAGIAN BARU: ACTIONS ---
             ->actions([
-                // Kita ganti Edit menjadi View, agar Admin bisa lihat detail barang
-                // tanpa merusak data harga/profit yg sudah terkunci.
                 Tables\Actions\ViewAction::make(),
+                Tables\Actions\EditAction::make()
+                    ->visible(fn (Transaction $record): bool => ! $record->isInFinalizedMonth()),
             ])
-            
-            // --- BAGIAN BARU: EXPORT EXCEL ---
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([
-                    // Fitur Export (Centang semua -> Export)
+                    BulkAction::make('deleteAll')
+                        ->label('Delete All')
+                        ->icon('heroicon-o-trash')
+                        ->color('danger')
+                        ->requiresConfirmation()
+                        ->modalHeading('Hapus semua transaksi terpilih?')
+                        ->modalDescription('Semua transaksi yang dipilih akan dihapus permanen beserta item detailnya.')
+                        ->action(function (Collection $records, MonthlyReportService $monthlyReportService): void {
+                            $lockedCount = $records
+                                ->filter(fn (Transaction $transaction): bool => $monthlyReportService->isFinalized($transaction->reportMonth()))
+                                ->count();
+
+                            if ($lockedCount > 0) {
+                                Notification::make()
+                                    ->title('Ada transaksi pada bulan yang sudah difinalisasi')
+                                    ->body("{$lockedCount} transaksi tidak bisa dihapus karena bulannya sudah final.")
+                                    ->danger()
+                                    ->send();
+
+                                return;
+                            }
+
+                            $records->each->delete();
+
+                            Notification::make()
+                                ->title('Transaksi terpilih berhasil dihapus')
+                                ->success()
+                                ->send();
+                        }),
+
                     ExportBulkAction::make()->label('Download Excel'),
                 ]),
             ]);
@@ -231,7 +320,7 @@ class TransactionResource extends Resource
     public static function getRelations(): array
     {
         return [
-            // Nanti kita isi ini agar saat klik "View", 
+            // Nanti kita isi ini agar saat klik "View",
             // muncul daftar barang apa saja yang dibeli.
         ];
     }
@@ -240,9 +329,12 @@ class TransactionResource extends Resource
     {
         return [
             'index' => Pages\ListTransactions::route('/'),
-            // Create kita hilangkan karena transaksi hanya boleh dari POS Kasir (React)
-            // 'create' => Pages\CreateTransaction::route('/create'),
             'edit' => Pages\EditTransaction::route('/{record}/edit'),
         ];
+    }
+
+    protected static function isLocked(?Transaction $record): bool
+    {
+        return $record?->isInFinalizedMonth() ?? false;
     }
 }

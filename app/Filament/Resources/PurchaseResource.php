@@ -3,21 +3,22 @@
 namespace App\Filament\Resources;
 
 use App\Filament\Resources\PurchaseResource\Pages;
-use App\Filament\Resources\PurchaseResource\RelationManagers;
 use App\Models\Purchase;
-use Filament\Forms;
 use Filament\Forms\Form;
 use Filament\Resources\Resource;
-use Filament\Tables;
 use Filament\Tables\Table;
-use Illuminate\Database\Eloquent\Builder;
-use Illuminate\Database\Eloquent\SoftDeletingScope;
 
 class PurchaseResource extends Resource
 {
     protected static ?string $model = Purchase::class;
 
     protected static ?string $navigationIcon = 'heroicon-o-rectangle-stack';
+
+    protected static ?string $navigationLabel = 'Pembelian';
+
+    protected static ?string $navigationGroup = 'Inventaris';
+
+    protected static ?int $navigationSort = 2;
 
     public static function form(Form $form): Form
     {
@@ -27,7 +28,7 @@ class PurchaseResource extends Resource
                     ->label('Tanggal Belanja')
                     ->required()
                     ->default(now()),
-                
+
                 \Filament\Forms\Components\TextInput::make('supplier_name')
                     ->label('Supplier / Toko')
                     ->placeholder('Contoh: Toko Bintang Mas'),
@@ -68,7 +69,7 @@ class PurchaseResource extends Resource
                     ->readOnly()
                     ->prefix('Rp')
                     // Tambahkan 'dehydrated' agar nilai readOnly tetap terkirim ke database saat save
-                    ->dehydrated(), 
+                    ->dehydrated(),
             ]);
     }
 

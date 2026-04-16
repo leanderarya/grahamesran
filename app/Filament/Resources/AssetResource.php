@@ -15,7 +15,12 @@ class AssetResource extends Resource
     protected static ?string $model = Asset::class;
 
     protected static ?string $navigationIcon = 'heroicon-o-building-office-2';
-    protected static ?int $navigationSort = 3;
+
+    protected static ?string $navigationLabel = 'Aset';
+
+    protected static ?string $navigationGroup = 'Inventaris';
+
+    protected static ?int $navigationSort = 4;
 
     public static function form(Form $form): Form
     {
@@ -53,7 +58,7 @@ class AssetResource extends Resource
                         Forms\Components\TextInput::make('location')
                             ->label('Lokasi')
                             ->placeholder('Gudang / Kasir'),
-                            
+
                         Forms\Components\Textarea::make('note')
                             ->label('Catatan Aset')
                             ->rows(2),

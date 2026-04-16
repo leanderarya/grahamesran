@@ -16,9 +16,13 @@ class UserResource extends Resource
     protected static ?string $model = User::class;
 
     // Ganti ikon jadi ikon Orang/Group
-    protected static ?string $navigationIcon = 'heroicon-o-users'; 
-    protected static ?string $navigationLabel = 'Manajemen Pegawai';
-    protected static ?string $navigationGroup = 'Settings';
+    protected static ?string $navigationIcon = 'heroicon-o-users';
+
+    protected static ?string $navigationLabel = 'Pengguna & Pegawai';
+
+    protected static ?string $navigationGroup = 'Pengaturan';
+
+    protected static ?int $navigationSort = 1;
 
     public static function form(Form $form): Form
     {
@@ -80,7 +84,7 @@ class UserResource extends Resource
                 Tables\Actions\DeleteAction::make(), // Fitur Pecat
             ]);
     }
-    
+
     public static function getPages(): array
     {
         return [

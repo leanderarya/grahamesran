@@ -3,20 +3,22 @@
 namespace App\Filament\Widgets;
 
 use App\Models\Transaction;
+use Carbon\Carbon;
 use Filament\Widgets\ChartWidget;
 use Flowframe\Trend\Trend;
 use Flowframe\Trend\TrendValue;
-use Carbon\Carbon;
 
 class SalesChart extends ChartWidget
 {
     protected static ?string $heading = 'Grafik Penjualan Bulan Ini';
-    
+
     // Urutan ke-2 (setelah StatsOverview)
-    protected static ?int $sort = 2; 
-    
-    // Biar grafik menuhin lebar layar (opsional)
-    protected int | string | array $columnSpan = 'full'; 
+    protected static ?int $sort = 2;
+
+    protected static ?string $maxHeight = '260px';
+
+    // Tampil sejajar dengan grafik bulanan
+    protected int|string|array $columnSpan = 1;
 
     protected function getData(): array
     {
@@ -38,6 +40,8 @@ class SalesChart extends ChartWidget
                     'backgroundColor' => 'rgba(59, 130, 246, 0.1)', // Biru transparan
                     'fill' => true,
                     'tension' => 0.4, // Biar garisnya melengkung halus (tidak kaku)
+                    'pointRadius' => 3,
+                    'pointHoverRadius' => 5,
                 ],
             ],
             'labels' => $data->map(fn (TrendValue $value) => Carbon::parse($value->date)->format('d M')),

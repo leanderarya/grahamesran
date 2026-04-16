@@ -4,24 +4,31 @@ namespace App\Filament\Resources;
 
 use App\Filament\Resources\ProductResource\Pages;
 use App\Models\Product;
-use Filament\Forms;
+use Filament\Forms\Components\Section;
+use Filament\Forms\Components\Select;
+use Filament\Forms\Components\TextInput;
+use Filament\Forms\Components\View;
 use Filament\Forms\Form;
+use Filament\Notifications\Notification;
 use Filament\Resources\Resource;
 use Filament\Tables;
-use Filament\Tables\Table;
-use Filament\Forms\Components\Section;
-use Filament\Forms\Components\TextInput;
-use Filament\Forms\Components\Select;
+use Filament\Tables\Actions\BulkAction;
 use Filament\Tables\Columns\TextColumn;
+use Filament\Tables\Table;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Model;
-use Filament\Forms\Components\View;
 
 class ProductResource extends Resource
 {
     protected static ?string $model = Product::class;
 
     protected static ?string $navigationIcon = 'heroicon-o-cube'; // Ikon Kotak
-    protected static ?string $navigationGroup = 'Gudang';
+
+    protected static ?string $navigationLabel = 'Produk';
+
+    protected static ?string $navigationGroup = 'Inventaris';
+
+    protected static ?int $navigationSort = 1;
 
     public static function form(Form $form): Form
     {
@@ -47,6 +54,13 @@ class ProductResource extends Resource
                             ->required()
                             ->columnSpanFull(),
 
+                        TextInput::make('volume_liter')
+                            ->label('Volume (Liter)')
+                            ->numeric()
+                            ->step('0.01')
+                            ->suffix('L')
+                            ->helperText('Contoh: 0.8, 1, 4. Kosongkan jika tidak relevan.'),
+
                         // Keuangan & Stok
                         TextInput::make('stock')
                             ->label('Stok Saat Ini')
@@ -59,13 +73,13 @@ class ProductResource extends Resource
                             ->prefix('Rp')
                             // UBAH BARIS INI:
                             // Hanya Read Only kalau lagi mode 'edit'. Kalau 'create', boleh diisi.
-                            ->readOnly(fn (string $context): bool => $context === 'edit') 
-                            
+                            ->readOnly(fn (string $context): bool => $context === 'edit')
+
                             // Wajib diisi saat bikin baru, biar HPP nggak nol
-                            ->required(fn (string $context): bool => $context === 'create') 
-                            
-                            ->helperText(fn (string $context) => $context === 'create' 
-                                ? 'Masukkan modal awal untuk stok ini.' 
+                            ->required(fn (string $context): bool => $context === 'create')
+
+                            ->helperText(fn (string $context) => $context === 'create'
+                                ? 'Masukkan modal awal untuk stok ini.'
                                 : 'HPP terkunci. Input via menu Pembelian untuk update harga (Moving Average).'
                             ),
 
@@ -93,10 +107,10 @@ class ProductResource extends Resource
                             ->preload()
                             // 1. MODIFIKASI TAMPILAN LABEL (Merk + Model + Tahun)
                             ->getOptionLabelFromRecordUsing(fn (Model $record) => "{$record->brand} {$record->model} ({$record->year_generation})")
-                            
+
                             // 2. MODIFIKASI PENCARIAN (Biar bisa ketik "2015" atau "Gen 2")
                             ->searchable(['brand', 'model', 'year_generation'])
-                            
+
                             ->placeholder('Pilih mobil... (Bisa lebih dari satu)')
                             ->columnSpanFull(),
                     ]),
@@ -119,6 +133,13 @@ class ProductResource extends Resource
                     ->searchable()
                     ->weight('bold'),
 
+                TextColumn::make('volume_liter')
+                    ->label('Volume')
+                    ->formatStateUsing(fn ($state): string => filled($state)
+                        ? rtrim(rtrim(number_format((float) $state, 2, '.', ''), '0'), '.').' L'
+                        : '-')
+                    ->sortable(),
+
                 // Indikator Stok (Merah kalau sedikit)
                 TextColumn::make('stock')
                     ->sortable()
@@ -140,7 +161,7 @@ class ProductResource extends Resource
                     ->money('IDR')
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),
-                
+
                 // HPP (Hanya Owner yang boleh lihat, tapi di sini kita buka dulu)
                 TextColumn::make('cost_price')
                     ->label('HPP')
@@ -160,15 +181,58 @@ class ProductResource extends Resource
             ])
             ->actions([
                 Tables\Actions\EditAction::make(),
-                Tables\Actions\DeleteAction::make(),
+                Tables\Actions\DeleteAction::make()
+                    ->before(function (Product $record): void {
+                        static::guardProductDeletion($record);
+                    }),
             ])
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([
-                    Tables\Actions\DeleteBulkAction::make(),
+                    BulkAction::make('deleteSelectedProducts')
+                        ->label('Hapus Produk Terpilih')
+                        ->icon('heroicon-o-trash')
+                        ->color('danger')
+                        ->requiresConfirmation()
+                        ->modalHeading('Hapus produk terpilih?')
+                        ->modalDescription('Produk yang masih punya riwayat pembelian atau transaksi tidak akan dihapus.')
+                        ->action(function (Collection $records): void {
+                            $deletedCount = 0;
+                            $blockedProducts = [];
+
+                            foreach ($records as $product) {
+                                if (static::hasDeletionDependencies($product)) {
+                                    $blockedProducts[] = $product->display_name;
+
+                                    continue;
+                                }
+
+                                $product->delete();
+                                $deletedCount++;
+                            }
+
+                            if ($deletedCount > 0) {
+                                Notification::make()
+                                    ->title("{$deletedCount} produk berhasil dihapus")
+                                    ->success()
+                                    ->send();
+                            }
+
+                            if ($blockedProducts !== []) {
+                                $blockedCount = count($blockedProducts);
+                                $examples = implode(', ', array_slice($blockedProducts, 0, 3));
+                                $suffix = $blockedCount > 3 ? ' dan lainnya' : '';
+
+                                Notification::make()
+                                    ->title("{$blockedCount} produk tidak bisa dihapus")
+                                    ->body("Masih dipakai oleh riwayat pembelian/transaksi: {$examples}{$suffix}.")
+                                    ->warning()
+                                    ->send();
+                            }
+                        }),
                 ]),
             ]);
     }
-    
+
     public static function getRelations(): array
     {
         return [
@@ -183,5 +247,27 @@ class ProductResource extends Resource
             'create' => Pages\CreateProduct::route('/create'),
             'edit' => Pages\EditProduct::route('/{record}/edit'),
         ];
+    }
+
+    protected static function guardProductDeletion(Product $product): void
+    {
+        if (! static::hasDeletionDependencies($product)) {
+            return;
+        }
+
+        Notification::make()
+            ->title('Produk tidak bisa dihapus')
+            ->body('Produk ini masih dipakai oleh riwayat pembelian, transaksi, atau penyesuaian stok.')
+            ->danger()
+            ->send();
+
+        abort(422, 'Produk masih memiliki relasi data dan tidak bisa dihapus.');
+    }
+
+    protected static function hasDeletionDependencies(Product $product): bool
+    {
+        return $product->purchases()->exists()
+            || $product->transactionItems()->exists()
+            || $product->stockAdjustments()->exists();
     }
 }

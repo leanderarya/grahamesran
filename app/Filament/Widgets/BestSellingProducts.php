@@ -10,10 +10,10 @@ use Filament\Widgets\TableWidget as BaseWidget;
 class BestSellingProducts extends BaseWidget
 {
     // Atur urutan tampilan di dashboard (biar gak paling atas)
-    protected static ?int $sort = 3; 
-    
-    // Lebar widget (Full width biar enak lihatnya)
-    protected int | string | array $columnSpan = 'full';
+    protected static ?int $sort = 4;
+
+    // Sejajar dengan widget stok menipis agar lebih ringkas
+    protected int|string|array $columnSpan = 1;
 
     public function table(Table $table): Table
     {
@@ -27,15 +27,19 @@ class BestSellingProducts extends BaseWidget
                     ->orderByDesc('total_sold')
                     ->limit(5) // Ambil Top 5 saja
             )
-            ->heading('Produk Paling Laris (Top 5)')
+            ->heading('Produk Paling Laris')
             ->columns([
                 Tables\Columns\TextColumn::make('name')
                     ->label('Nama Barang')
-                    ->weight('bold'),
-                
+                    ->weight('bold')
+                    ->wrap(),
+
                 Tables\Columns\TextColumn::make('sku')
                     ->label('SKU')
-                    ->color('gray'),
+                    ->color('gray')
+                    ->limit(12)
+                    ->tooltip(fn (Product $record): string => $record->sku)
+                    ->toggleable(isToggledHiddenByDefault: true),
 
                 Tables\Columns\TextColumn::make('total_sold')
                     ->label('Terjual (Pcs)')
@@ -46,7 +50,9 @@ class BestSellingProducts extends BaseWidget
                 Tables\Columns\TextColumn::make('stock')
                     ->label('Sisa Stok')
                     ->alignCenter()
-                    ->color(fn (string $state): string => $state <= 5 ? 'danger' : 'gray'),
+                    ->badge()
+                    ->weight('bold')
+                    ->color(fn (string $state): string => $state <= 5 ? 'danger' : 'success'),
             ])
             ->paginated(false); // Matikan pagination biar ringkas
     }
