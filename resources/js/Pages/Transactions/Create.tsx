@@ -1,35 +1,100 @@
 // @ts-nocheck
+import {
+    AppNotifications,
+    notifyError,
+    notifyWarning,
+} from '@/Components/app-notifications';
 import { Head, Link, router, useForm, usePage } from '@inertiajs/react';
-import { Html5Qrcode } from 'html5-qrcode';
 import {
     useCallback,
     useDeferredValue,
     useEffect,
     useMemo,
-    useRef,
     useState,
 } from 'react';
 import { route } from 'ziggy-js';
 
-// --- KONFIGURASI TOKO ---
 const STORE_CONFIG = {
-    name: 'GRAHA MESRAN',
+    name: 'GRAHA MOTOR',
     address: 'Jl. Raya Pertamina No. 1',
     phone: '0812-3456-7890',
-    bank: {
-        name: 'BCA',
-        number: '3537001405',
-        holder: 'ARYA AJISADDA HARYANTO',
-    },
-    qrisUrl: 'assets/img/qris.jpg',
 };
 
-// --- small helper ---
-const cx = (...arr) => arr.filter(Boolean).join(' ');
-const formatRupiah = (num) => new Intl.NumberFormat('id-ID').format(num);
+const cx = (...classes) => classes.filter(Boolean).join(' ');
+const formatRupiah = (value) =>
+    new Intl.NumberFormat('id-ID').format(value || 0);
+const sanitizeNumericInput = (value) => value.replace(/[^\d]/g, '');
+const formatDateTime = (value) =>
+    value
+        ? new Intl.DateTimeFormat('id-ID', {
+              dateStyle: 'medium',
+              timeStyle: 'short',
+          }).format(new Date(value))
+        : '-';
+const formatSignedCurrency = (value) =>
+    `${value < 0 ? '-' : ''}Rp ${formatRupiah(Math.abs(value || 0))}`;
+const formatVolume = (value) => {
+    const numeric = Number(value);
+    if (!numeric) return null;
+    return `${numeric.toString().replace(/\.0+$/, '')}L`;
+};
+const getProductLabel = (product) => {
+    if (!product) return '';
+    const volume = formatVolume(product.volume_liter);
+    return volume ? `${product.name} (${volume})` : product.name;
+};
+const placeholderImage = '/images/product-placeholder.svg';
+const interactiveSurface =
+    'transition-all duration-200 ease-out shadow-sm hover:shadow-md';
+const formSurface =
+    'border border-slate-200 bg-white transition-all duration-200 ease-out';
 
-// --- ICONS ---
 const Icons = {
+    Sidebar: () => (
+        <svg
+            className="h-5 w-5"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+        >
+            <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth="2"
+                d="M4 6h16M4 12h16M4 18h16"
+            />
+        </svg>
+    ),
+    ChevronLeft: () => (
+        <svg
+            className="h-4 w-4"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+        >
+            <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth="2"
+                d="M15 19l-7-7 7-7"
+            />
+        </svg>
+    ),
+    ChevronRight: () => (
+        <svg
+            className="h-4 w-4"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+        >
+            <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth="2"
+                d="M9 5l7 7-7 7"
+            />
+        </svg>
+    ),
     Search: () => (
         <svg
             className="h-5 w-5"
@@ -41,11 +106,11 @@ const Icons = {
                 strokeLinecap="round"
                 strokeLinejoin="round"
                 strokeWidth="2"
-                d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+                d="M21 21l-4.35-4.35m1.6-5.15a7 7 0 11-14 0 7 7 0 0114 0z"
             />
         </svg>
     ),
-    Scan: () => (
+    Cashier: () => (
         <svg
             className="h-5 w-5"
             fill="none"
@@ -56,11 +121,11 @@ const Icons = {
                 strokeLinecap="round"
                 strokeLinejoin="round"
                 strokeWidth="2"
-                d="M12 4v1m6 11h2m-6 0h-2v4h2v-4zM5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4"
+                d="M4 7h16M6 11h12M6 15h7m-9 6h16a2 2 0 002-2V7a2 2 0 00-2-2H4a2 2 0 00-2 2v12a2 2 0 002 2z"
             />
         </svg>
     ),
-    Trash: () => (
+    Balance: () => (
         <svg
             className="h-5 w-5"
             fill="none"
@@ -71,71 +136,11 @@ const Icons = {
                 strokeLinecap="round"
                 strokeLinejoin="round"
                 strokeWidth="2"
-                d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+                d="M12 8c-2.21 0-4 1.79-4 4m8 0a4 4 0 00-4-4m0 0V4m0 8l3 3m-3-3l-3 3m9 4H6"
             />
         </svg>
     ),
-    Cash: () => (
-        <svg
-            className="h-7 w-7"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-        >
-            <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth="2"
-                d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z"
-            />
-        </svg>
-    ),
-    Qris: () => (
-        <svg
-            className="h-7 w-7"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-        >
-            <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth="2"
-                d="M12 4v1m6 11h2m-6 0h-2v4h2v-4zM5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4"
-            />
-        </svg>
-    ),
-    Card: () => (
-        <svg
-            className="h-7 w-7"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-        >
-            <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth="2"
-                d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"
-            />
-        </svg>
-    ),
-    Box: () => (
-        <svg
-            className="h-4 w-4"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-        >
-            <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth="2"
-                d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"
-            />
-        </svg>
-    ),
-    Cart: () => (
+    Report: () => (
         <svg
             className="h-5 w-5"
             fill="none"
@@ -146,7 +151,49 @@ const Icons = {
                 strokeLinecap="round"
                 strokeLinejoin="round"
                 strokeWidth="2"
-                d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"
+                d="M9 17v-6m4 6V7m4 10v-3M5 21h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v14a2 2 0 002 2z"
+            />
+        </svg>
+    ),
+    Settings: () => (
+        <svg
+            className="h-5 w-5"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+        >
+            <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth="2"
+                d="M10.325 4.317a1 1 0 011.35-.936l1.62.66a1 1 0 00.78 0l1.62-.66a1 1 0 011.35.936l.18 1.74a1 1 0 00.54.79l1.5.84a1 1 0 01.42 1.32l-.72 1.59a1 1 0 000 .82l.72 1.59a1 1 0 01-.42 1.32l-1.5.84a1 1 0 00-.54.79l-.18 1.74a1 1 0 01-1.35.936l-1.62-.66a1 1 0 00-.78 0l-1.62.66a1 1 0 01-1.35-.936l-.18-1.74a1 1 0 00-.54-.79l-1.5-.84a1 1 0 01-.42-1.32l.72-1.59a1 1 0 000-.82l-.72-1.59a1 1 0 01.42-1.32l1.5-.84a1 1 0 00.54-.79l.18-1.74z"
+            />
+            <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth="2"
+                d="M12 15a3 3 0 100-6 3 3 0 000 6z"
+            />
+        </svg>
+    ),
+    Logout: () => (
+        <svg
+            className="h-5 w-5"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+        >
+            <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth="2"
+                d="M17 16l4-4m0 0l-4-4m4 4H9"
+            />
+            <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth="2"
+                d="M13 20H6a2 2 0 01-2-2V6a2 2 0 012-2h7"
             />
         </svg>
     ),
@@ -165,7 +212,7 @@ const Icons = {
             />
         </svg>
     ),
-    Back: () => (
+    Minus: () => (
         <svg
             className="h-5 w-5"
             fill="none"
@@ -176,11 +223,11 @@ const Icons = {
                 strokeLinecap="round"
                 strokeLinejoin="round"
                 strokeWidth="2"
-                d="M10 19l-7-7m0 0l7-7m-7 7h18"
+                d="M20 12H4"
             />
         </svg>
     ),
-    Copy: () => (
+    Plus: () => (
         <svg
             className="h-5 w-5"
             fill="none"
@@ -191,11 +238,11 @@ const Icons = {
                 strokeLinecap="round"
                 strokeLinejoin="round"
                 strokeWidth="2"
-                d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"
+                d="M12 4v16m8-8H4"
             />
         </svg>
     ),
-    Check: () => (
+    Trash: () => (
         <svg
             className="h-5 w-5"
             fill="none"
@@ -206,36 +253,17 @@ const Icons = {
                 strokeLinecap="round"
                 strokeLinejoin="round"
                 strokeWidth="2"
-                d="M5 13l4 4L19 7"
-            />
-        </svg>
-    ),
-    Tag: () => (
-        <svg
-            className="h-4 w-4"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-        >
-            <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth="2"
-                d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 011 12V7a4 4 0 014-4z"
+                d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
             />
         </svg>
     ),
 };
 
-// --- COMPONENT: PRODUCT CARD ---
-const ProductCard = ({ product, onAdd, customerType }) => {
-    const isOutOfStock = (Number(product.stock) || 0) <= 0;
-    const stockNum = Number(product.stock) || 0;
-    const isLowStock = stockNum > 0 && stockNum <= 5;
-
-    const sellPrice = parseFloat(product.sell_price) || 0;
-    const workshopPrice = parseFloat(product.workshop_price) || 0;
-
+const ProductCard = ({ product, customerType, onAdd }) => {
+    const stock = Number(product.stock) || 0;
+    const isOut = stock <= 0;
+    const workshopPrice = Number(product.workshop_price) || 0;
+    const sellPrice = Number(product.sell_price) || 0;
     const activePrice =
         customerType === 'workshop' && workshopPrice > 0
             ? workshopPrice
@@ -244,225 +272,215 @@ const ProductCard = ({ product, onAdd, customerType }) => {
     return (
         <button
             type="button"
-            onClick={() => !isOutOfStock && onAdd(product)}
+            onClick={() => !isOut && onAdd(product)}
             className={cx(
-                'group relative flex w-full flex-col justify-between rounded-2xl border p-4 text-left shadow-sm transition',
-                'bg-white/90 backdrop-blur supports-[backdrop-filter]:bg-white/70',
-                'focus:ring-2 focus:ring-slate-300 focus:ring-offset-2 focus:outline-none',
-                isOutOfStock
-                    ? 'cursor-not-allowed border-slate-200 bg-slate-50 opacity-50 grayscale'
-                    : 'border-slate-200 hover:-translate-y-[1px] hover:shadow-md active:translate-y-0 active:scale-[0.99]',
+                'rounded-3xl border p-3 text-left',
+                interactiveSurface,
+                isOut
+                    ? 'cursor-not-allowed border-slate-200 bg-slate-50 opacity-50'
+                    : 'border-slate-200 bg-white hover:border-slate-300 hover:shadow-sm',
             )}
         >
-            {/* top meta */}
-            <div className="mb-3 flex items-start justify-between gap-2">
-                <span className="inline-flex items-center rounded-lg bg-slate-100 px-2 py-1 text-[10px] font-extrabold tracking-wide text-slate-600">
-                    {product.sku || 'NOSKU'}
-                </span>
-
-                <span
-                    className={cx(
-                        'inline-flex items-center rounded-full px-2 py-1 text-[10px] font-extrabold',
-                        isOutOfStock
-                            ? 'bg-red-100 text-red-600'
-                            : isLowStock
-                              ? 'bg-orange-100 text-orange-700'
-                              : 'bg-emerald-100 text-emerald-700',
-                    )}
-                >
-                    {isOutOfStock
-                        ? 'HABIS'
-                        : isLowStock
-                          ? `SISA: ${stockNum}`
-                          : `STOK: ${stockNum}`}
-                </span>
-            </div>
-
-            {/* name + vehicles */}
-            <div className="flex-1">
-                <h3 className="line-clamp-2 min-h-[2.5rem] text-sm leading-snug font-black text-slate-900">
-                    {product.name}
-                </h3>
-
-                {product.vehicles?.length > 0 && (
-                    <div className="mt-2 inline-flex max-w-full items-center gap-1 rounded-lg bg-slate-50 px-2 py-1 text-[10px] font-semibold text-slate-600">
-                        <Icons.Box />
-                        <span className="truncate">
-                            {product.vehicles.map((v) => v.model).join(', ')}
-                        </span>
+            <div className="flex items-center gap-3">
+                <img
+                    src={product.image_url || placeholderImage}
+                    alt={getProductLabel(product)}
+                    className="h-16 w-16 rounded-2xl border border-slate-200 bg-slate-50 object-cover"
+                />
+                <div className="min-w-0 flex-1">
+                    <div className="truncate text-[11px] font-black tracking-widest text-slate-400 uppercase">
+                        {product.sku || 'NOSKU'}
                     </div>
-                )}
-            </div>
+                    <div className="mt-1 line-clamp-2 text-sm font-black text-slate-900">
+                        {getProductLabel(product)}
+                    </div>
 
-            {/* price */}
-            <div className="mt-4 flex items-end justify-between border-t border-slate-100 pt-3">
-                <div className="space-y-1">
-                    {customerType === 'workshop' && workshopPrice > 0 && (
-                        <div className="inline-flex items-center gap-1 rounded-md bg-orange-50 px-2 py-0.5 text-[10px] font-extrabold text-orange-700">
-                            <Icons.Tag />
-                            Harga Bengkel
+                    <div className="mt-2 flex items-center gap-2">
+                        <div
+                            className={cx(
+                                'rounded-full px-2.5 py-1 text-[10px] font-black uppercase',
+                                isOut
+                                    ? 'bg-red-100 text-red-700'
+                                    : stock <= 5
+                                      ? 'bg-amber-100 text-amber-700'
+                                      : 'bg-emerald-100 text-emerald-700',
+                            )}
+                        >
+                            {isOut ? 'Habis' : `Stok ${stock}`}
                         </div>
-                    )}
-                    <div className="text-[11px] font-semibold text-slate-400">
-                        Harga
+                        <div
+                            className={cx(
+                                'text-sm font-black',
+                                customerType === 'workshop' && workshopPrice > 0
+                                    ? 'text-amber-600'
+                                    : 'text-slate-900',
+                            )}
+                        >
+                            Rp {formatRupiah(activePrice)}
+                        </div>
                     </div>
                 </div>
-
-                <div
-                    className={cx(
-                        'text-base font-black tracking-tight',
-                        customerType === 'workshop'
-                            ? 'text-orange-600'
-                            : 'text-slate-900',
-                    )}
-                >
-                    Rp {formatRupiah(activePrice)}
-                </div>
             </div>
-
-            {/* subtle hover accent */}
-            <div className="pointer-events-none absolute inset-0 rounded-2xl ring-1 ring-transparent transition group-hover:ring-slate-200" />
         </button>
     );
 };
 
-// --- COMPONENT: NUMPAD ---
-const Numpad = ({ onInput, onClear, onBackspace }) => {
-    const buttons = [1, 2, 3, 4, 5, 6, 7, 8, 9, 'C', 0, '⌫'];
-    return (
-        <div className="grid h-full grid-cols-3 gap-3">
-            {buttons.map((btn) => (
-                <button
-                    key={btn}
-                    onClick={() => {
-                        if (btn === 'C') onClear();
-                        else if (btn === '⌫') onBackspace();
-                        else onInput(btn);
-                    }}
-                    className={cx(
-                        'flex min-h-[58px] items-center justify-center rounded-2xl text-2xl font-black shadow-sm transition active:scale-[0.98]',
-                        typeof btn === 'number'
-                            ? 'border border-slate-200 bg-white text-slate-800 hover:bg-slate-50'
-                            : 'bg-slate-200 text-slate-700 hover:bg-slate-300',
-                    )}
-                >
-                    {btn}
-                </button>
-            ))}
-        </div>
-    );
-};
-
-export default function TabletPOS({ products }) {
-    const { auth } = usePage().props;
+export default function TabletPOS({ products, cashierSession }) {
+    const { auth, flash } = usePage().props;
+    const [activeMenu, setActiveMenu] = useState('cashier');
+    const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
     const [search, setSearch] = useState('');
-
-    // --- STATES ---
-    const [customerType, setCustomerType] = useState('general'); // 'general' or 'workshop'
-    const [showCartMobile, setShowCartMobile] = useState(false);
-    const [isPaymentOpen, setPaymentOpen] = useState(false);
-    const [isLogoutModalOpen, setIsLogoutModalOpen] = useState(false);
-
+    const [showMobileCheckout, setShowMobileCheckout] = useState(false);
+    const [customerType, setCustomerType] = useState('general');
     const [paymentMethod, setPaymentMethod] = useState('cash');
     const [cashReceived, setCashReceived] = useState('');
-    const [change, setChange] = useState(0);
-    const [isProcessing, setIsProcessing] = useState(false);
-    const [copied, setCopied] = useState(false);
     const [receiptData, setReceiptData] = useState(null);
-
+    const [showLogoutModal, setShowLogoutModal] = useState(false);
+    const [showOpenSessionModal, setShowOpenSessionModal] =
+        useState(!cashierSession);
+    const [showSettlementModal, setShowSettlementModal] = useState(false);
+    const [openingCash, setOpeningCash] = useState('');
+    const [openingNotes, setOpeningNotes] = useState('');
+    const [closingCashPhysical, setClosingCashPhysical] = useState('');
+    const [closingNotes, setClosingNotes] = useState('');
+    const [isOpeningSession, setIsOpeningSession] = useState(false);
+    const [isClosingSession, setIsClosingSession] = useState(false);
+    const [isProcessing, setIsProcessing] = useState(false);
+    const [sessionState, setSessionState] = useState(cashierSession);
     const { data, setData, reset } = useForm({ cart: [] });
 
-    const isWorkshop = customerType === 'workshop';
+    useEffect(() => {
+        setSessionState(cashierSession ?? null);
+        setShowOpenSessionModal(!cashierSession);
+    }, [cashierSession]);
 
-    // --- PERF: INDEX PRODUCTS BY ID ---
+    const hasOpenSession = Boolean(sessionState?.id);
+    const isWorkshop = customerType === 'workshop';
+    const deferredSearch = useDeferredValue(search);
+
     const productById = useMemo(() => {
-        const m = new Map();
-        for (const p of products) m.set(p.id, p);
-        return m;
+        const map = new Map();
+        for (const product of products) map.set(product.id, product);
+        return map;
     }, [products]);
 
-    // --- HELPER: ACTIVE PRICE ---
+    const filteredProducts = useMemo(() => {
+        const query = deferredSearch.trim().toLowerCase();
+
+        const base = !query
+            ? products
+            : products.filter(
+                  (product) =>
+                      product.name.toLowerCase().includes(query) ||
+                      (product.sku || '').toLowerCase().includes(query) ||
+                      (product.vehicles?.some((vehicle) =>
+                          (vehicle.model || '').toLowerCase().includes(query),
+                      ) ??
+                          false),
+              );
+
+        return base.slice(0, 40);
+    }, [deferredSearch, products]);
+
     const getProductPrice = useCallback(
         (product) => {
-            const sellPrice = parseFloat(product?.sell_price) || 0;
-            const workshopPrice = parseFloat(product?.workshop_price) || 0;
-            if (customerType === 'workshop' && workshopPrice > 0)
-                return workshopPrice;
-            return sellPrice;
+            const workshopPrice = Number(product?.workshop_price) || 0;
+            const sellPrice = Number(product?.sell_price) || 0;
+            return customerType === 'workshop' && workshopPrice > 0
+                ? workshopPrice
+                : sellPrice;
         },
         [customerType],
     );
 
-    // --- PERF: SEARCH (SMOOTHER) + LIMIT 30 ---
-    const deferredSearch = useDeferredValue(search);
+    const totalAmount = useMemo(
+        () =>
+            data.cart.reduce((sum, item) => {
+                const product = productById.get(item.id);
+                return (
+                    sum +
+                    getProductPrice(product || item) * (Number(item.qty) || 0)
+                );
+            }, 0),
+        [data.cart, getProductPrice, productById],
+    );
 
-    const filteredProducts = useMemo(() => {
-        const q = deferredSearch.trim().toLowerCase();
-        const base = !q
-            ? products
-            : products.filter(
-                  (p) =>
-                      p.name.toLowerCase().includes(q) ||
-                      (p.sku || '').toLowerCase().includes(q) ||
-                      (p.vehicles?.some((v) =>
-                          (v.model || '').toLowerCase().includes(q),
-                      ) ??
-                          false),
-              );
-        return base.slice(0, 30);
-    }, [products, deferredSearch]);
+    const cashShortcutAmounts = useMemo(() => {
+        const roundUpToNearest = (amount, nearest) =>
+            Math.ceil((amount || 0) / nearest) * nearest;
 
-    // --- PERF: TOTAL AMOUNT WITHOUT REPEATED find() ---
-    const totalAmount = useMemo(() => {
-        return data.cart.reduce((sum, item) => {
-            const product = productById.get(item.id);
-            const sellPrice =
-                parseFloat(product?.sell_price ?? item.sell_price) || 0;
-            const workshopPrice = parseFloat(product?.workshop_price ?? 0) || 0;
+        const candidates = [
+            totalAmount,
+            20000,
+            50000,
+            100000,
+            200000,
+            roundUpToNearest(totalAmount, 5000),
+            roundUpToNearest(totalAmount, 10000),
+            roundUpToNearest(totalAmount, 50000),
+        ];
 
-            const price =
-                customerType === 'workshop' && workshopPrice > 0
-                    ? workshopPrice
-                    : sellPrice;
-            return sum + price * (Number(item.qty) || 0);
-        }, 0);
-    }, [data.cart, productById, customerType]);
+        return [
+            ...new Set(
+                candidates.filter(
+                    (amount) => amount >= totalAmount && amount > 0,
+                ),
+            ),
+        ]
+            .sort((a, b) => a - b)
+            .slice(0, 6);
+    }, [totalAmount]);
 
-    useEffect(() => {
-        if (paymentMethod === 'cash') {
-            const received = parseInt(cashReceived) || 0;
-            setChange(received - totalAmount);
-        } else {
-            setChange(0);
-        }
-    }, [cashReceived, totalAmount, paymentMethod]);
+    const change = useMemo(() => {
+        if (paymentMethod !== 'cash') return 0;
+        return (Number(cashReceived || 0) || 0) - totalAmount;
+    }, [cashReceived, paymentMethod, totalAmount]);
 
-    // --- ACTIONS ---
+    const expectedCash =
+        Number(sessionState?.opening_cash || 0) +
+        Number(sessionState?.cash_sales_total || 0);
+    const settlementDifference =
+        Number(closingCashPhysical || 0) - expectedCash;
+    const settlementStatus =
+        settlementDifference === 0
+            ? 'balance'
+            : settlementDifference < 0
+              ? 'minus'
+              : 'over';
+
     const addToCart = useCallback(
         (product) => {
+            if (!hasOpenSession) {
+                setShowOpenSessionModal(true);
+                return;
+            }
+
             const existing = data.cart.find((item) => item.id === product.id);
             const stock = Number(product.stock) || 0;
 
-            if (existing && (Number(existing.qty) || 0) + 1 > stock) {
-                alert(`Stok tidak cukup! Sisa: ${stock}`);
+            if (existing && Number(existing.qty || 0) + 1 > stock) {
+                notifyWarning(
+                    `Stok ${getProductLabel(product)} tinggal ${stock}.`,
+                    'Stok terbatas',
+                );
                 return;
             }
-            if (navigator.vibrate) navigator.vibrate(30);
 
             if (existing) {
                 setData(
                     'cart',
                     data.cart.map((item) =>
                         item.id === product.id
-                            ? { ...item, qty: (Number(item.qty) || 0) + 1 }
+                            ? { ...item, qty: Number(item.qty || 0) + 1 }
                             : item,
                     ),
                 );
-            } else {
-                setData('cart', [...data.cart, { ...product, qty: 1 }]);
+                return;
             }
+
+            setData('cart', [...data.cart, { ...product, qty: 1 }]);
         },
-        [data.cart, setData],
+        [data.cart, hasOpenSession, setData],
     );
 
     const updateQty = useCallback(
@@ -473,128 +491,119 @@ export default function TabletPOS({ products }) {
                     if (item.id !== id) return item;
 
                     const stock = Number(productById.get(id)?.stock || 0);
-                    const currentQty = Number(item.qty) || 1;
-                    const newQty = Math.max(1, currentQty + delta);
+                    const nextQty = Math.max(1, Number(item.qty || 1) + delta);
 
-                    if (newQty > stock) {
-                        alert('Mencapai batas stok tersedia');
+                    if (nextQty > stock) {
+                        notifyWarning(
+                            `Jumlah maksimal untuk item ini adalah ${stock}.`,
+                            'Melebihi stok',
+                        );
                         return item;
                     }
-                    return { ...item, qty: newQty };
+
+                    return { ...item, qty: nextQty };
                 }),
             );
         },
         [data.cart, productById, setData],
     );
 
-    const handleManualQtyChange = useCallback(
-        (id, value) => {
-            if (value === '') {
-                setData(
-                    'cart',
-                    data.cart.map((item) =>
-                        item.id === id ? { ...item, qty: '' } : item,
-                    ),
-                );
-                return;
-            }
-
-            const stock = Number(productById.get(id)?.stock || 0);
-            let newQty = parseInt(value);
-            if (isNaN(newQty)) newQty = 1;
-
-            if (newQty > stock) {
-                alert(`Stok maksimal hanya ${stock}`);
-                newQty = stock;
-            }
-
-            setData(
-                'cart',
-                data.cart.map((item) =>
-                    item.id === id ? { ...item, qty: newQty } : item,
-                ),
-            );
-        },
-        [data.cart, productById, setData],
-    );
-
-    const handleManualQtyBlur = useCallback(
-        (id, value) => {
-            if (value === '' || parseInt(value) <= 0) {
-                setData(
-                    'cart',
-                    data.cart.map((item) =>
-                        item.id === id ? { ...item, qty: 1 } : item,
-                    ),
-                );
-            }
-        },
-        [data.cart, setData],
-    );
-
     const removeItem = useCallback(
         (id) => {
-            const newCart = data.cart.filter((item) => item.id !== id);
-            setData('cart', newCart);
-            if (newCart.length === 0) setShowCartMobile(false);
+            setData(
+                'cart',
+                data.cart.filter((item) => item.id !== id),
+            );
         },
         [data.cart, setData],
     );
 
     const clearCart = useCallback(() => {
-        if (data.cart.length === 0) return;
         setData('cart', []);
-    }, [data.cart.length, setData]);
+    }, [setData]);
 
-    const handleNumpadInput = useCallback(
-        (num) => setCashReceived((prev) => prev + num.toString()),
-        [],
-    );
-    const handleNumpadClear = useCallback(() => setCashReceived(''), []);
-    const handleNumpadBackspace = useCallback(
-        () => setCashReceived((prev) => prev.slice(0, -1)),
-        [],
-    );
+    const handleOpenSession = useCallback(() => {
+        setIsOpeningSession(true);
 
-    const copyToClipboard = useCallback((text) => {
-        navigator.clipboard.writeText(text);
-        setCopied(true);
-        setTimeout(() => setCopied(false), 1500);
-    }, []);
+        router.post(
+            route('transactions.session.open'),
+            {
+                opening_cash: Number(openingCash || 0),
+                opening_notes: openingNotes,
+            },
+            {
+                preserveScroll: true,
+                onSuccess: () => {
+                    setSessionState({
+                        id: Date.now(),
+                        opening_cash: Number(openingCash || 0),
+                        cash_sales_total: 0,
+                        non_cash_sales_total: 0,
+                        transactions_count: 0,
+                        opened_at: new Date().toISOString(),
+                    });
+                    setOpeningCash('');
+                    setOpeningNotes('');
+                    setShowOpenSessionModal(false);
+                },
+                onError: (errors) => {
+                    notifyError(errors?.opening_cash || 'Gagal membuka kasir.');
+                },
+                onFinish: () => setIsOpeningSession(false),
+            },
+        );
+    }, [openingCash, openingNotes]);
 
-    // Tailwind-safe styles (no dynamic border-${color})
-    const payStyle = useMemo(
-        () => ({
-            cash: {
-                border: 'border-emerald-500',
-                ring: 'ring-emerald-200',
-                iconBg: 'bg-emerald-100',
-                iconText: 'text-emerald-700',
+    const handleCloseSession = useCallback(() => {
+        if (data.cart.length > 0) {
+            notifyWarning(
+                'Kosongkan keranjang sebelum tutup kasir.',
+                'Keranjang masih terisi',
+            );
+            return;
+        }
+
+        setIsClosingSession(true);
+
+        router.post(
+            route('transactions.session.close'),
+            {
+                closing_cash_physical: Number(closingCashPhysical || 0),
+                closing_notes: closingNotes,
             },
-            qris: {
-                border: 'border-slate-500',
-                ring: 'ring-slate-200',
-                iconBg: 'bg-slate-100',
-                iconText: 'text-slate-700',
+            {
+                preserveScroll: true,
+                onSuccess: () => {
+                    setSessionState(null);
+                    setClosingCashPhysical('');
+                    setClosingNotes('');
+                    setShowSettlementModal(false);
+                    setShowOpenSessionModal(true);
+                    reset();
+                    setSearch('');
+                    setCashReceived('');
+                },
+                onError: (errors) => {
+                    notifyError(
+                        errors?.closing_cash_physical || 'Gagal menutup kasir.',
+                    );
+                },
+                onFinish: () => setIsClosingSession(false),
             },
-            bank: {
-                border: 'border-blue-500',
-                ring: 'ring-blue-200',
-                iconBg: 'bg-blue-100',
-                iconText: 'text-blue-700',
-            },
-        }),
-        [],
-    );
+        );
+    }, [closingCashPhysical, closingNotes, data.cart.length, reset]);
 
     const processPayment = useCallback(() => {
+        if (!hasOpenSession) {
+            setShowOpenSessionModal(true);
+            return;
+        }
+
         const finalPaid =
-            paymentMethod === 'cash'
-                ? parseInt(cashReceived) || 0
-                : totalAmount;
+            paymentMethod === 'cash' ? Number(cashReceived || 0) : totalAmount;
 
         if (paymentMethod === 'cash' && finalPaid < totalAmount) {
-            alert('Uang pembayaran kurang!');
+            notifyWarning('Uang pembayaran kurang.', 'Pembayaran belum cukup');
             return;
         }
 
@@ -602,1202 +611,1054 @@ export default function TabletPOS({ products }) {
 
         const finalChange =
             paymentMethod === 'cash' ? finalPaid - totalAmount : 0;
-
         const finalCart = data.cart.map((item) => {
             const product = productById.get(item.id);
-            return { ...item, sell_price: getProductPrice(product) };
+            return {
+                ...item,
+                name: product?.name ?? item.name,
+                volume_liter: product?.volume_liter ?? item.volume_liter,
+                sell_price: getProductPrice(product || item),
+            };
         });
 
-        const payload = {
-            cart: finalCart,
-            payment_method: paymentMethod,
-            amount_paid: finalPaid,
-            change_amount: finalChange,
-            customer_type: customerType,
-        };
-
-        router.post(route('transactions.store'), payload, {
-            onSuccess: () => {
-                const newReceipt = {
-                    invoice: 'INV-' + Math.floor(Date.now() / 1000),
-                    date: new Date().toLocaleString('id-ID'),
-                    items: finalCart,
-                    total: totalAmount,
-                    payAmount: finalPaid,
-                    change: finalChange,
-                    paymentMethod: paymentMethod.toUpperCase(),
-                    cashier: auth.user.name,
-                    customerType:
-                        customerType === 'workshop' ? 'BENGKEL' : 'UMUM',
-                };
-                setReceiptData(newReceipt);
-                setPaymentOpen(false);
-                setShowCartMobile(false);
-
-                setTimeout(() => {
-                    window.print();
-                    reset();
-                    setSearch('');
-                    setCashReceived('');
-                    setCustomerType('general');
-                }, 450);
+        router.post(
+            route('transactions.store'),
+            {
+                cart: finalCart,
+                payment_method: paymentMethod,
+                amount_paid: finalPaid,
+                change_amount: finalChange,
+                customer_type: customerType,
             },
-            onError: (errors) => {
-                console.error('Error Log:', errors);
-                let errorMsg = 'Gagal memproses transaksi:\n';
-                Object.keys(errors).forEach((key) => {
-                    errorMsg += `- ${errors[key]}\n`;
-                });
-                alert(errorMsg);
-                setIsProcessing(false);
+            {
+                onSuccess: () => {
+                    setSessionState((current) =>
+                        current
+                            ? {
+                                  ...current,
+                                  transactions_count:
+                                      Number(current.transactions_count || 0) +
+                                      1,
+                                  cash_sales_total:
+                                      Number(current.cash_sales_total || 0) +
+                                      (paymentMethod === 'cash'
+                                          ? totalAmount
+                                          : 0),
+                                  non_cash_sales_total:
+                                      Number(
+                                          current.non_cash_sales_total || 0,
+                                      ) +
+                                      (paymentMethod === 'cash'
+                                          ? 0
+                                          : totalAmount),
+                              }
+                            : current,
+                    );
+
+                    setReceiptData({
+                        invoice: `INV-${Math.floor(Date.now() / 1000)}`,
+                        date: new Date().toLocaleString('id-ID'),
+                        items: finalCart,
+                        total: totalAmount,
+                        payAmount: finalPaid,
+                        change: finalChange,
+                        paymentMethod: paymentMethod.toUpperCase(),
+                        cashier: auth?.user?.name,
+                        customerType:
+                            customerType === 'workshop' ? 'BENGKEL' : 'UMUM',
+                    });
+
+                    setTimeout(() => {
+                        window.print();
+                        reset();
+                        setCashReceived('');
+                    }, 250);
+                },
+                onError: (errors) => {
+                    const message =
+                        errors?.cart ||
+                        errors?.payment_method ||
+                        errors?.amount_paid ||
+                        'Gagal memproses transaksi.';
+                    notifyError(message);
+                },
+                onFinish: () => setIsProcessing(false),
             },
-            onFinish: () => setIsProcessing(false),
-        });
+        );
     }, [
-        paymentMethod,
-        cashReceived,
-        totalAmount,
-        data.cart,
-        productById,
-        getProductPrice,
-        customerType,
         auth?.user?.name,
+        cashReceived,
+        customerType,
+        data.cart,
+        getProductPrice,
+        hasOpenSession,
+        paymentMethod,
+        productById,
         reset,
+        totalAmount,
     ]);
 
-    // --- STATE SCANNER ---
-    const [scanToast, setScanToast] = useState(null);
-    const [isScannerOpen, setIsScannerOpen] = useState(false);
-    const lastScannedRef = useRef(null);
-    const scannerRef = useRef(null);
-    const scanCallbackRef = useRef(null);
-
-    const beepAudio = useRef(
-        typeof Audio !== 'undefined'
-            ? new Audio('/assets/audio/beep.mp3')
-            : null,
-    );
-
-    const playBeep = () => {
-        if (beepAudio.current) {
-            beepAudio.current.currentTime = 0;
-            beepAudio.current
-                .play()
-                .catch((e) => console.log('Audio play failed', e));
-        }
-    };
-
-    const onScanSuccess = useCallback(
-        (decodedText) => {
-            const scannedOriginal = String(decodedText).trim().toUpperCase();
-            if (lastScannedRef.current === scannedOriginal) return;
-            lastScannedRef.current = scannedOriginal;
-
-            const scannedNoZero = scannedOriginal.replace(/^0+/, '');
-
-            const product = products.find((p) => {
-                const skuDb = String(p.sku || '')
-                    .trim()
-                    .toUpperCase();
-                return skuDb === scannedOriginal || skuDb === scannedNoZero;
-            });
-
-            if (product) {
-                playBeep();
-                addToCart(product);
-                setScanToast(`Berhasil: ${product.name}`);
-                setTimeout(() => setScanToast(null), 1800);
-
-                if (navigator.vibrate) navigator.vibrate(50);
-                setTimeout(() => {
-                    lastScannedRef.current = null;
-                }, 1200);
-            } else {
-                playBeep();
-                setScanToast(`❌ Barang tidak ditemukan: ${scannedOriginal}`);
-                setTimeout(() => setScanToast(null), 2600);
-
-                setTimeout(() => {
-                    lastScannedRef.current = null;
-                }, 1600);
-            }
+    const menuItems = [
+        {
+            id: 'cashier',
+            label: 'Transaksi Kasir',
+            icon: Icons.Cashier,
+            onClick: () => setActiveMenu('cashier'),
         },
-        [products, addToCart],
-    );
+        {
+            id: 'settlement',
+            label: 'Settlement / Tutup',
+            icon: Icons.Balance,
+            onClick: () => {
+                setActiveMenu('settlement');
+                if (hasOpenSession) {
+                    setShowSettlementModal(true);
+                } else {
+                    setShowOpenSessionModal(true);
+                }
+            },
+        },
+        {
+            id: 'report',
+            label: 'Rekap Penjualan',
+            icon: Icons.Report,
+            onClick: () => router.visit(route('transactions.recap')),
+        },
+        {
+            id: 'logout',
+            label: 'Keluar',
+            icon: Icons.Logout, // <-- pastikan ini ada di mapping Icons kamu
+            onClick: () => {
+                setActiveMenu('logout');
 
-    useEffect(() => {
-        scanCallbackRef.current = onScanSuccess;
-    }, [onScanSuccess]);
+                if (hasOpenSession) {
+                    notifyWarning(
+                        'Kasir masih terbuka. Selesaikan settlement / tutup kasir terlebih dahulu sebelum logout.',
+                        'Logout diblokir',
+                    );
+                    setShowSettlementModal(true);
+                    return;
+                }
 
-    useEffect(() => {
-        let isMounted = true;
-
-        if (isScannerOpen) {
-            const timer = setTimeout(() => {
-                if (!isMounted) return;
-                if (!document.getElementById('reader')) return;
-                if (scannerRef.current) return;
-
-                const html5QrCode = new Html5Qrcode('reader', false);
-                scannerRef.current = html5QrCode;
-
-                const config = {
-                    fps: 10,
-                    qrbox: (viewfinderWidth, viewfinderHeight) => {
-                        const minEdgePercentage = 0.72;
-                        const minDim = Math.min(
-                            viewfinderWidth,
-                            viewfinderHeight,
-                        );
-                        return {
-                            width: minDim * minEdgePercentage,
-                            height: minDim * minEdgePercentage,
-                        };
-                    },
-                };
-
-                html5QrCode
-                    .start(
-                        { facingMode: 'environment' },
-                        config,
-                        (decodedText) => {
-                            if (scanCallbackRef.current)
-                                scanCallbackRef.current(decodedText);
-                        },
-                    )
-                    .catch((err) => {
-                        console.error('Kamera Error:', err);
-                        let errorMsg = 'Gagal start kamera.';
-                        if (
-                            location.protocol !== 'https:' &&
-                            location.hostname !== 'localhost'
-                        ) {
-                            errorMsg = 'Wajib HTTPS/Localhost!';
-                        }
-                        if (isMounted) {
-                            alert(errorMsg);
-                            setIsScannerOpen(false);
-                        }
-                    });
-            }, 350);
-
-            return () => clearTimeout(timer);
-        } else {
-            if (scannerRef.current) {
-                scannerRef.current
-                    .stop()
-                    .then(() => {
-                        scannerRef.current.clear();
-                        scannerRef.current = null;
-                    })
-                    .catch(() => {
-                        scannerRef.current = null;
-                    });
-            }
-        }
-
-        return () => {
-            isMounted = false;
-        };
-    }, [isScannerOpen]);
-
-    // --- accents ---
-    const accentBg = isWorkshop ? 'bg-orange-600' : 'bg-blue-600';
-    const accentSoft = isWorkshop ? 'bg-orange-50' : 'bg-slate-50';
-    const accentRing = isWorkshop
-        ? 'focus:ring-orange-500'
-        : 'focus:ring-blue-500';
-    const accentText = isWorkshop ? 'text-orange-600' : 'text-blue-600';
+                setShowLogoutModal(true);
+            },
+        },
+    ];
 
     return (
-        <div
-            className={cx(
-                'h-screen w-full overflow-hidden font-sans text-slate-900',
-                isWorkshop ? 'bg-orange-50' : 'bg-slate-100',
-            )}
-        >
-            <Head title="Kasir - Graha Mesran" />
+        <div className="min-h-screen bg-slate-100 text-slate-900">
+            <Head title="Kasir - Graha Motor" />
+            <AppNotifications flash={flash} />
 
-            {/* --- TOP BAR (cleaner + premium) --- */}
-            <div className="sticky top-0 z-40 border-b border-slate-200/70 bg-white/80 backdrop-blur-md print:hidden">
-                <div className="mx-auto flex h-16 w-full max-w-[1600px] items-center gap-3 px-4">
-                    {/* brand */}
-                    <div className="flex items-center gap-3">
-                        {/* BAGIAN INI YANG DIUBAH: Ganti Icon Petir jadi Gambar Logo */}
-                        <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-white p-1 shadow-lg">
-                            <img
-                                src="/GrahaMesran-light.png"
-                                alt="Graha Mesran"
-                                className="h-full w-full object-contain"
-                            />
-                        </div>
-
-                        {/* Bagian Teks (Tetap Sama) */}
-                        <div className="hidden sm:block">
-                            <div className="text-sm leading-tight font-black">
-                                {STORE_CONFIG.name}
+            <div
+                className={cx(
+                    'mx-auto min-h-screen max-w-[1800px] lg:grid',
+                    sidebarCollapsed
+                        ? 'lg:grid-cols-[88px_minmax(0,1fr)_360px] xl:grid-cols-[88px_minmax(0,1fr)_420px]'
+                        : 'lg:grid-cols-[88px_minmax(0,1fr)_360px] xl:grid-cols-[260px_minmax(0,1fr)_420px]',
+                )}
+            >
+                <aside className="w-full border-b border-slate-200 bg-slate-950 px-4 py-4 text-white lg:min-h-screen lg:border-r lg:border-b-0 lg:px-3 lg:py-5 xl:px-5 xl:py-6">
+                    <div className="flex items-center justify-between gap-3">
+                        <div className="flex items-center gap-3">
+                            <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-white/10">
+                                <img
+                                    src="/GrahaMesran-light.png"
+                                    alt="Graha Motor"
+                                    className="h-9 w-9 object-contain"
+                                />
                             </div>
-                            <div className="text-[11px] font-semibold text-slate-500">
-                                {auth?.user?.name}
-                            </div>
-                        </div>
-                    </div>
-
-                    {/* search */}
-                    <div className="flex flex-1 items-center gap-2">
-                        <div className="relative flex-1">
-                            <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3 text-slate-400">
-                                <Icons.Search />
-                            </div>
-                            <input
-                                type="text"
-                                value={search}
-                                onChange={(e) => setSearch(e.target.value)}
-                                placeholder="Cari Barang / SKU / Motor..."
-                                className={cx(
-                                    'w-full rounded-2xl border border-slate-200 bg-white px-10 py-3 text-sm font-bold text-slate-900 shadow-sm',
-                                    'placeholder:text-slate-400 focus:border-transparent focus:ring-2',
-                                    accentRing,
-                                )}
-                            />
-                            {search?.length > 0 && (
-                                <button
-                                    onClick={() => setSearch('')}
-                                    className="absolute inset-y-0 right-2 my-auto rounded-xl px-2 text-slate-400 hover:bg-slate-100 hover:text-slate-700"
+                            <div>
+                                <div
+                                    className={cx(
+                                        'text-sm font-black tracking-[0.2em] text-slate-300 uppercase',
+                                        sidebarCollapsed
+                                            ? 'hidden'
+                                            : 'hidden xl:block',
+                                    )}
                                 >
-                                    <Icons.Close />
-                                </button>
-                            )}
+                                    Graha Motor
+                                </div>
+                                <div
+                                    className={cx(
+                                        'mt-1 text-lg font-black',
+                                        sidebarCollapsed
+                                            ? 'hidden'
+                                            : 'hidden xl:block',
+                                    )}
+                                >
+                                    Kasir POS
+                                </div>
+                            </div>
                         </div>
-
-                        <button
-                            onClick={() => setIsScannerOpen(true)}
-                            className={cx(
-                                'hidden items-center gap-2 rounded-2xl px-4 py-3 text-sm font-black text-white shadow-lg transition active:scale-[0.99] md:flex',
-                                isWorkshop
-                                    ? 'bg-orange-700 hover:bg-orange-800'
-                                    : 'bg-slate-900 hover:bg-black',
-                            )}
-                        >
-                            <Icons.Scan />
-                            Scan
-                        </button>
                     </div>
 
-                    {/* mode */}
-                    <div className="hidden rounded-2xl bg-slate-100 p-1 md:flex">
-                        <button
-                            onClick={() => setCustomerType('general')}
-                            className={cx(
-                                'rounded-2xl px-4 py-2 text-xs font-black transition',
-                                !isWorkshop
-                                    ? 'bg-white text-slate-900 shadow-sm'
-                                    : 'text-slate-500 hover:text-slate-800',
-                            )}
-                        >
-                            UMUM
-                        </button>
-                        <button
-                            onClick={() => setCustomerType('workshop')}
-                            className={cx(
-                                'flex items-center gap-1 rounded-2xl px-4 py-2 text-xs font-black transition',
-                                isWorkshop
-                                    ? 'bg-orange-600 text-white shadow-sm'
-                                    : 'text-slate-500 hover:text-slate-800',
-                            )}
-                        >
-                            <Icons.Tag />
-                            BENGKEL
-                        </button>
-                    </div>
-
-                    {/* actions */}
-                    <button
-                        onClick={() => setIsScannerOpen(true)}
-                        className={cx(
-                            'flex items-center justify-center rounded-2xl border border-slate-200 bg-white p-3 shadow-sm md:hidden',
-                            'active:scale-[0.99]',
-                        )}
-                    >
-                        <Icons.Scan />
-                    </button>
-
-                    <button
-                        onClick={() => setShowCartMobile(!showCartMobile)}
-                        className="relative rounded-2xl border border-slate-200 bg-white p-3 shadow-sm active:scale-[0.99] lg:hidden"
-                    >
-                        <Icons.Cart />
-                        {data.cart.length > 0 && (
-                            <span className="absolute -top-1 -right-1 flex h-5 min-w-[20px] items-center justify-center rounded-full bg-red-500 px-1 text-[10px] font-black text-white">
-                                {data.cart.length}
-                            </span>
-                        )}
-                    </button>
-
-                    <button
-                        onClick={() => setIsLogoutModalOpen(true)}
-                        className="rounded-2xl p-3 text-red-500 transition hover:bg-red-50 active:scale-[0.99]"
-                        title="Keluar"
-                    >
-                        <svg
-                            className="h-5 w-5"
-                            fill="none"
-                            stroke="currentColor"
-                            viewBox="0 0 24 24"
-                        >
-                            <path
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                                strokeWidth="2"
-                                d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"
-                            />
-                        </svg>
-                    </button>
-                </div>
-
-                {/* mobile mode toggle */}
-                <div className="mx-auto flex max-w-[1600px] gap-2 px-4 pb-3 md:hidden">
-                    <button
-                        onClick={() => setCustomerType('general')}
-                        className={cx(
-                            'flex-1 rounded-2xl border px-4 py-2 text-xs font-black',
-                            !isWorkshop
-                                ? 'border-slate-300 bg-white text-slate-900 shadow-sm'
-                                : 'border-slate-200 bg-slate-50 text-slate-600',
-                        )}
-                    >
-                        UMUM
-                    </button>
-                    <button
-                        onClick={() => setCustomerType('workshop')}
-                        className={cx(
-                            'flex flex-1 items-center justify-center gap-1 rounded-2xl border px-4 py-2 text-xs font-black',
-                            isWorkshop
-                                ? 'border-orange-300 bg-orange-600 text-white shadow-sm'
-                                : 'border-slate-200 bg-slate-50 text-slate-600',
-                        )}
-                    >
-                        <Icons.Tag />
-                        BENGKEL
-                    </button>
-                </div>
-            </div>
-
-            {/* --- MAIN SHELL --- */}
-            <div className="mx-auto flex h-[calc(100vh-4rem)] max-w-[1600px] overflow-hidden print:hidden">
-                {/* PRODUCTS */}
-                <div
-                    className={cx(
-                        'flex-1 overflow-y-auto p-4 md:p-6',
-                        isWorkshop ? 'bg-orange-50' : 'bg-slate-100',
-                    )}
-                >
-                    {/* subtle header row */}
-                    <div className="mb-4 flex items-center justify-between">
-                        <div className="text-sm font-black text-slate-900">
-                            Produk
-                            {deferredSearch?.trim() && (
-                                <span className="ml-2 text-xs font-semibold text-slate-500">
-                                    ({filteredProducts.length} hasil • max 30)
+                    <div className="mt-5 flex gap-2 overflow-x-auto pb-1 lg:mt-8 lg:block lg:space-y-2 lg:overflow-visible lg:pb-0">
+                        {menuItems.map((item) => (
+                            <button
+                                key={item.id}
+                                onClick={item.onClick}
+                                className={cx(
+                                    'flex shrink-0 items-center gap-3 rounded-2xl px-4 py-3 text-left text-sm font-bold transition-all duration-200 lg:w-full lg:justify-center lg:px-0',
+                                    !sidebarCollapsed &&
+                                        'xl:justify-start xl:px-4',
+                                    activeMenu === item.id
+                                        ? 'bg-white text-slate-950'
+                                        : 'text-slate-300 hover:bg-white/10 hover:text-white',
+                                )}
+                            >
+                                <item.icon />
+                                <span
+                                    className={cx(
+                                        'whitespace-nowrap lg:hidden',
+                                        !sidebarCollapsed && 'xl:inline',
+                                    )}
+                                >
+                                    {item.label}
                                 </span>
-                            )}
-                        </div>
-                        <div
-                            className={cx(
-                                'rounded-2xl px-3 py-1 text-xs font-black',
-                                isWorkshop
-                                    ? 'bg-orange-100 text-orange-700'
-                                    : 'bg-slate-200 text-slate-700',
-                            )}
-                        >
-                            {isWorkshop ? 'MODE: HARGA BENGKEL' : 'MODE: UMUM'}
-                        </div>
+                            </button>
+                        ))}
                     </div>
 
-                    {filteredProducts.length === 0 ? (
-                        <div className="flex h-[60vh] flex-col items-center justify-center text-slate-400">
-                            <Icons.Search />
-                            <p className="mt-3 text-sm font-bold">
-                                Barang tidak ditemukan
-                            </p>
-                            <p className="mt-1 text-xs">
-                                Coba cari pakai SKU atau model motor.
-                            </p>
+                    {!sidebarCollapsed && (
+                        <>
+                            <div className="mt-5 rounded-3xl bg-white/5 p-4 lg:mt-8">
+                                <div className="text-[11px] font-black tracking-widest text-slate-400 uppercase">
+                                    Status Kasir
+                                </div>
+                                <div className="mt-3 text-lg font-black lg:text-center xl:text-left">
+                                    {hasOpenSession
+                                        ? 'Sesi Aktif'
+                                        : 'Belum Dibuka'}
+                                </div>
+                                <div className="mt-1 text-sm text-slate-300 lg:hidden xl:block">
+                                    {hasOpenSession
+                                        ? `Dibuka ${formatDateTime(sessionState?.opened_at)}`
+                                        : 'Masukkan saldo awal sebelum transaksi.'}
+                                </div>
+
+                                <button
+                                    onClick={() =>
+                                        hasOpenSession
+                                            ? setShowSettlementModal(true)
+                                            : setShowOpenSessionModal(true)
+                                    }
+                                    className="mt-4 w-full rounded-2xl bg-white px-4 py-3 text-sm font-black text-slate-950 transition hover:bg-slate-200"
+                                >
+                                    <span className="lg:hidden xl:inline">
+                                        {hasOpenSession
+                                            ? 'Settlement / Tutup Kasir'
+                                            : 'Buka Kasir'}
+                                    </span>
+                                    <span className="hidden lg:inline xl:hidden">
+                                        {hasOpenSession ? 'Tutup' : 'Buka'}
+                                    </span>
+                                </button>
+                            </div>
+
+                            <div className="mt-5 rounded-3xl border border-white/10 p-4 lg:mt-8">
+                                <div className="text-sm font-black">
+                                    {auth?.user?.name}
+                                </div>
+                                <div className="mt-1 text-sm text-slate-400">
+                                    Kasir aktif
+                                </div>
+                                <div className="mt-4 hidden text-xs font-semibold text-slate-400 xl:block">
+                                    {STORE_CONFIG.address}
+                                </div>
+                                <div className="hidden text-xs font-semibold text-slate-400 xl:block">
+                                    {STORE_CONFIG.phone}
+                                </div>
+                            </div>
+                        </>
+                    )}
+                </aside>
+
+                <main className="contents">
+                    <section className="space-y-5 p-4 pb-28 sm:p-5 sm:pb-32 lg:col-start-2 lg:p-5 lg:pb-5 xl:p-6 xl:pb-6">
+                        <div className="hidden lg:block">
+                            <button
+                                onClick={() =>
+                                    setSidebarCollapsed((current) => !current)
+                                }
+                                className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-3 py-2 text-sm font-black text-slate-700 shadow-sm transition hover:bg-slate-50"
+                                title={
+                                    sidebarCollapsed
+                                        ? 'Buka sidebar'
+                                        : 'Tutup sidebar'
+                                }
+                            >
+                                {sidebarCollapsed ? (
+                                    <Icons.ChevronRight />
+                                ) : (
+                                    <Icons.ChevronLeft />
+                                )}
+                                <span>
+                                    {sidebarCollapsed
+                                        ? 'Buka Menu'
+                                        : 'Tutup Menu'}
+                                </span>
+                            </button>
                         </div>
-                    ) : (
-                        <div className="grid grid-cols-2 gap-4 pb-28 md:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5">
+
+                        <div className="rounded-[2rem] bg-white p-5 shadow-sm">
+                            <div className="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
+                                <div className="flex flex-wrap gap-2">
+                                    <button
+                                        onClick={() =>
+                                            setCustomerType('general')
+                                        }
+                                        className={cx(
+                                            'rounded-2xl px-4 py-2 text-sm font-black shadow-sm transition-all duration-200 hover:shadow-md',
+                                            !isWorkshop
+                                                ? 'bg-slate-950 text-white'
+                                                : 'bg-slate-100 text-slate-600',
+                                        )}
+                                    >
+                                        Pelanggan Umum
+                                    </button>
+                                    <button
+                                        onClick={() =>
+                                            setCustomerType('workshop')
+                                        }
+                                        className={cx(
+                                            'rounded-2xl px-4 py-2 text-sm font-black shadow-sm transition-all duration-200 hover:shadow-md',
+                                            isWorkshop
+                                                ? 'bg-amber-500 text-white'
+                                                : 'bg-amber-50 text-amber-700',
+                                        )}
+                                    >
+                                        Bengkel
+                                    </button>
+                                </div>
+
+                                <div className="text-sm font-semibold text-slate-500">
+                                    {filteredProducts.length} produk tampil
+                                </div>
+                            </div>
+
+                            <div
+                                className={cx(
+                                    'mt-5 flex items-center gap-3 rounded-3xl px-4 py-3',
+                                    formSurface,
+                                )}
+                            >
+                                <div className="text-slate-400">
+                                    <Icons.Search />
+                                </div>
+                                <input
+                                    type="text"
+                                    value={search}
+                                    onChange={(event) =>
+                                        setSearch(event.target.value)
+                                    }
+                                    placeholder="Cari barang, SKU, atau model motor..."
+                                    className="w-full border-0 bg-transparent p-0 text-sm font-semibold text-slate-900 placeholder:text-slate-400 focus:ring-0 focus:outline-none"
+                                />
+                            </div>
+                        </div>
+
+                        <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+                            <div className="rounded-3xl bg-white p-4 shadow-sm">
+                                <div className="text-[11px] font-black tracking-widest text-slate-400 uppercase">
+                                    Saldo Awal
+                                </div>
+                                <div className="mt-2 text-xl font-black text-slate-950">
+                                    Rp{' '}
+                                    {formatRupiah(
+                                        sessionState?.opening_cash || 0,
+                                    )}
+                                </div>
+                            </div>
+                            <div className="rounded-3xl bg-white p-4 shadow-sm">
+                                <div className="text-[11px] font-black tracking-widest text-slate-400 uppercase">
+                                    Cash Masuk
+                                </div>
+                                <div className="mt-2 text-xl font-black text-slate-950">
+                                    Rp{' '}
+                                    {formatRupiah(
+                                        sessionState?.cash_sales_total || 0,
+                                    )}
+                                </div>
+                            </div>
+                            <div className="rounded-3xl bg-white p-4 shadow-sm">
+                                <div className="text-[11px] font-black tracking-widest text-slate-400 uppercase">
+                                    Non Cash
+                                </div>
+                                <div className="mt-2 text-xl font-black text-slate-950">
+                                    Rp{' '}
+                                    {formatRupiah(
+                                        sessionState?.non_cash_sales_total || 0,
+                                    )}
+                                </div>
+                            </div>
+                            <div className="rounded-3xl bg-slate-950 p-4 text-white shadow-sm">
+                                <div className="text-[11px] font-black tracking-widest text-slate-400 uppercase">
+                                    Expected Cash
+                                </div>
+                                <div className="mt-2 text-xl font-black">
+                                    Rp {formatRupiah(expectedCash)}
+                                </div>
+                            </div>
+                        </div>
+
+                        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-2 xl:grid-cols-2 2xl:grid-cols-3">
                             {filteredProducts.map((product) => (
                                 <ProductCard
                                     key={product.id}
                                     product={product}
-                                    onAdd={addToCart}
                                     customerType={customerType}
+                                    onAdd={addToCart}
                                 />
                             ))}
-                        </div>
-                    )}
-                </div>
 
-                {/* CART (desktop) */}
-                <div className="relative hidden w-[420px] shrink-0 border-l border-slate-200 bg-white lg:flex lg:flex-col">
-                    {/* cart header */}
-                    <div
+                            {filteredProducts.length === 0 && (
+                                <div className="col-span-full rounded-3xl border border-dashed border-slate-300 bg-white p-10 text-center">
+                                    <div className="text-lg font-black text-slate-900">
+                                        Produk tidak ditemukan
+                                    </div>
+                                    <div className="mt-2 text-sm font-semibold text-slate-500">
+                                        Coba kata kunci lain atau kosongkan
+                                        pencarian.
+                                    </div>
+                                </div>
+                            )}
+                        </div>
+                    </section>
+
+                    <section
                         className={cx(
-                            'border-b p-5',
-                            isWorkshop
-                                ? 'border-orange-100 bg-orange-50/40'
-                                : 'border-slate-100 bg-slate-50/50',
+                            'space-y-5 border-t border-slate-200 bg-slate-100 p-4 pb-28 sm:p-5 sm:pb-32 lg:col-start-3 lg:border-t-0 lg:border-l lg:p-5 lg:pb-5 xl:p-6 xl:pb-6',
+                            !showMobileCheckout && 'hidden lg:block',
                         )}
                     >
-                        <div className="flex items-start justify-between">
-                            <div>
-                                <div className="text-lg font-black text-slate-900">
-                                    Keranjang
+                        <div className="rounded-[2rem] bg-white p-5 shadow-sm lg:sticky lg:top-5 xl:top-6">
+                            <div className="flex items-start justify-between gap-4">
+                                <div>
+                                    <div className="text-xs font-black tracking-[0.3em] text-slate-400 uppercase">
+                                        Keranjang
+                                    </div>
+                                    <div className="mt-2 text-2xl font-black text-slate-950">
+                                        {data.cart.length} item
+                                    </div>
                                 </div>
-                                <div className="mt-1 text-xs font-semibold text-slate-500">
-                                    {data.cart.length} item •{' '}
-                                    {isWorkshop ? (
-                                        <span
-                                            className={cx(
-                                                'font-black',
-                                                accentText,
-                                            )}
-                                        >
-                                            harga bengkel aktif
-                                        </span>
-                                    ) : (
-                                        'siap dibayar'
-                                    )}
-                                </div>
+                                <button
+                                    onClick={clearCart}
+                                    className="rounded-2xl bg-red-50 px-3 py-2 text-sm font-black text-red-700 shadow-sm transition-all duration-200 hover:bg-red-100 hover:shadow-md"
+                                >
+                                    Hapus Semua
+                                </button>
                             </div>
-                            <button
-                                onClick={clearCart}
-                                className="rounded-2xl bg-red-50 px-3 py-2 text-xs font-black text-red-600 transition hover:bg-red-100 active:scale-[0.99]"
-                            >
-                                Hapus
-                            </button>
-                        </div>
-                    </div>
 
-                    {/* cart list */}
-                    <div className="flex-1 overflow-y-auto p-5">
-                        {data.cart.length === 0 ? (
-                            <div className="flex h-full flex-col items-center justify-center text-slate-300">
-                                <Icons.Cart />
-                                <p className="mt-3 text-sm font-bold">
-                                    Keranjang Kosong
-                                </p>
-                                <p className="mt-1 text-xs">
-                                    Tap produk untuk menambahkan.
-                                </p>
-                            </div>
-                        ) : (
-                            <div className="space-y-4">
-                                {data.cart.map((item, idx) => {
-                                    const product = productById.get(item.id);
-                                    const currentPrice = product
-                                        ? getProductPrice(product)
-                                        : parseFloat(item.sell_price) || 0;
-                                    const displayQty =
-                                        item.qty === '' ? '' : item.qty;
-
-                                    return (
-                                        <div
-                                            key={idx}
-                                            className={cx(
-                                                'rounded-2xl border p-4 shadow-sm',
-                                                isWorkshop
-                                                    ? 'border-orange-100'
-                                                    : 'border-slate-200',
-                                            )}
-                                        >
-                                            <div className="flex items-start justify-between gap-3">
-                                                <div className="min-w-0">
-                                                    <div className="line-clamp-2 text-sm font-black text-slate-900">
-                                                        {item.name}
-                                                    </div>
-                                                    <div className="mt-1 text-xs font-semibold text-slate-500">
-                                                        @ Rp{' '}
-                                                        {formatRupiah(
-                                                            currentPrice,
-                                                        )}
-                                                    </div>
-                                                </div>
-                                                <button
-                                                    onClick={() =>
-                                                        removeItem(item.id)
-                                                    }
-                                                    className="rounded-2xl p-2 text-slate-300 transition hover:bg-red-50 hover:text-red-600 active:scale-[0.99]"
-                                                    title="Hapus item"
-                                                >
-                                                    <Icons.Trash />
-                                                </button>
-                                            </div>
-
-                                            <div className="mt-4 flex items-end justify-between">
-                                                <div className="flex items-center overflow-hidden rounded-2xl border border-slate-200 bg-slate-50">
-                                                    <button
-                                                        onClick={() =>
-                                                            updateQty(
-                                                                item.id,
-                                                                -1,
-                                                            )
-                                                        }
-                                                        disabled={
-                                                            (Number(item.qty) ||
-                                                                1) <= 1
-                                                        }
-                                                        className="flex h-11 w-12 items-center justify-center font-black text-slate-600 active:bg-slate-200 disabled:opacity-40"
-                                                    >
-                                                        −
-                                                    </button>
-                                                    <input
-                                                        type="text"
-                                                        inputMode="numeric"
-                                                        pattern="[0-9]*"
-                                                        className="h-11 w-14 border-0 bg-transparent p-0 text-center text-lg font-black text-slate-900 focus:ring-0"
-                                                        value={displayQty}
-                                                        onChange={(e) =>
-                                                            handleManualQtyChange(
-                                                                item.id,
-                                                                e.target.value,
-                                                            )
-                                                        }
-                                                        onBlur={(e) =>
-                                                            handleManualQtyBlur(
-                                                                item.id,
-                                                                e.target.value,
-                                                            )
-                                                        }
-                                                    />
-                                                    <button
-                                                        onClick={() =>
-                                                            updateQty(
-                                                                item.id,
-                                                                1,
-                                                            )
-                                                        }
-                                                        className={cx(
-                                                            'flex h-11 w-12 items-center justify-center font-black active:bg-blue-100',
-                                                            accentText,
-                                                        )}
-                                                    >
-                                                        +
-                                                    </button>
-                                                </div>
-
-                                                <div
-                                                    className={cx(
-                                                        'text-lg font-black tracking-tight',
-                                                        isWorkshop
-                                                            ? 'text-orange-600'
-                                                            : 'text-slate-900',
-                                                    )}
-                                                >
-                                                    Rp{' '}
-                                                    {formatRupiah(
-                                                        currentPrice *
-                                                            (Number(item.qty) ||
-                                                                0),
-                                                    )}
-                                                </div>
-                                            </div>
+                            <div className="mt-5 max-h-[300px] space-y-3 overflow-y-auto pr-1 xl:max-h-[360px]">
+                                {data.cart.length === 0 && (
+                                    <div className="rounded-3xl border border-dashed border-slate-200 bg-slate-50 px-4 py-10 text-center">
+                                        <div className="text-base font-black text-slate-900">
+                                            Keranjang masih kosong
                                         </div>
-                                    );
-                                })}
-                            </div>
-                        )}
-                    </div>
-
-                    {/* cart footer */}
-                    <div className="border-t border-slate-100 p-5 shadow-[0_-10px_30px_rgba(0,0,0,0.06)]">
-                        <div className="flex items-end justify-between">
-                            <div className="text-xs font-bold tracking-widest text-slate-400 uppercase">
-                                Total
-                            </div>
-                            <div
-                                className={cx(
-                                    'text-3xl font-black tracking-tight',
-                                    isWorkshop
-                                        ? 'text-orange-600'
-                                        : 'text-slate-900',
-                                )}
-                            >
-                                Rp {formatRupiah(totalAmount)}
-                            </div>
-                        </div>
-
-                        <button
-                            onClick={() =>
-                                data.cart.length > 0 && setPaymentOpen(true)
-                            }
-                            disabled={data.cart.length === 0}
-                            className={cx(
-                                'mt-4 w-full rounded-2xl py-4 text-base font-black text-white shadow-xl transition active:scale-[0.99] disabled:opacity-50',
-                                data.cart.length === 0
-                                    ? 'bg-slate-300'
-                                    : isWorkshop
-                                      ? 'bg-orange-600 shadow-orange-600/25 hover:bg-orange-700'
-                                      : 'bg-blue-600 shadow-blue-600/25 hover:bg-blue-700',
-                            )}
-                        >
-                            Bayar Sekarang
-                        </button>
-                    </div>
-                </div>
-
-                {/* CART (mobile slide over) */}
-                <div
-                    className={cx(
-                        'fixed inset-0 z-50 flex transform flex-col bg-white transition-transform duration-300 lg:hidden',
-                        showCartMobile ? 'translate-x-0' : 'translate-x-full',
-                    )}
-                >
-                    <div className="flex items-center justify-between border-b border-slate-100 bg-white p-4">
-                        <div>
-                            <div className="text-lg font-black">Keranjang</div>
-                            <div className="text-xs font-semibold text-slate-500">
-                                {data.cart.length} item
-                            </div>
-                        </div>
-                        <button
-                            onClick={() => setShowCartMobile(false)}
-                            className="rounded-2xl bg-slate-100 p-2 text-slate-600"
-                        >
-                            <Icons.Close />
-                        </button>
-                    </div>
-
-                    <div className="flex-1 overflow-y-auto p-4">
-                        {data.cart.length === 0 ? (
-                            <div className="flex h-full flex-col items-center justify-center text-slate-300">
-                                <Icons.Cart />
-                                <p className="mt-2 text-sm font-bold">
-                                    Keranjang Kosong
-                                </p>
-                            </div>
-                        ) : (
-                            <div className="space-y-3">
-                                {data.cart.map((item, idx) => {
-                                    const product = productById.get(item.id);
-                                    const currentPrice = product
-                                        ? getProductPrice(product)
-                                        : parseFloat(item.sell_price) || 0;
-                                    const displayQty =
-                                        item.qty === '' ? '' : item.qty;
-
-                                    return (
-                                        <div
-                                            key={idx}
-                                            className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm"
-                                        >
-                                            <div className="flex items-start justify-between gap-3">
-                                                <div className="min-w-0">
-                                                    <div className="line-clamp-2 text-sm font-black text-slate-900">
-                                                        {item.name}
-                                                    </div>
-                                                    <div className="mt-1 text-xs font-semibold text-slate-500">
-                                                        @ Rp{' '}
-                                                        {formatRupiah(
-                                                            currentPrice,
-                                                        )}
-                                                    </div>
-                                                </div>
-                                                <button
-                                                    onClick={() =>
-                                                        removeItem(item.id)
-                                                    }
-                                                    className="rounded-2xl p-2 text-slate-300 hover:bg-red-50 hover:text-red-600"
-                                                >
-                                                    <Icons.Trash />
-                                                </button>
-                                            </div>
-
-                                            <div className="mt-3 flex items-end justify-between">
-                                                <div className="flex items-center overflow-hidden rounded-2xl border border-slate-200 bg-slate-50">
-                                                    <button
-                                                        onClick={() =>
-                                                            updateQty(
-                                                                item.id,
-                                                                -1,
-                                                            )
-                                                        }
-                                                        disabled={
-                                                            (Number(item.qty) ||
-                                                                1) <= 1
-                                                        }
-                                                        className="flex h-11 w-12 items-center justify-center font-black text-slate-600 active:bg-slate-200 disabled:opacity-40"
-                                                    >
-                                                        −
-                                                    </button>
-                                                    <input
-                                                        type="text"
-                                                        inputMode="numeric"
-                                                        pattern="[0-9]*"
-                                                        className="h-11 w-14 border-0 bg-transparent p-0 text-center text-lg font-black text-slate-900 focus:ring-0"
-                                                        value={displayQty}
-                                                        onChange={(e) =>
-                                                            handleManualQtyChange(
-                                                                item.id,
-                                                                e.target.value,
-                                                            )
-                                                        }
-                                                        onBlur={(e) =>
-                                                            handleManualQtyBlur(
-                                                                item.id,
-                                                                e.target.value,
-                                                            )
-                                                        }
-                                                    />
-                                                    <button
-                                                        onClick={() =>
-                                                            updateQty(
-                                                                item.id,
-                                                                1,
-                                                            )
-                                                        }
-                                                        className={cx(
-                                                            'flex h-11 w-12 items-center justify-center font-black active:bg-blue-100',
-                                                            accentText,
-                                                        )}
-                                                    >
-                                                        +
-                                                    </button>
-                                                </div>
-                                                <div className="text-lg font-black text-slate-900">
-                                                    Rp{' '}
-                                                    {formatRupiah(
-                                                        currentPrice *
-                                                            (Number(item.qty) ||
-                                                                0),
-                                                    )}
-                                                </div>
-                                            </div>
+                                        <div className="mt-2 text-sm font-semibold text-slate-500">
+                                            Pilih produk di panel tengah untuk
+                                            mulai transaksi.
                                         </div>
-                                    );
-                                })}
-                            </div>
-                        )}
-                    </div>
-
-                    <div className="border-t border-slate-100 p-4 shadow-[0_-10px_30px_rgba(0,0,0,0.06)]">
-                        <div className="flex items-end justify-between">
-                            <div className="text-xs font-bold tracking-widest text-slate-400 uppercase">
-                                Total
-                            </div>
-                            <div className="text-2xl font-black text-slate-900">
-                                Rp {formatRupiah(totalAmount)}
-                            </div>
-                        </div>
-                        <button
-                            onClick={() =>
-                                data.cart.length > 0 && setPaymentOpen(true)
-                            }
-                            disabled={data.cart.length === 0}
-                            className={cx(
-                                'mt-4 w-full rounded-2xl py-4 text-base font-black text-white shadow-xl transition active:scale-[0.99] disabled:opacity-50',
-                                data.cart.length === 0
-                                    ? 'bg-slate-300'
-                                    : isWorkshop
-                                      ? 'bg-orange-600 hover:bg-orange-700'
-                                      : 'bg-blue-600 hover:bg-blue-700',
-                            )}
-                        >
-                            Bayar Sekarang
-                        </button>
-                    </div>
-                </div>
-            </div>
-
-            {/* --- PAYMENT MODAL --- */}
-            {isPaymentOpen && (
-                <div className="fixed inset-0 z-[60] flex flex-col bg-white md:flex-row print:hidden">
-                    <div className="flex items-center justify-between border-b border-slate-100 p-4 md:hidden">
-                        <button
-                            onClick={() => setPaymentOpen(false)}
-                            className="flex items-center gap-2 text-sm font-black text-slate-600"
-                        >
-                            <Icons.Back /> Kembali
-                        </button>
-                        <h3 className="text-base font-black">Pembayaran</h3>
-                    </div>
-
-                    {/* left summary */}
-                    <div className="w-full bg-slate-50 p-6 md:w-[420px] md:border-r md:border-slate-100 md:p-8">
-                        <div className="hidden md:block">
-                            <button
-                                onClick={() => setPaymentOpen(false)}
-                                className="flex items-center gap-2 text-sm font-black text-slate-600 hover:text-slate-900"
-                            >
-                                <Icons.Back /> Kembali
-                            </button>
-                        </div>
-
-                        <div className="mt-6 rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
-                            <div className="flex items-center justify-between">
-                                <div className="text-xs font-black tracking-widest text-slate-400 uppercase">
-                                    Total Tagihan
-                                </div>
-                                {isWorkshop && (
-                                    <div className="rounded-xl bg-orange-100 px-3 py-1 text-[10px] font-black text-orange-700">
-                                        HARGA BENGKEL
                                     </div>
                                 )}
-                            </div>
-                            <div className="mt-3 text-4xl font-black tracking-tight text-slate-900">
-                                Rp {formatRupiah(totalAmount)}
+
+                                {data.cart.map((item) => {
+                                    const product =
+                                        productById.get(item.id) || item;
+                                    const price = getProductPrice(product);
+
+                                    return (
+                                        <div
+                                            key={item.id}
+                                            className="rounded-3xl border border-slate-200 bg-slate-50 p-4"
+                                        >
+                                            <div className="flex items-start justify-between gap-3">
+                                                <div className="flex min-w-0 flex-1 gap-3">
+                                                    <img
+                                                        src={
+                                                            product.image_url ||
+                                                            item.image_url ||
+                                                            placeholderImage
+                                                        }
+                                                        alt={getProductLabel(
+                                                            item,
+                                                        )}
+                                                        className="h-14 w-14 rounded-2xl border border-slate-200 bg-white object-cover"
+                                                    />
+                                                    <div className="min-w-0">
+                                                        <div className="line-clamp-2 text-sm font-black text-slate-900">
+                                                            {getProductLabel(
+                                                                item,
+                                                            )}
+                                                        </div>
+                                                        <div className="mt-1 text-xs font-semibold text-slate-500">
+                                                            Rp{' '}
+                                                            {formatRupiah(
+                                                                price,
+                                                            )}{' '}
+                                                            / item
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                <button
+                                                    onClick={() =>
+                                                        removeItem(item.id)
+                                                    }
+                                                    className="rounded-2xl p-2 text-slate-400 transition-all duration-200 hover:bg-red-50 hover:text-red-600"
+                                                >
+                                                    <Icons.Trash />
+                                                </button>
+                                            </div>
+
+                                            <div className="mt-4 flex items-center justify-between">
+                                                <div className="flex items-center gap-2">
+                                                    <button
+                                                        onClick={() =>
+                                                            updateQty(
+                                                                item.id,
+                                                                -1,
+                                                            )
+                                                        }
+                                                        className="rounded-2xl border border-slate-200 bg-white p-2 text-slate-700 shadow-sm transition-all duration-200 hover:border-slate-300 hover:shadow-md"
+                                                    >
+                                                        <Icons.Minus />
+                                                    </button>
+                                                    <div className="min-w-[48px] text-center text-lg font-black text-slate-900">
+                                                        {item.qty}
+                                                    </div>
+                                                    <button
+                                                        onClick={() =>
+                                                            updateQty(
+                                                                item.id,
+                                                                1,
+                                                            )
+                                                        }
+                                                        className="rounded-2xl border border-slate-200 bg-white p-2 text-slate-700 shadow-sm transition-all duration-200 hover:border-slate-300 hover:shadow-md"
+                                                    >
+                                                        <Icons.Plus />
+                                                    </button>
+                                                </div>
+                                                <div className="text-lg font-black text-slate-950">
+                                                    Rp{' '}
+                                                    {formatRupiah(
+                                                        price *
+                                                            Number(
+                                                                item.qty || 0,
+                                                            ),
+                                                    )}
+                                                </div>
+                                            </div>
+                                        </div>
+                                    );
+                                })}
                             </div>
                         </div>
 
-                        <div className="mt-6 space-y-3">
-                            <div className="text-sm font-black text-slate-700">
-                                Metode Bayar
+                        <div className="rounded-[2rem] bg-white p-5 shadow-sm">
+                            <div className="text-xs font-black tracking-[0.3em] text-slate-400 uppercase">
+                                Pembayaran
                             </div>
 
-                            {[
-                                {
-                                    id: 'cash',
-                                    label: 'Tunai',
-                                    icon: Icons.Cash,
-                                },
-                                {
-                                    id: 'qris',
-                                    label: 'QRIS Scan',
-                                    icon: Icons.Qris,
-                                },
-                                {
-                                    id: 'bank',
-                                    label: 'BCA Transfer',
-                                    icon: Icons.Card,
-                                },
-                            ].map((m) => {
-                                const s = payStyle[m.id];
-                                return (
+                            <div className="mt-4 rounded-3xl bg-slate-950 p-5 text-white">
+                                <div className="text-sm font-semibold text-slate-400">
+                                    Total tagihan
+                                </div>
+                                <div className="mt-2 text-3xl font-black">
+                                    Rp {formatRupiah(totalAmount)}
+                                </div>
+                            </div>
+
+                            <div className="mt-4 grid grid-cols-3 gap-2">
+                                {[
+                                    { id: 'cash', label: 'Tunai' },
+                                    { id: 'qris', label: 'QRIS' },
+                                    { id: 'bank', label: 'Transfer' },
+                                ].map((method) => (
                                     <button
-                                        key={m.id}
-                                        onClick={() => {
-                                            setPaymentMethod(m.id);
-                                            setCashReceived('');
-                                        }}
+                                        key={method.id}
+                                        onClick={() =>
+                                            setPaymentMethod(method.id)
+                                        }
                                         className={cx(
-                                            'flex w-full items-center rounded-3xl border-2 p-4 transition active:scale-[0.99]',
-                                            paymentMethod === m.id
-                                                ? `${s.border} bg-white shadow-md ring-1 ${s.ring}`
-                                                : 'border-slate-200 bg-white hover:border-slate-300',
+                                            'rounded-2xl px-3 py-3 text-sm font-black shadow-sm transition-all duration-200 hover:shadow-md',
+                                            paymentMethod === method.id
+                                                ? 'bg-slate-950 text-white'
+                                                : 'bg-slate-100 text-slate-600',
                                         )}
                                     >
-                                        <div
-                                            className={cx(
-                                                'mr-4 rounded-2xl p-2',
-                                                paymentMethod === m.id
-                                                    ? `${s.iconBg} ${s.iconText}`
-                                                    : 'bg-slate-100 text-slate-400',
-                                            )}
-                                        >
-                                            <m.icon />
-                                        </div>
-                                        <div
-                                            className={cx(
-                                                'text-base font-black',
-                                                paymentMethod === m.id
-                                                    ? 'text-slate-900'
-                                                    : 'text-slate-600',
-                                            )}
-                                        >
-                                            {m.label}
-                                        </div>
+                                        {method.label}
                                     </button>
-                                );
-                            })}
-                        </div>
-                    </div>
+                                ))}
+                            </div>
 
-                    {/* right content */}
-                    <div className="flex flex-1 flex-col p-6 md:p-10">
-                        {paymentMethod === 'cash' && (
-                            <div className="mx-auto flex w-full max-w-lg flex-1 flex-col">
-                                <div className="mb-6 rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
-                                    <div className="text-xs font-black tracking-widest text-slate-400 uppercase">
+                            {paymentMethod === 'cash' && (
+                                <div className="mt-4">
+                                    <label className="text-xs font-black tracking-widest text-slate-400 uppercase">
                                         Uang Diterima
+                                    </label>
+                                    <div
+                                        className={cx(
+                                            'mt-2 flex items-center rounded-2xl px-4 py-3',
+                                            formSurface,
+                                        )}
+                                    >
+                                        <span className="text-lg font-black text-slate-500">
+                                            Rp
+                                        </span>
+                                        <input
+                                            type="text"
+                                            inputMode="numeric"
+                                            value={cashReceived}
+                                            onChange={(event) =>
+                                                setCashReceived(
+                                                    sanitizeNumericInput(
+                                                        event.target.value,
+                                                    ),
+                                                )
+                                            }
+                                            placeholder="0"
+                                            className="ml-3 w-full border-0 bg-transparent p-0 text-2xl font-black text-slate-950 focus:ring-0 focus:outline-none"
+                                        />
                                     </div>
-                                    <div className="mt-3 text-4xl font-black tracking-tight text-slate-900">
-                                        {cashReceived ? (
-                                            `Rp ${formatRupiah(parseInt(cashReceived))}`
-                                        ) : (
-                                            <span className="text-slate-300">
-                                                Rp 0
-                                            </span>
+                                    <div className="mt-3 grid grid-cols-2 gap-2">
+                                        {cashShortcutAmounts.map(
+                                            (amount, index) => (
+                                                <button
+                                                    key={`${amount}-${index}`}
+                                                    type="button"
+                                                    onClick={() =>
+                                                        setCashReceived(
+                                                            String(amount),
+                                                        )
+                                                    }
+                                                    className={cx(
+                                                        'rounded-2xl border px-3 py-3 text-left text-sm font-black shadow-sm transition-all duration-200 hover:shadow-md',
+                                                        Number(
+                                                            cashReceived || 0,
+                                                        ) === amount
+                                                            ? 'border-slate-950 bg-slate-950 text-white'
+                                                            : amount ===
+                                                                totalAmount
+                                                              ? 'border-emerald-200 bg-emerald-50 text-emerald-800 hover:bg-emerald-100'
+                                                              : 'border-slate-200 bg-slate-50 text-slate-700 hover:bg-slate-100',
+                                                    )}
+                                                >
+                                                    {amount === totalAmount ? (
+                                                        <div className="space-y-1">
+                                                            <div className="text-[10px] font-black tracking-widest uppercase opacity-70">
+                                                                Uang Pas
+                                                            </div>
+                                                            <div className="text-sm font-black">
+                                                                Rp{' '}
+                                                                {formatRupiah(
+                                                                    amount,
+                                                                )}
+                                                            </div>
+                                                        </div>
+                                                    ) : (
+                                                        <div>
+                                                            Rp{' '}
+                                                            {formatRupiah(
+                                                                amount,
+                                                            )}
+                                                        </div>
+                                                    )}
+                                                </button>
+                                            ),
                                         )}
                                     </div>
                                     <div
                                         className={cx(
-                                            'mt-4 inline-flex rounded-2xl px-4 py-2 text-sm font-black',
+                                            'mt-3 text-sm font-black',
                                             change < 0
-                                                ? 'bg-red-100 text-red-700'
-                                                : 'bg-emerald-100 text-emerald-800',
+                                                ? 'text-red-600'
+                                                : 'text-emerald-600',
                                         )}
                                     >
                                         {change < 0
-                                            ? `Kurang: Rp ${formatRupiah(Math.abs(change))}`
-                                            : `Kembali: Rp ${formatRupiah(change)}`}
+                                            ? `Kurang ${formatSignedCurrency(change)}`
+                                            : `Kembali Rp ${formatRupiah(change)}`}
                                     </div>
                                 </div>
+                            )}
 
-                                <div className="mb-6 grid grid-cols-2 gap-3">
-                                    <button
-                                        onClick={() =>
-                                            setCashReceived(
-                                                totalAmount.toString(),
-                                            )
-                                        }
-                                        className="rounded-3xl bg-blue-50 py-3 text-sm font-black text-blue-800 active:bg-blue-100"
-                                    >
-                                        Uang Pas
-                                    </button>
-                                    <button
-                                        onClick={() => setCashReceived('50000')}
-                                        className="rounded-3xl bg-slate-50 py-3 text-sm font-black text-slate-800 active:bg-slate-200"
-                                    >
-                                        50.000
-                                    </button>
-                                    <button
-                                        onClick={() =>
-                                            setCashReceived('100000')
-                                        }
-                                        className="rounded-3xl bg-slate-50 py-3 text-sm font-black text-slate-800 active:bg-slate-200"
-                                    >
-                                        100.000
-                                    </button>
-                                    <button
-                                        onClick={() =>
-                                            setCashReceived(
-                                                (
-                                                    totalAmount +
-                                                    (50000 -
-                                                        (totalAmount % 50000))
-                                                ).toString(),
-                                            )
-                                        }
-                                        className="rounded-3xl bg-slate-50 py-3 text-sm font-black text-slate-800 active:bg-slate-200"
-                                    >
-                                        Next 50k
-                                    </button>
+                            {paymentMethod !== 'cash' && (
+                                <div className="mt-4 rounded-3xl bg-slate-50 p-4 text-sm font-semibold text-slate-600">
+                                    Pembayaran non-tunai akan dianggap lunas
+                                    sesuai nominal total.
                                 </div>
+                            )}
 
-                                <div className="flex-1">
-                                    <Numpad
-                                        onInput={handleNumpadInput}
-                                        onClear={handleNumpadClear}
-                                        onBackspace={handleNumpadBackspace}
-                                    />
-                                </div>
-                            </div>
-                        )}
-
-                        {paymentMethod === 'qris' && (
-                            <div className="flex flex-1 flex-col items-center justify-center text-center">
-                                <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-xl">
-                                    <img
-                                        src={STORE_CONFIG.qrisUrl}
-                                        alt="QRIS Code"
-                                        className="mx-auto h-64 w-64 rounded-2xl object-contain"
-                                        onError={(e) => {
-                                            e.target.onerror = null;
-                                            e.target.src = `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=Pembayaran%20Graha%20Mesran%20Rp${totalAmount}`;
-                                        }}
-                                    />
-                                    <div className="mt-3 text-base font-black text-slate-900">
-                                        Scan QRIS
+                            <div className="mt-5 grid grid-cols-2 gap-3 text-sm font-semibold text-slate-600">
+                                <div className="rounded-2xl bg-slate-50 p-4">
+                                    <div className="text-[11px] font-black tracking-widest text-slate-400 uppercase">
+                                        Mode Harga
                                     </div>
-                                    <div className="text-xs font-semibold text-slate-500">
-                                        NMID: GRAHA MESRAN
+                                    <div className="mt-2 font-black text-slate-950">
+                                        {isWorkshop ? 'Bengkel' : 'Umum'}
                                     </div>
                                 </div>
-
-                                <div className="mt-6 rounded-3xl bg-blue-50 px-6 py-4 text-blue-900">
-                                    <div className="text-sm font-black">
-                                        Menunggu Pembayaran…
+                                <div className="rounded-2xl bg-slate-50 p-4">
+                                    <div className="text-[11px] font-black tracking-widest text-slate-400 uppercase">
+                                        Status Sesi
                                     </div>
-                                    <div className="mt-1 text-sm">
-                                        Nominal:{' '}
-                                        <span className="font-black">
-                                            Rp {formatRupiah(totalAmount)}
-                                        </span>
+                                    <div className="mt-2 font-black text-slate-950">
+                                        {hasOpenSession
+                                            ? 'Aktif'
+                                            : 'Belum dibuka'}
                                     </div>
                                 </div>
                             </div>
-                        )}
 
-                        {paymentMethod === 'bank' && (
-                            <div className="mx-auto flex w-full max-w-md flex-1 flex-col items-center justify-center text-center">
-                                <div className="relative w-full overflow-hidden rounded-3xl bg-gradient-to-br from-blue-600 to-blue-900 p-6 text-white shadow-xl">
-                                    <div className="absolute -top-10 -right-10 h-28 w-28 rounded-full bg-white/10" />
-                                    <div className="flex items-start justify-between">
-                                        <div className="text-2xl font-black italic">
-                                            BCA
-                                        </div>
-                                        <div className="text-xs font-bold opacity-80">
-                                            DEBIT / TF
-                                        </div>
-                                    </div>
+                            <button
+                                onClick={processPayment}
+                                disabled={
+                                    !hasOpenSession ||
+                                    data.cart.length === 0 ||
+                                    isProcessing ||
+                                    (paymentMethod === 'cash' && change < 0)
+                                }
+                                className="mt-5 w-full rounded-3xl bg-slate-950 px-4 py-4 text-base font-black text-white shadow-sm transition-all duration-200 hover:bg-slate-800 hover:shadow-md disabled:cursor-not-allowed disabled:opacity-40"
+                            >
+                                {isProcessing
+                                    ? 'Memproses...'
+                                    : 'Selesaikan Transaksi'}
+                            </button>
 
-                                    <div className="mt-8 text-left">
-                                        <div className="text-xs font-black tracking-widest uppercase opacity-70">
-                                            Nomor Rekening
-                                        </div>
-                                        <div className="mt-2 flex items-center gap-2">
-                                            <div className="font-mono text-3xl font-black tracking-widest">
-                                                {STORE_CONFIG.bank.number}
-                                            </div>
-                                            <button
-                                                onClick={() =>
-                                                    copyToClipboard(
-                                                        STORE_CONFIG.bank
-                                                            .number,
-                                                    )
-                                                }
-                                                className="rounded-2xl bg-white/20 p-2 backdrop-blur transition hover:bg-white/30 active:scale-[0.99]"
-                                            >
-                                                {copied ? (
-                                                    <Icons.Check />
-                                                ) : (
-                                                    <Icons.Copy />
-                                                )}
-                                            </button>
-                                        </div>
-                                    </div>
+                            <button
+                                onClick={() => setShowMobileCheckout(false)}
+                                className="mt-3 w-full rounded-3xl border border-slate-200 px-4 py-3 text-sm font-black text-slate-700 shadow-sm transition-all duration-200 hover:bg-slate-50 hover:shadow-md lg:hidden"
+                            >
+                                Kembali ke Katalog
+                            </button>
+                        </div>
+                    </section>
+                </main>
+            </div>
 
-                                    <div className="mt-6 border-t border-white/20 pt-4 text-left">
-                                        <div className="text-xs font-black tracking-widest uppercase opacity-70">
-                                            Atas Nama
-                                        </div>
-                                        <div className="mt-1 truncate text-lg font-black">
-                                            {STORE_CONFIG.bank.holder}
-                                        </div>
-                                    </div>
-                                </div>
+            <div className="fixed inset-x-0 bottom-0 z-30 border-t border-slate-200 bg-white/95 p-3 shadow-[0_-12px_32px_rgba(15,23,42,0.08)] backdrop-blur lg:hidden">
+                <div className="mx-auto flex max-w-xl items-center gap-3">
+                    <button
+                        onClick={() =>
+                            setShowMobileCheckout((current) => !current)
+                        }
+                        className="flex-1 rounded-3xl bg-slate-950 px-4 py-4 text-left text-white shadow-sm transition-all duration-200 hover:bg-slate-800 hover:shadow-md"
+                    >
+                        <div className="text-[11px] font-black tracking-widest text-slate-400 uppercase">
+                            Checkout Mobile
+                        </div>
+                        <div className="mt-1 flex items-center justify-between gap-3">
+                            <span className="text-sm font-bold">
+                                {data.cart.length} item di keranjang
+                            </span>
+                            <span className="text-lg font-black">
+                                Rp {formatRupiah(totalAmount)}
+                            </span>
+                        </div>
+                    </button>
+                    <button
+                        onClick={() =>
+                            hasOpenSession
+                                ? setShowSettlementModal(true)
+                                : setShowOpenSessionModal(true)
+                        }
+                        className="rounded-3xl border border-slate-200 bg-white px-4 py-4 text-sm font-black text-slate-700 shadow-sm transition-all duration-200 hover:bg-slate-50 hover:shadow-md"
+                    >
+                        {hasOpenSession ? 'Tutup' : 'Buka'}
+                    </button>
+                </div>
+            </div>
 
-                                <div className="mt-6 w-full rounded-3xl border border-slate-200 bg-slate-50 p-5">
-                                    <div className="text-xs font-black tracking-widest text-slate-400 uppercase">
-                                        Transfer Total
-                                    </div>
-                                    <div className="mt-2 text-2xl font-black text-slate-900">
-                                        Rp {formatRupiah(totalAmount)}
-                                    </div>
-                                </div>
+            {!hasOpenSession && showOpenSessionModal && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/70 p-4">
+                    <div className="w-full max-w-lg rounded-[2rem] bg-white p-6 shadow-2xl">
+                        <div className="text-xs font-black tracking-[0.3em] text-slate-400 uppercase">
+                            Buka Kasir
+                        </div>
+                        <div className="mt-2 text-2xl font-black text-slate-950">
+                            Masukkan uang awal di laci
+                        </div>
+                        <div className="mt-2 text-sm font-semibold text-slate-500">
+                            Nilai ini akan menjadi dasar expected cash saat
+                            settlement nanti.
+                        </div>
+
+                        <div className="mt-6 rounded-3xl bg-slate-50 p-5">
+                            {/* CASH AWAL */}
+                            <label className="text-xs font-black tracking-widest text-slate-400 uppercase">
+                                Cash Awal
+                            </label>
+
+                            <div
+                                className={cx(
+                                    'mt-2 flex items-center rounded-2xl px-4 py-3',
+                                    formSurface,
+                                )}
+                            >
+                                <span className="text-lg font-black text-slate-500">
+                                    Rp
+                                </span>
+
+                                <input
+                                    type="text"
+                                    inputMode="numeric"
+                                    value={openingCash}
+                                    onChange={(event) =>
+                                        setOpeningCash(
+                                            sanitizeNumericInput(
+                                                event.target.value,
+                                            ),
+                                        )
+                                    }
+                                    placeholder="0"
+                                    className="ml-3 w-full border-0 bg-transparent p-0 text-2xl font-black text-slate-950 focus:ring-0 focus:outline-none"
+                                />
                             </div>
-                        )}
 
-                        <button
-                            onClick={processPayment}
-                            disabled={
-                                isProcessing ||
-                                (paymentMethod === 'cash' && change < 0)
-                            }
-                            className="mt-6 w-full rounded-3xl bg-slate-900 py-5 text-base font-black text-white shadow-xl shadow-slate-900/20 transition active:scale-[0.99] disabled:opacity-50"
-                        >
-                            {isProcessing
-                                ? 'MEMPROSES...'
-                                : 'SELESAI & CETAK STRUK'}
-                        </button>
+                            {/* CATATAN */}
+                            <label className="mt-4 block text-xs font-black tracking-widest text-slate-400 uppercase">
+                                Catatan Awal
+                            </label>
+
+                            <textarea
+                                rows={3}
+                                value={openingNotes}
+                                onChange={(event) =>
+                                    setOpeningNotes(event.target.value)
+                                }
+                                placeholder="Opsional"
+                                className="mt-2 w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm font-semibold text-slate-700 focus:ring-0 focus:outline-none"
+                            />
+                        </div>
+
+                        <div className="mt-6 flex gap-3">
+                            <Link
+                                href={route('logout')}
+                                method="post"
+                                as="button"
+                                className="flex-1 rounded-3xl border border-slate-200 bg-white py-4 text-sm font-black text-slate-700 shadow-sm transition-all duration-200 hover:bg-slate-50 hover:shadow-md"
+                            >
+                                Keluar
+                            </Link>
+                            <button
+                                onClick={handleOpenSession}
+                                disabled={isOpeningSession}
+                                className="flex-[1.2] rounded-3xl bg-slate-950 py-4 text-sm font-black text-white shadow-sm transition-all duration-200 hover:bg-slate-800 hover:shadow-md disabled:opacity-40"
+                            >
+                                {isOpeningSession ? 'Membuka...' : 'Buka Kasir'}
+                            </button>
+                        </div>
                     </div>
                 </div>
             )}
 
-            {/* --- SCANNER MODAL --- */}
-            {isScannerOpen && (
-                <div className="fixed inset-0 z-[70] flex items-center justify-center bg-slate-900/70 backdrop-blur-sm">
-                    <div className="relative w-full max-w-md overflow-hidden rounded-3xl border border-white/10 bg-white p-4 shadow-2xl">
-                        <div className="flex items-center justify-between px-1 py-2">
-                            <div className="text-base font-black text-slate-900">
-                                Scan Barcode
+            {showSettlementModal && hasOpenSession && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/70 p-4">
+                    <div className="w-full max-w-3xl rounded-[2rem] bg-white p-6 shadow-2xl">
+                        <div className="flex items-start justify-between gap-4">
+                            <div>
+                                <div className="text-xs font-black tracking-[0.3em] text-slate-400 uppercase">
+                                    Settlement
+                                </div>
+                                <div className="mt-2 text-2xl font-black text-slate-950">
+                                    Tutup kasir dan cocokkan uang fisik
+                                </div>
                             </div>
                             <button
-                                onClick={() => setIsScannerOpen(false)}
-                                className="rounded-2xl bg-slate-100 p-2 text-slate-600 hover:bg-red-100 hover:text-red-600"
+                                onClick={() => setShowSettlementModal(false)}
+                                className="rounded-2xl bg-slate-100 p-2 text-slate-500"
                             >
                                 <Icons.Close />
                             </button>
                         </div>
 
-                        {/* toast */}
-                        {scanToast && (
-                            <div
-                                className={cx(
-                                    'absolute top-16 right-4 left-4 z-10 rounded-2xl px-4 py-3 text-center text-sm font-black text-white shadow-lg',
-                                    'animate-[toastIn_.18s_ease-out]',
-                                    scanToast.includes('❌')
-                                        ? 'bg-red-600'
-                                        : 'bg-emerald-600',
-                                )}
-                            >
-                                {scanToast}
+                        <div className="mt-6 grid gap-4 md:grid-cols-4">
+                            <div className="rounded-3xl bg-slate-50 p-4">
+                                <div className="text-[11px] font-black tracking-widest text-slate-400 uppercase">
+                                    Saldo Awal
+                                </div>
+                                <div className="mt-2 text-xl font-black text-slate-950">
+                                    Rp{' '}
+                                    {formatRupiah(
+                                        sessionState?.opening_cash || 0,
+                                    )}
+                                </div>
                             </div>
-                        )}
-
-                        <style>{`
-                          @keyframes toastIn {
-                            from { transform: translateY(-8px); opacity: 0; }
-                            to { transform: translateY(0); opacity: 1; }
-                          }
-                        `}</style>
-
-                        <div className="relative mt-3 overflow-hidden rounded-2xl bg-black">
-                            <div
-                                id="reader"
-                                className="min-h-[320px] w-full bg-black"
-                            />
-                            {/* modern reticle */}
-                            <div className="pointer-events-none absolute inset-0 grid place-items-center">
-                                <div className="relative h-56 w-56 rounded-3xl border border-white/40">
-                                    <div className="absolute top-0 left-0 h-5 w-5 rounded-tl-2xl border-t-4 border-l-4 border-white/80" />
-                                    <div className="absolute top-0 right-0 h-5 w-5 rounded-tr-2xl border-t-4 border-r-4 border-white/80" />
-                                    <div className="absolute bottom-0 left-0 h-5 w-5 rounded-bl-2xl border-b-4 border-l-4 border-white/80" />
-                                    <div className="absolute right-0 bottom-0 h-5 w-5 rounded-br-2xl border-r-4 border-b-4 border-white/80" />
-                                    <div className="absolute inset-x-0 top-1/2 h-[2px] -translate-y-1/2 bg-rose-500/70 shadow-[0_0_18px_rgba(244,63,94,0.8)]" />
+                            <div className="rounded-3xl bg-slate-50 p-4">
+                                <div className="text-[11px] font-black tracking-widest text-slate-400 uppercase">
+                                    Cash Sales
+                                </div>
+                                <div className="mt-2 text-xl font-black text-slate-950">
+                                    Rp{' '}
+                                    {formatRupiah(
+                                        sessionState?.cash_sales_total || 0,
+                                    )}
+                                </div>
+                            </div>
+                            <div className="rounded-3xl bg-slate-50 p-4">
+                                <div className="text-[11px] font-black tracking-widest text-slate-400 uppercase">
+                                    Non Cash
+                                </div>
+                                <div className="mt-2 text-xl font-black text-slate-950">
+                                    Rp{' '}
+                                    {formatRupiah(
+                                        sessionState?.non_cash_sales_total || 0,
+                                    )}
+                                </div>
+                            </div>
+                            <div className="rounded-3xl bg-slate-950 p-4 text-white">
+                                <div className="text-[11px] font-black tracking-widest text-slate-400 uppercase">
+                                    Expected Cash
+                                </div>
+                                <div className="mt-2 text-xl font-black">
+                                    Rp {formatRupiah(expectedCash)}
                                 </div>
                             </div>
                         </div>
 
-                        <div className="mt-4 text-center text-sm font-semibold text-slate-500">
-                            Arahkan kamera ke barcode. <br />
-                            Otomatis lanjut scan barang berikutnya.
+                        <div className="mt-6 grid gap-5 md:grid-cols-[1.1fr_0.9fr]">
+                            <div className="rounded-3xl bg-slate-50 p-5">
+                                <label className="text-xs font-black tracking-widest text-slate-400 uppercase">
+                                    Uang Fisik Di Laci
+                                </label>
+                                <div
+                                    className={cx(
+                                        'mt-2 flex items-center rounded-2xl px-4 py-3',
+                                        formSurface,
+                                    )}
+                                >
+                                    <span className="text-lg font-black text-slate-500">
+                                        Rp
+                                    </span>
+                                    <input
+                                        type="text"
+                                        inputMode="numeric"
+                                        value={closingCashPhysical}
+                                        onChange={(event) =>
+                                            setClosingCashPhysical(
+                                                sanitizeNumericInput(
+                                                    event.target.value,
+                                                ),
+                                            )
+                                        }
+                                        placeholder="0"
+                                        className="ml-3 w-full border-0 bg-transparent p-0 text-2xl font-black text-slate-950 focus:ring-0 focus:outline-none"
+                                    />
+                                </div>
+
+                                <label className="mt-4 block text-xs font-black tracking-widest text-slate-400 uppercase">
+                                    Catatan Settlement
+                                </label>
+                                <textarea
+                                    rows={4}
+                                    value={closingNotes}
+                                    onChange={(event) =>
+                                        setClosingNotes(event.target.value)
+                                    }
+                                    placeholder="Opsional"
+                                    className="mt-2 w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm font-semibold text-slate-700 focus:ring-0 focus:outline-none"
+                                />
+                            </div>
+
+                            <div className="rounded-3xl border border-slate-200 p-5">
+                                <div className="text-xs font-black tracking-widest text-slate-400 uppercase">
+                                    Hasil Settlement
+                                </div>
+                                <div
+                                    className={cx(
+                                        'mt-4 inline-flex rounded-full px-3 py-1 text-xs font-black uppercase',
+                                        settlementStatus === 'balance'
+                                            ? 'bg-emerald-100 text-emerald-700'
+                                            : settlementStatus === 'minus'
+                                              ? 'bg-red-100 text-red-700'
+                                              : 'bg-amber-100 text-amber-700',
+                                    )}
+                                >
+                                    {settlementStatus === 'balance'
+                                        ? 'Balance'
+                                        : settlementStatus === 'minus'
+                                          ? 'Minus'
+                                          : 'Lebih'}
+                                </div>
+
+                                <div
+                                    className={cx(
+                                        'mt-4 text-3xl font-black',
+                                        settlementStatus === 'balance'
+                                            ? 'text-emerald-700'
+                                            : settlementStatus === 'minus'
+                                              ? 'text-red-700'
+                                              : 'text-amber-700',
+                                    )}
+                                >
+                                    {formatSignedCurrency(settlementDifference)}
+                                </div>
+
+                                <div className="mt-6 space-y-3 text-sm font-semibold text-slate-600">
+                                    <div className="flex items-center justify-between">
+                                        <span>Expected cash</span>
+                                        <span className="font-black text-slate-950">
+                                            Rp {formatRupiah(expectedCash)}
+                                        </span>
+                                    </div>
+                                    <div className="flex items-center justify-between">
+                                        <span>Uang fisik</span>
+                                        <span className="font-black text-slate-950">
+                                            Rp{' '}
+                                            {formatRupiah(
+                                                Number(
+                                                    closingCashPhysical || 0,
+                                                ),
+                                            )}
+                                        </span>
+                                    </div>
+                                    <div className="flex items-center justify-between">
+                                        <span>Total transaksi</span>
+                                        <span className="font-black text-slate-950">
+                                            {sessionState?.transactions_count ||
+                                                0}
+                                        </span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div className="mt-6 flex gap-3">
+                            <button
+                                onClick={() => setShowSettlementModal(false)}
+                                className="flex-1 rounded-3xl border border-slate-200 bg-white py-4 text-sm font-black text-slate-700 shadow-sm transition-all duration-200 hover:bg-slate-50 hover:shadow-md"
+                            >
+                                Kembali
+                            </button>
+                            <button
+                                onClick={handleCloseSession}
+                                disabled={isClosingSession}
+                                className="flex-[1.2] rounded-3xl bg-slate-950 py-4 text-sm font-black text-white shadow-sm transition-all duration-200 hover:bg-slate-800 hover:shadow-md disabled:opacity-40"
+                            >
+                                {isClosingSession
+                                    ? 'Menyimpan...'
+                                    : 'Simpan Settlement & Tutup Kasir'}
+                            </button>
                         </div>
                     </div>
                 </div>
             )}
 
-            {/* --- LOGOUT CONFIRMATION MODAL --- */}
-            {isLogoutModalOpen && (
-                <div className="fixed inset-0 z-[80] flex items-center justify-center bg-slate-900/50 backdrop-blur-sm">
-                    <div className="w-full max-w-sm rounded-3xl bg-white p-6 shadow-2xl">
-                        <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-red-100 text-red-600">
-                            <svg
-                                className="h-6 w-6"
-                                fill="none"
-                                stroke="currentColor"
-                                viewBox="0 0 24 24"
-                            >
-                                <path
-                                    strokeLinecap="round"
-                                    strokeLinejoin="round"
-                                    strokeWidth="2"
-                                    d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"
-                                />
-                            </svg>
+            {showLogoutModal && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/70 p-4">
+                    <div className="w-full max-w-md rounded-[2rem] bg-white p-6 shadow-2xl">
+                        <div className="text-xl font-black text-slate-950">
+                            Keluar dari kasir?
                         </div>
-
-                        <div className="mt-4 text-center text-xl font-black text-slate-900">
-                            Konfirmasi Keluar
+                        <div className="mt-2 text-sm font-semibold text-slate-500">
+                            Gunakan logout hanya jika tidak ada sesi kasir yang
+                            sedang aktif.
                         </div>
-                        <div className="mt-2 text-center text-sm font-semibold text-slate-500">
-                            Apakah Anda yakin ingin mengakhiri sesi kasir ini?
-                        </div>
-
                         <div className="mt-6 flex gap-3">
                             <button
-                                onClick={() => setIsLogoutModalOpen(false)}
-                                className="flex-1 rounded-3xl border border-slate-200 bg-white py-3 font-black text-slate-700 hover:bg-slate-50 active:scale-[0.99]"
+                                onClick={() => setShowLogoutModal(false)}
+                                className="flex-1 rounded-3xl border border-slate-200 bg-white py-4 text-sm font-black text-slate-700 shadow-sm transition-all duration-200 hover:bg-slate-50 hover:shadow-md"
                             >
                                 Batal
                             </button>
@@ -1805,7 +1666,7 @@ export default function TabletPOS({ products }) {
                                 href={route('logout')}
                                 method="post"
                                 as="button"
-                                className="flex-1 rounded-3xl bg-red-600 py-3 font-black text-white shadow-lg shadow-red-600/25 hover:bg-red-700 active:scale-[0.99]"
+                                className="flex-1 rounded-3xl bg-slate-950 py-4 text-sm font-black text-white shadow-sm transition-all duration-200 hover:bg-slate-800 hover:shadow-md"
                             >
                                 Ya, Keluar
                             </Link>
@@ -1814,7 +1675,6 @@ export default function TabletPOS({ products }) {
                 </div>
             )}
 
-            {/* --- STRUK PRINT --- */}
             <div
                 id="printable-area"
                 className="hidden bg-white p-2 print:block"
@@ -1830,34 +1690,29 @@ export default function TabletPOS({ products }) {
                     </div>
                     <div className="mb-2 border-b border-dashed border-black" />
                     <div className="mb-2">
-                        <div className="flex justify-between">
-                            <span>No: {receiptData?.invoice}</span>
-                        </div>
-                        <div className="flex justify-between">
-                            <span>Tgl: {receiptData?.date}</span>
-                        </div>
-                        <div className="flex justify-between">
-                            <span>Kasir: {receiptData?.cashier}</span>
-                        </div>
-                        <div className="flex justify-between">
-                            <span>Plg: {receiptData?.customerType}</span>
-                        </div>
+                        <div>No: {receiptData?.invoice}</div>
+                        <div>Tgl: {receiptData?.date}</div>
+                        <div>Kasir: {receiptData?.cashier}</div>
+                        <div>Plg: {receiptData?.customerType}</div>
                     </div>
                     <div className="mb-2 border-b border-dashed border-black" />
                     <div className="mb-2 space-y-1">
-                        {receiptData?.items.map((item, i) => (
-                            <div key={i}>
-                                <div className="font-bold">{item.name}</div>
+                        {receiptData?.items?.map((item, index) => (
+                            <div key={index}>
+                                <div className="font-bold">
+                                    {getProductLabel(item)}
+                                </div>
                                 <div className="flex justify-between pl-2">
                                     <span>
                                         {item.qty} x{' '}
-                                        {parseInt(
-                                            item.sell_price,
+                                        {Number(
+                                            item.sell_price || 0,
                                         ).toLocaleString('id-ID')}
                                     </span>
                                     <span>
                                         {(
-                                            item.qty * item.sell_price
+                                            Number(item.qty || 0) *
+                                            Number(item.sell_price || 0)
                                         ).toLocaleString('id-ID')}
                                     </span>
                                 </div>
@@ -1885,7 +1740,9 @@ export default function TabletPOS({ products }) {
                     </div>
                     <div className="mt-4 text-center">
                         <p>*** TERIMA KASIH ***</p>
-                        <p>Barang yg dibeli tdk dpt ditukar/dikembalikan</p>
+                        <p>
+                            Barang yang dibeli tidak dapat ditukar/dikembalikan
+                        </p>
                     </div>
                 </div>
             </div>

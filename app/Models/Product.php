@@ -10,6 +10,10 @@ class Product extends Model
 {
     protected $guarded = [];
 
+    protected $appends = [
+        'image_url',
+    ];
+
     protected $casts = [
         'stock' => 'integer',
         'volume_liter' => 'decimal:2',
@@ -48,6 +52,15 @@ class Product extends Model
         $volume = rtrim(rtrim(number_format((float) $this->volume_liter, 2, '.', ''), '0'), '.');
 
         return "{$this->name} ({$volume}L)";
+    }
+
+    public function getImageUrlAttribute(): ?string
+    {
+        if (! $this->image_path) {
+            return null;
+        }
+
+        return asset('storage/' . ltrim($this->image_path, '/'));
     }
 
     protected static function booted(): void

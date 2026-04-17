@@ -4,6 +4,7 @@ namespace App\Filament\Resources;
 
 use App\Filament\Resources\ProductResource\Pages;
 use App\Models\Product;
+use Filament\Forms\Components\FileUpload;
 use Filament\Forms\Components\Section;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
@@ -13,6 +14,7 @@ use Filament\Notifications\Notification;
 use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Actions\BulkAction;
+use Filament\Tables\Columns\ImageColumn;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Collection;
@@ -53,6 +55,15 @@ class ProductResource extends Resource
                             ->placeholder('Contoh: Oli Fastron Techno 10W-30 (1L)')
                             ->required()
                             ->columnSpanFull(),
+
+                        FileUpload::make('image_path')
+                            ->label('Gambar Produk')
+                            ->image()
+                            ->imageEditor()
+                            ->directory('products')
+                            ->disk('public')
+                            ->visibility('public')
+                            ->helperText('Opsional. Foto produk akan tampil di admin dan halaman kasir.'),
 
                         TextInput::make('volume_liter')
                             ->label('Volume (Liter)')
@@ -121,6 +132,12 @@ class ProductResource extends Resource
     {
         return $table
             ->columns([
+                ImageColumn::make('image_path')
+                    ->label('Foto')
+                    ->disk('public')
+                    ->square()
+                    ->defaultImageUrl(asset('images/product-placeholder.svg')),
+
                 // SKU
                 TextColumn::make('sku')
                     ->label('SKU')
@@ -129,16 +146,12 @@ class ProductResource extends Resource
                     ->copyable(),
 
                 // Nama Barang
-                TextColumn::make('name')
-                    ->searchable()
+                TextColumn::make('display_name')
+                    ->label('Produk')
+                    ->searchable(query: function ($query, string $search) {
+                        return $query->where('name', 'like', "%{$search}%");
+                    })
                     ->weight('bold'),
-
-                TextColumn::make('volume_liter')
-                    ->label('Volume')
-                    ->formatStateUsing(fn ($state): string => filled($state)
-                        ? rtrim(rtrim(number_format((float) $state, 2, '.', ''), '0'), '.').' L'
-                        : '-')
-                    ->sortable(),
 
                 // Indikator Stok (Merah kalau sedikit)
                 TextColumn::make('stock')

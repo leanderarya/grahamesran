@@ -4,6 +4,8 @@ namespace App\Models;
 
 // use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Laravel\Fortify\TwoFactorAuthenticatable;
@@ -64,5 +66,22 @@ class User extends Authenticatable implements FilamentUser
     public function isAdmin()
     {
         return $this->role === 'admin';
+    }
+
+    public function cashierSessions(): HasMany
+    {
+        return $this->hasMany(CashierSession::class);
+    }
+
+    public function openCashierSession(): HasOne
+    {
+        return $this->hasOne(CashierSession::class)
+            ->whereNull('closed_at')
+            ->latestOfMany('opened_at');
+    }
+
+    public function hasOpenCashierSession(): bool
+    {
+        return $this->openCashierSession()->exists();
     }
 }

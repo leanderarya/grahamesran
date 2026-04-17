@@ -39,6 +39,11 @@ class Transaction extends Model
         return $this->belongsTo(User::class);
     }
 
+    public function cashierSession(): BelongsTo
+    {
+        return $this->belongsTo(CashierSession::class);
+    }
+
     public function transactionItems()
     {
         return $this->hasMany(TransactionItem::class);
