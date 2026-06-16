@@ -1,129 +1,9 @@
 import InputError from '@/Components/input-error';
+import { cn } from '@/lib/utils';
 import { Head, Link, useForm } from '@inertiajs/react';
+import { ArrowRight, Eye, EyeOff, HelpCircle, Lock, User } from 'lucide-react';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { route } from 'ziggy-js';
-
-const cx = (...classes: (string | boolean | undefined | null)[]) => classes.filter(Boolean).join(' ');
-
-function IconBank({ className }: { className?: string }) {
-    return (
-        <svg
-            className={className}
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-        >
-            <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth="1.8"
-                d="M3 10.5L12 4l9 6.5M4.5 10h15M6 10v8m4-8v8m4-8v8m4-8v8M4 20h16"
-            />
-        </svg>
-    );
-}
-
-function IconUser({ className }: { className?: string }) {
-    return (
-        <svg
-            className={className}
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-        >
-            <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth="1.8"
-                d="M15 19a4 4 0 00-6 0M12 12a3.5 3.5 0 100-7 3.5 3.5 0 000 7z"
-            />
-        </svg>
-    );
-}
-
-function IconLock({ className }: { className?: string }) {
-    return (
-        <svg
-            className={className}
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-        >
-            <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth="1.8"
-                d="M8 10V8a4 4 0 118 0v2m-9 0h10a1 1 0 011 1v8a1 1 0 01-1 1H7a1 1 0 01-1-1v-8a1 1 0 011-1z"
-            />
-        </svg>
-    );
-}
-
-function IconEye({ className }: { className?: string }) {
-    return (
-        <svg
-            className={className}
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-        >
-            <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth="1.8"
-                d="M2.5 12s3.5-6 9.5-6 9.5 6 9.5 6-3.5 6-9.5 6-9.5-6-9.5-6z"
-            />
-            <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth="1.8"
-                d="M12 15.25a3.25 3.25 0 100-6.5 3.25 3.25 0 000 6.5z"
-            />
-        </svg>
-    );
-}
-
-function IconEyeOff({ className }: { className?: string }) {
-    return (
-        <svg
-            className={className}
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-        >
-            <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth="1.8"
-                d="M4 4l16 16"
-            />
-            <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth="1.8"
-                d="M9.88 9.88A3 3 0 0012 15a2.98 2.98 0 002.12-.88M6.18 6.18C4.25 7.45 3 9.4 2.5 12c0 0 3.5 6 9.5 6 2.33 0 4.31-.9 5.91-2.11M14.12 8.85A2.98 2.98 0 0012 8c-.37 0-.72.07-1.05.19M17.82 17.82C19.75 16.55 21 14.6 21.5 12c0 0-3.5-6-9.5-6-.72 0-1.4.09-2.06.25"
-            />
-        </svg>
-    );
-}
-
-function IconHelp({ className }: { className?: string }) {
-    return (
-        <svg
-            className={className}
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-        >
-            <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth="1.8"
-                d="M9.09 9a3 3 0 115.82 1c0 2-3 2-3 4m.09 4h.01M22 12a10 10 0 11-20 0 10 10 0 0120 0z"
-            />
-        </svg>
-    );
-}
 
 export default function Login({ status, canResetPassword }: { status?: string; canResetPassword?: boolean }) {
     const { data, setData, post, processing, errors, reset } = useForm({
@@ -198,8 +78,8 @@ export default function Login({ status, canResetPassword }: { status?: string; c
                                     Email atau Username
                                 </label>
 
-                                <div className={cx(fieldWrapperClass, 'mt-2')}>
-                                    <IconUser className="h-5 w-5 shrink-0 text-slate-400 transition-colors group-focus-within:text-slate-600" />
+                                <div className={cn(fieldWrapperClass, 'mt-2')}>
+                                    <User className="h-5 w-5 shrink-0 text-slate-400 transition-colors group-focus-within:text-slate-600" />
                                     <input
                                         id="email"
                                         ref={emailRef}
@@ -240,8 +120,8 @@ export default function Login({ status, canResetPassword }: { status?: string; c
                                     )}
                                 </div>
 
-                                <div className={cx(fieldWrapperClass, 'mt-2')}>
-                                    <IconLock className="h-5 w-5 shrink-0 text-slate-400 transition-colors group-focus-within:text-slate-600" />
+                                <div className={cn(fieldWrapperClass, 'mt-2')}>
+                                    <Lock className="h-5 w-5 shrink-0 text-slate-400 transition-colors group-focus-within:text-slate-600" />
                                     <input
                                         id="password"
                                         type={
@@ -274,9 +154,9 @@ export default function Login({ status, canResetPassword }: { status?: string; c
                                         }
                                     >
                                         {showPassword ? (
-                                            <IconEyeOff className="h-5 w-5" />
+                                            <EyeOff className="h-5 w-5" />
                                         ) : (
-                                            <IconEye className="h-5 w-5" />
+                                            <Eye className="h-5 w-5" />
                                         )}
                                     </button>
                                 </div>
@@ -316,19 +196,7 @@ export default function Login({ status, canResetPassword }: { status?: string; c
                                         ? 'Memproses...'
                                         : 'Masuk ke Akun'}
                                 </span>
-                                <svg
-                                    className="h-5 w-5"
-                                    viewBox="0 0 24 24"
-                                    fill="none"
-                                    stroke="currentColor"
-                                >
-                                    <path
-                                        strokeLinecap="round"
-                                        strokeLinejoin="round"
-                                        strokeWidth="1.8"
-                                        d="M11 5l7 7-7 7M18 12H6"
-                                    />
-                                </svg>
+                                <ArrowRight className="h-5 w-5" />
                             </button>
                         </form>
 
@@ -337,7 +205,7 @@ export default function Login({ status, canResetPassword }: { status?: string; c
                                 Butuh bantuan
                             </p>
                             <div className="inline-flex items-center justify-center gap-2 text-sm font-semibold text-slate-500">
-                                <IconHelp className="h-4 w-4" />
+                                <HelpCircle className="h-4 w-4" />
                                 Hubungi admin toko
                             </div>
                         </div>
