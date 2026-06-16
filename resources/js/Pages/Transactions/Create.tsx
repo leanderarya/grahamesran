@@ -117,17 +117,17 @@ const ProductCard = ({ product, customerType, onAdd }: { product: Product; custo
                     className="h-16 w-16 rounded-2xl border border-slate-200 bg-slate-50 object-cover"
                 />
                 <div className="min-w-0 flex-1">
-                    <div className="truncate text-[11px] font-black tracking-widest text-slate-400 uppercase">
+                    <div className="truncate text-[11px] font-bold tracking-widest text-slate-400 uppercase">
                         {product.sku || 'NOSKU'}
                     </div>
-                    <div className="mt-1 line-clamp-2 text-sm font-black text-slate-900">
+                    <div className="mt-1 line-clamp-2 text-sm font-bold text-slate-900">
                         {getProductLabel(product)}
                     </div>
 
                     <div className="mt-2 flex items-center gap-2">
                         <div
                             className={cn(
-                                'rounded-full px-2.5 py-1 text-[10px] font-black uppercase',
+                                'rounded-full px-2.5 py-1 text-[10px] font-bold uppercase',
                                 isOut
                                     ? 'bg-red-100 text-red-700'
                                     : stock <= 5
@@ -139,7 +139,7 @@ const ProductCard = ({ product, customerType, onAdd }: { product: Product; custo
                         </div>
                         <div
                             className={cn(
-                                'text-sm font-black',
+                                'text-sm font-bold',
                                 customerType === 'workshop' && workshopPrice > 0
                                     ? 'text-amber-600'
                                     : 'text-slate-900',
@@ -687,7 +687,7 @@ export default function TabletPOS({ products, categories, cashierSession }: { pr
                             <div>
                                 <div
                                     className={cn(
-                                        'text-sm font-black tracking-[0.2em] text-slate-300 uppercase',
+                                        'text-sm font-bold tracking-[0.2em] text-slate-300 uppercase',
                                         sidebarCollapsed
                                             ? 'hidden'
                                             : 'hidden xl:block',
@@ -697,7 +697,7 @@ export default function TabletPOS({ products, categories, cashierSession }: { pr
                                 </div>
                                 <div
                                     className={cn(
-                                        'mt-1 text-lg font-black',
+                                        'mt-1 text-lg font-bold',
                                         sidebarCollapsed
                                             ? 'hidden'
                                             : 'hidden xl:block',
@@ -739,10 +739,10 @@ export default function TabletPOS({ products, categories, cashierSession }: { pr
                     {!sidebarCollapsed && (
                         <>
                             <div className="mt-5 rounded-3xl bg-white/5 p-4 lg:mt-8">
-                                <div className="text-[11px] font-black tracking-widest text-slate-400 uppercase">
+                                <div className="text-[11px] font-bold tracking-widest text-slate-400 uppercase">
                                     Status Kasir
                                 </div>
-                                <div className="mt-3 text-lg font-black lg:text-center xl:text-left">
+                                <div className="mt-3 text-lg font-bold lg:text-center xl:text-left">
                                     {hasOpenSession
                                         ? 'Sesi Aktif'
                                         : 'Belum Dibuka'}
@@ -759,7 +759,7 @@ export default function TabletPOS({ products, categories, cashierSession }: { pr
                                             ? setShowSettlementModal(true)
                                             : setShowOpenSessionModal(true)
                                     }
-                                    className="mt-4 w-full rounded-2xl bg-white px-4 py-4 text-sm font-black text-slate-950 transition hover:bg-slate-200"
+                                    className="mt-4 w-full rounded-2xl bg-white px-4 py-4 text-sm font-bold text-slate-950 transition hover:bg-slate-200"
                                 >
                                     <span className="lg:hidden xl:inline">
                                         {hasOpenSession
@@ -773,7 +773,7 @@ export default function TabletPOS({ products, categories, cashierSession }: { pr
                             </div>
 
                             <div className="mt-5 rounded-3xl border border-white/10 p-4 lg:mt-8">
-                                <div className="text-sm font-black">
+                                <div className="text-sm font-bold">
                                     {auth?.user?.name}
                                 </div>
                                 <div className="mt-1 text-sm text-slate-400">
@@ -797,7 +797,7 @@ export default function TabletPOS({ products, categories, cashierSession }: { pr
                                 onClick={() =>
                                     setSidebarCollapsed((current) => !current)
                                 }
-                                className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-3 py-3 text-sm font-black text-slate-700 shadow-sm transition hover:bg-slate-50"
+                                className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-3 py-3 text-sm font-bold text-slate-700 shadow-sm transition hover:bg-slate-50"
                                 title={
                                     sidebarCollapsed
                                         ? 'Buka sidebar'
@@ -825,7 +825,7 @@ export default function TabletPOS({ products, categories, cashierSession }: { pr
                                             setCustomerType('general')
                                         }
                                         className={cn(
-                                            'rounded-2xl px-4 py-3 text-sm font-black shadow-sm transition-all duration-200 hover:shadow-md',
+                                            'rounded-2xl px-4 py-3 text-sm font-bold shadow-sm transition-all duration-200 hover:shadow-md',
                                             !isWorkshop
                                                 ? 'bg-slate-950 text-white'
                                                 : 'bg-slate-100 text-slate-600',
@@ -838,7 +838,7 @@ export default function TabletPOS({ products, categories, cashierSession }: { pr
                                             setCustomerType('workshop')
                                         }
                                         className={cn(
-                                            'rounded-2xl px-4 py-3 text-sm font-black shadow-sm transition-all duration-200 hover:shadow-md',
+                                            'rounded-2xl px-4 py-3 text-sm font-bold shadow-sm transition-all duration-200 hover:shadow-md',
                                             isWorkshop
                                                 ? 'bg-amber-500 text-white'
                                                 : 'bg-amber-50 text-amber-700',
@@ -886,10 +886,10 @@ export default function TabletPOS({ products, categories, cashierSession }: { pr
 
                         <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
                             <div className="rounded-3xl bg-white p-4 shadow-sm">
-                                <div className="text-[11px] font-black tracking-widest text-slate-400 uppercase">
+                                <div className="text-[11px] font-bold tracking-widest text-slate-400 uppercase">
                                     Saldo Awal
                                 </div>
-                                <div className="mt-2 text-xl font-black text-slate-950">
+                                <div className="mt-2 text-xl font-bold text-slate-950">
                                     Rp{' '}
                                     {formatRupiah(
                                         sessionState?.opening_cash || 0,
@@ -897,10 +897,10 @@ export default function TabletPOS({ products, categories, cashierSession }: { pr
                                 </div>
                             </div>
                             <div className="rounded-3xl bg-white p-4 shadow-sm">
-                                <div className="text-[11px] font-black tracking-widest text-slate-400 uppercase">
+                                <div className="text-[11px] font-bold tracking-widest text-slate-400 uppercase">
                                     Cash Masuk
                                 </div>
-                                <div className="mt-2 text-xl font-black text-slate-950">
+                                <div className="mt-2 text-xl font-bold text-slate-950">
                                     Rp{' '}
                                     {formatRupiah(
                                         sessionState?.cash_sales_total || 0,
@@ -908,10 +908,10 @@ export default function TabletPOS({ products, categories, cashierSession }: { pr
                                 </div>
                             </div>
                             <div className="rounded-3xl bg-white p-4 shadow-sm">
-                                <div className="text-[11px] font-black tracking-widest text-slate-400 uppercase">
+                                <div className="text-[11px] font-bold tracking-widest text-slate-400 uppercase">
                                     Non Cash
                                 </div>
-                                <div className="mt-2 text-xl font-black text-slate-950">
+                                <div className="mt-2 text-xl font-bold text-slate-950">
                                     Rp{' '}
                                     {formatRupiah(
                                         sessionState?.non_cash_sales_total || 0,
@@ -919,10 +919,10 @@ export default function TabletPOS({ products, categories, cashierSession }: { pr
                                 </div>
                             </div>
                             <div className="rounded-3xl bg-slate-950 p-4 text-white shadow-sm">
-                                <div className="text-[11px] font-black tracking-widest text-slate-400 uppercase">
+                                <div className="text-[11px] font-bold tracking-widest text-slate-400 uppercase">
                                     Expected Cash
                                 </div>
-                                <div className="mt-2 text-xl font-black">
+                                <div className="mt-2 text-xl font-bold">
                                     Rp {formatRupiah(expectedCash)}
                                 </div>
                             </div>
@@ -994,16 +994,16 @@ export default function TabletPOS({ products, categories, cashierSession }: { pr
                         <div className="rounded-[2rem] bg-white p-5 shadow-sm lg:sticky lg:top-5 xl:top-6">
                             <div className="flex items-start justify-between gap-4">
                                 <div>
-                                    <div className="text-xs font-black tracking-[0.3em] text-slate-400 uppercase">
+                                    <div className="text-xs font-bold tracking-[0.3em] text-slate-400 uppercase">
                                         Keranjang
                                     </div>
-                                    <div className="mt-2 text-2xl font-black text-slate-950">
+                                    <div className="mt-2 text-2xl font-bold text-slate-950">
                                         {data.cart.length} item
                                     </div>
                                 </div>
                                 <button
                                     onClick={clearCart}
-                                    className="rounded-2xl bg-red-50 px-3 py-3 text-sm font-black text-red-700 shadow-sm transition-all duration-200 hover:bg-red-100 hover:shadow-md"
+                                    className="rounded-2xl bg-red-50 px-3 py-3 text-sm font-bold text-red-700 shadow-sm transition-all duration-200 hover:bg-red-100 hover:shadow-md"
                                 >
                                     Hapus Semua
                                 </button>
@@ -1012,7 +1012,7 @@ export default function TabletPOS({ products, categories, cashierSession }: { pr
                             <div className="mt-5 max-h-[300px] space-y-3 overflow-y-auto pr-1 xl:max-h-[360px]">
                                 {data.cart.length === 0 && (
                                     <div className="rounded-3xl border border-dashed border-slate-200 bg-slate-50 px-4 py-10 text-center">
-                                        <div className="text-base font-black text-slate-900">
+                                        <div className="text-base font-bold text-slate-900">
                                             Keranjang masih kosong
                                         </div>
                                         <div className="mt-2 text-sm font-semibold text-slate-500">
@@ -1046,7 +1046,7 @@ export default function TabletPOS({ products, categories, cashierSession }: { pr
                                                         className="h-14 w-14 rounded-2xl border border-slate-200 bg-white object-cover"
                                                     />
                                                     <div className="min-w-0">
-                                                        <div className="line-clamp-2 text-sm font-black text-slate-900">
+                                                        <div className="line-clamp-2 text-sm font-bold text-slate-900">
                                                             {getProductLabel(
                                                                 item,
                                                             )}
@@ -1083,7 +1083,7 @@ export default function TabletPOS({ products, categories, cashierSession }: { pr
                                                     >
                                                         <Minus />
                                                     </button>
-                                                    <div className="min-w-[48px] text-center text-lg font-black text-slate-900">
+                                                    <div className="min-w-[48px] text-center text-lg font-bold text-slate-900">
                                                         {item.qty}
                                                     </div>
                                                     <button
@@ -1098,7 +1098,7 @@ export default function TabletPOS({ products, categories, cashierSession }: { pr
                                                         <Plus />
                                                     </button>
                                                 </div>
-                                                <div className="text-lg font-black text-slate-950">
+                                                <div className="text-lg font-bold text-slate-950">
                                                     Rp{' '}
                                                     {formatRupiah(
                                                         price *
@@ -1115,7 +1115,7 @@ export default function TabletPOS({ products, categories, cashierSession }: { pr
                         </div>
 
                         <div className="rounded-[2rem] bg-white p-5 shadow-sm">
-                            <div className="text-xs font-black tracking-[0.3em] text-slate-400 uppercase">
+                            <div className="text-xs font-bold tracking-[0.3em] text-slate-400 uppercase">
                                 Pembayaran
                             </div>
 
@@ -1123,7 +1123,7 @@ export default function TabletPOS({ products, categories, cashierSession }: { pr
                                 <div className="text-sm font-semibold text-slate-400">
                                     Total tagihan
                                 </div>
-                                <div className="mt-2 text-3xl font-black">
+                                <div className="mt-2 text-3xl font-bold">
                                     Rp {formatRupiah(totalAmount)}
                                 </div>
                             </div>
@@ -1140,7 +1140,7 @@ export default function TabletPOS({ products, categories, cashierSession }: { pr
                                             setPaymentMethod(method.id)
                                         }
                                         className={cn(
-                                            'rounded-2xl px-3 py-4 text-sm font-black shadow-sm transition-all duration-200 hover:shadow-md',
+                                            'rounded-2xl px-3 py-4 text-sm font-bold shadow-sm transition-all duration-200 hover:shadow-md',
                                             paymentMethod === method.id
                                                 ? 'bg-slate-950 text-white'
                                                 : 'bg-slate-100 text-slate-600',
@@ -1153,7 +1153,7 @@ export default function TabletPOS({ products, categories, cashierSession }: { pr
 
                             {paymentMethod === 'cash' && (
                                 <div className="mt-4">
-                                    <label className="text-xs font-black tracking-widest text-slate-400 uppercase">
+                                    <label className="text-xs font-bold tracking-widest text-slate-400 uppercase">
                                         Uang Diterima
                                     </label>
                                     <div
@@ -1162,7 +1162,7 @@ export default function TabletPOS({ products, categories, cashierSession }: { pr
                                             formSurface,
                                         )}
                                     >
-                                        <span className="text-lg font-black text-slate-500">
+                                        <span className="text-lg font-bold text-slate-500">
                                             Rp
                                         </span>
                                         <input
@@ -1177,7 +1177,7 @@ export default function TabletPOS({ products, categories, cashierSession }: { pr
                                                 )
                                             }
                                             placeholder="0"
-                                            className="ml-3 w-full border-0 bg-transparent p-0 text-2xl font-black text-slate-950 focus:ring-0 focus:outline-none"
+                                            className="ml-3 w-full border-0 bg-transparent p-0 text-2xl font-bold text-slate-950 focus:ring-0 focus:outline-none"
                                         />
                                     </div>
                                     <div className="mt-3 grid grid-cols-2 gap-2">
@@ -1192,7 +1192,7 @@ export default function TabletPOS({ products, categories, cashierSession }: { pr
                                                         )
                                                     }
                                                     className={cn(
-                                                        'rounded-2xl border px-3 py-4 text-left text-sm font-black shadow-sm transition-all duration-200 hover:shadow-md',
+                                                        'rounded-2xl border px-3 py-4 text-left text-sm font-bold shadow-sm transition-all duration-200 hover:shadow-md',
                                                         Number(
                                                             cashReceived || 0,
                                                         ) === amount
@@ -1205,10 +1205,10 @@ export default function TabletPOS({ products, categories, cashierSession }: { pr
                                                 >
                                                     {amount === totalAmount ? (
                                                         <div className="space-y-1">
-                                                            <div className="text-[10px] font-black tracking-widest uppercase opacity-70">
+                                                            <div className="text-[10px] font-bold tracking-widest uppercase opacity-70">
                                                                 Uang Pas
                                                             </div>
-                                                            <div className="text-sm font-black">
+                                                            <div className="text-sm font-bold">
                                                                 Rp{' '}
                                                                 {formatRupiah(
                                                                     amount,
@@ -1229,7 +1229,7 @@ export default function TabletPOS({ products, categories, cashierSession }: { pr
                                     </div>
                                     <div
                                         className={cn(
-                                            'mt-3 text-sm font-black',
+                                            'mt-3 text-sm font-bold',
                                             change < 0
                                                 ? 'text-red-600'
                                                 : 'text-emerald-600',
@@ -1251,18 +1251,18 @@ export default function TabletPOS({ products, categories, cashierSession }: { pr
 
                             <div className="mt-5 grid grid-cols-2 gap-3 text-sm font-semibold text-slate-600">
                                 <div className="rounded-2xl bg-slate-50 p-4">
-                                    <div className="text-[11px] font-black tracking-widest text-slate-400 uppercase">
+                                    <div className="text-[11px] font-bold tracking-widest text-slate-400 uppercase">
                                         Mode Harga
                                     </div>
-                                    <div className="mt-2 font-black text-slate-950">
+                                    <div className="mt-2 font-bold text-slate-950">
                                         {isWorkshop ? 'Bengkel' : 'Umum'}
                                     </div>
                                 </div>
                                 <div className="rounded-2xl bg-slate-50 p-4">
-                                    <div className="text-[11px] font-black tracking-widest text-slate-400 uppercase">
+                                    <div className="text-[11px] font-bold tracking-widest text-slate-400 uppercase">
                                         Status Sesi
                                     </div>
-                                    <div className="mt-2 font-black text-slate-950">
+                                    <div className="mt-2 font-bold text-slate-950">
                                         {hasOpenSession
                                             ? 'Aktif'
                                             : 'Belum dibuka'}
@@ -1278,7 +1278,7 @@ export default function TabletPOS({ products, categories, cashierSession }: { pr
                                     isProcessing ||
                                     (paymentMethod === 'cash' && change < 0)
                                 }
-                                className="mt-5 w-full rounded-3xl bg-slate-950 px-4 py-4 text-base font-black text-white shadow-sm transition-all duration-200 hover:bg-slate-800 hover:shadow-md disabled:cursor-not-allowed disabled:opacity-40"
+                                className="mt-5 w-full rounded-3xl bg-slate-950 px-4 py-4 text-base font-bold text-white shadow-sm transition-all duration-200 hover:bg-slate-800 hover:shadow-md disabled:cursor-not-allowed disabled:opacity-40"
                             >
                                 {isProcessing
                                     ? 'Memproses...'
@@ -1287,7 +1287,7 @@ export default function TabletPOS({ products, categories, cashierSession }: { pr
 
                             <button
                                 onClick={() => setShowMobileCheckout(false)}
-                                className="mt-3 w-full rounded-3xl border border-slate-200 px-4 py-4 text-sm font-black text-slate-700 shadow-sm transition-all duration-200 hover:bg-slate-50 hover:shadow-md lg:hidden"
+                                className="mt-3 w-full rounded-3xl border border-slate-200 px-4 py-4 text-sm font-bold text-slate-700 shadow-sm transition-all duration-200 hover:bg-slate-50 hover:shadow-md lg:hidden"
                             >
                                 Kembali ke Katalog
                             </button>
@@ -1304,14 +1304,14 @@ export default function TabletPOS({ products, categories, cashierSession }: { pr
                         }
                         className="flex-1 rounded-3xl bg-slate-950 px-4 py-4 text-left text-white shadow-sm transition-all duration-200 hover:bg-slate-800 hover:shadow-md"
                     >
-                        <div className="text-[11px] font-black tracking-widest text-slate-400 uppercase">
+                        <div className="text-[11px] font-bold tracking-widest text-slate-400 uppercase">
                             Checkout Mobile
                         </div>
                         <div className="mt-1 flex items-center justify-between gap-3">
                             <span className="text-sm font-bold">
                                 {data.cart.length} item di keranjang
                             </span>
-                            <span className="text-lg font-black">
+                            <span className="text-lg font-bold">
                                 Rp {formatRupiah(totalAmount)}
                             </span>
                         </div>
@@ -1322,7 +1322,7 @@ export default function TabletPOS({ products, categories, cashierSession }: { pr
                                 ? setShowSettlementModal(true)
                                 : setShowOpenSessionModal(true)
                         }
-                        className="rounded-3xl border border-slate-200 bg-white px-4 py-4 text-sm font-black text-slate-700 shadow-sm transition-all duration-200 hover:bg-slate-50 hover:shadow-md"
+                        className="rounded-3xl border border-slate-200 bg-white px-4 py-4 text-sm font-bold text-slate-700 shadow-sm transition-all duration-200 hover:bg-slate-50 hover:shadow-md"
                     >
                         {hasOpenSession ? 'Tutup' : 'Buka'}
                     </button>
@@ -1332,10 +1332,10 @@ export default function TabletPOS({ products, categories, cashierSession }: { pr
             {!hasOpenSession && showOpenSessionModal && (
                 <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/70 p-4">
                     <div className="w-full max-w-lg rounded-[2rem] bg-white p-6 shadow-2xl">
-                        <div className="text-xs font-black tracking-[0.3em] text-slate-400 uppercase">
+                        <div className="text-xs font-bold tracking-[0.3em] text-slate-400 uppercase">
                             Buka Kasir
                         </div>
-                        <div className="mt-2 text-2xl font-black text-slate-950">
+                        <div className="mt-2 text-2xl font-bold text-slate-950">
                             Masukkan uang awal di laci
                         </div>
                         <div className="mt-2 text-sm font-semibold text-slate-500">
@@ -1345,7 +1345,7 @@ export default function TabletPOS({ products, categories, cashierSession }: { pr
 
                         <div className="mt-6 rounded-3xl bg-slate-50 p-5">
                             {/* CASH AWAL */}
-                            <label className="text-xs font-black tracking-widest text-slate-400 uppercase">
+                            <label className="text-xs font-bold tracking-widest text-slate-400 uppercase">
                                 Cash Awal
                             </label>
 
@@ -1355,7 +1355,7 @@ export default function TabletPOS({ products, categories, cashierSession }: { pr
                                     formSurface,
                                 )}
                             >
-                                <span className="text-lg font-black text-slate-500">
+                                <span className="text-lg font-bold text-slate-500">
                                     Rp
                                 </span>
 
@@ -1371,12 +1371,12 @@ export default function TabletPOS({ products, categories, cashierSession }: { pr
                                         )
                                     }
                                     placeholder="0"
-                                    className="ml-3 w-full border-0 bg-transparent p-0 text-2xl font-black text-slate-950 focus:ring-0 focus:outline-none"
+                                    className="ml-3 w-full border-0 bg-transparent p-0 text-2xl font-bold text-slate-950 focus:ring-0 focus:outline-none"
                                 />
                             </div>
 
                             {/* CATATAN */}
-                            <label className="mt-4 block text-xs font-black tracking-widest text-slate-400 uppercase">
+                            <label className="mt-4 block text-xs font-bold tracking-widest text-slate-400 uppercase">
                                 Catatan Awal
                             </label>
 
@@ -1396,14 +1396,14 @@ export default function TabletPOS({ products, categories, cashierSession }: { pr
                                 href={route('logout')}
                                 method="post"
                                 as="button"
-                                className="flex-1 rounded-3xl border border-slate-200 bg-white py-4 text-sm font-black text-slate-700 shadow-sm transition-all duration-200 hover:bg-slate-50 hover:shadow-md"
+                                className="flex-1 rounded-3xl border border-slate-200 bg-white py-4 text-sm font-bold text-slate-700 shadow-sm transition-all duration-200 hover:bg-slate-50 hover:shadow-md"
                             >
                                 Keluar
                             </Link>
                             <button
                                 onClick={handleOpenSession}
                                 disabled={isOpeningSession}
-                                className="flex-[1.2] rounded-3xl bg-slate-950 py-4 text-sm font-black text-white shadow-sm transition-all duration-200 hover:bg-slate-800 hover:shadow-md disabled:opacity-40"
+                                className="flex-[1.2] rounded-3xl bg-slate-950 py-4 text-sm font-bold text-white shadow-sm transition-all duration-200 hover:bg-slate-800 hover:shadow-md disabled:opacity-40"
                             >
                                 {isOpeningSession ? 'Membuka...' : 'Buka Kasir'}
                             </button>
@@ -1417,10 +1417,10 @@ export default function TabletPOS({ products, categories, cashierSession }: { pr
                     <div className="w-full max-w-3xl rounded-[2rem] bg-white p-6 shadow-2xl">
                         <div className="flex items-start justify-between gap-4">
                             <div>
-                                <div className="text-xs font-black tracking-[0.3em] text-slate-400 uppercase">
+                                <div className="text-xs font-bold tracking-[0.3em] text-slate-400 uppercase">
                                     Settlement
                                 </div>
-                                <div className="mt-2 text-2xl font-black text-slate-950">
+                                <div className="mt-2 text-2xl font-bold text-slate-950">
                                     Tutup kasir dan cocokkan uang fisik
                                 </div>
                             </div>
@@ -1434,10 +1434,10 @@ export default function TabletPOS({ products, categories, cashierSession }: { pr
 
                         <div className="mt-6 grid gap-4 md:grid-cols-4">
                             <div className="rounded-3xl bg-slate-50 p-4">
-                                <div className="text-[11px] font-black tracking-widest text-slate-400 uppercase">
+                                <div className="text-[11px] font-bold tracking-widest text-slate-400 uppercase">
                                     Saldo Awal
                                 </div>
-                                <div className="mt-2 text-xl font-black text-slate-950">
+                                <div className="mt-2 text-xl font-bold text-slate-950">
                                     Rp{' '}
                                     {formatRupiah(
                                         sessionState?.opening_cash || 0,
@@ -1445,10 +1445,10 @@ export default function TabletPOS({ products, categories, cashierSession }: { pr
                                 </div>
                             </div>
                             <div className="rounded-3xl bg-slate-50 p-4">
-                                <div className="text-[11px] font-black tracking-widest text-slate-400 uppercase">
+                                <div className="text-[11px] font-bold tracking-widest text-slate-400 uppercase">
                                     Cash Sales
                                 </div>
-                                <div className="mt-2 text-xl font-black text-slate-950">
+                                <div className="mt-2 text-xl font-bold text-slate-950">
                                     Rp{' '}
                                     {formatRupiah(
                                         sessionState?.cash_sales_total || 0,
@@ -1456,10 +1456,10 @@ export default function TabletPOS({ products, categories, cashierSession }: { pr
                                 </div>
                             </div>
                             <div className="rounded-3xl bg-slate-50 p-4">
-                                <div className="text-[11px] font-black tracking-widest text-slate-400 uppercase">
+                                <div className="text-[11px] font-bold tracking-widest text-slate-400 uppercase">
                                     Non Cash
                                 </div>
-                                <div className="mt-2 text-xl font-black text-slate-950">
+                                <div className="mt-2 text-xl font-bold text-slate-950">
                                     Rp{' '}
                                     {formatRupiah(
                                         sessionState?.non_cash_sales_total || 0,
@@ -1467,10 +1467,10 @@ export default function TabletPOS({ products, categories, cashierSession }: { pr
                                 </div>
                             </div>
                             <div className="rounded-3xl bg-slate-950 p-4 text-white">
-                                <div className="text-[11px] font-black tracking-widest text-slate-400 uppercase">
+                                <div className="text-[11px] font-bold tracking-widest text-slate-400 uppercase">
                                     Expected Cash
                                 </div>
-                                <div className="mt-2 text-xl font-black">
+                                <div className="mt-2 text-xl font-bold">
                                     Rp {formatRupiah(expectedCash)}
                                 </div>
                             </div>
@@ -1478,7 +1478,7 @@ export default function TabletPOS({ products, categories, cashierSession }: { pr
 
                         <div className="mt-6 grid gap-5 md:grid-cols-[1.1fr_0.9fr]">
                             <div className="rounded-3xl bg-slate-50 p-5">
-                                <label className="text-xs font-black tracking-widest text-slate-400 uppercase">
+                                <label className="text-xs font-bold tracking-widest text-slate-400 uppercase">
                                     Uang Fisik Di Laci
                                 </label>
                                 <div
@@ -1487,7 +1487,7 @@ export default function TabletPOS({ products, categories, cashierSession }: { pr
                                         formSurface,
                                     )}
                                 >
-                                    <span className="text-lg font-black text-slate-500">
+                                    <span className="text-lg font-bold text-slate-500">
                                         Rp
                                     </span>
                                     <input
@@ -1502,11 +1502,11 @@ export default function TabletPOS({ products, categories, cashierSession }: { pr
                                             )
                                         }
                                         placeholder="0"
-                                        className="ml-3 w-full border-0 bg-transparent p-0 text-2xl font-black text-slate-950 focus:ring-0 focus:outline-none"
+                                        className="ml-3 w-full border-0 bg-transparent p-0 text-2xl font-bold text-slate-950 focus:ring-0 focus:outline-none"
                                     />
                                 </div>
 
-                                <label className="mt-4 block text-xs font-black tracking-widest text-slate-400 uppercase">
+                                <label className="mt-4 block text-xs font-bold tracking-widest text-slate-400 uppercase">
                                     Catatan Settlement
                                 </label>
                                 <textarea
@@ -1521,12 +1521,12 @@ export default function TabletPOS({ products, categories, cashierSession }: { pr
                             </div>
 
                             <div className="rounded-3xl border border-slate-200 p-5">
-                                <div className="text-xs font-black tracking-widest text-slate-400 uppercase">
+                                <div className="text-xs font-bold tracking-widest text-slate-400 uppercase">
                                     Hasil Settlement
                                 </div>
                                 <div
                                     className={cn(
-                                        'mt-4 inline-flex rounded-full px-3 py-1 text-xs font-black uppercase',
+                                        'mt-4 inline-flex rounded-full px-3 py-1 text-xs font-bold uppercase',
                                         settlementStatus === 'balance'
                                             ? 'bg-emerald-100 text-emerald-700'
                                             : settlementStatus === 'minus'
@@ -1543,7 +1543,7 @@ export default function TabletPOS({ products, categories, cashierSession }: { pr
 
                                 <div
                                     className={cn(
-                                        'mt-4 text-3xl font-black',
+                                        'mt-4 text-3xl font-bold',
                                         settlementStatus === 'balance'
                                             ? 'text-emerald-700'
                                             : settlementStatus === 'minus'
@@ -1557,13 +1557,13 @@ export default function TabletPOS({ products, categories, cashierSession }: { pr
                                 <div className="mt-6 space-y-3 text-sm font-semibold text-slate-600">
                                     <div className="flex items-center justify-between">
                                         <span>Expected cash</span>
-                                        <span className="font-black text-slate-950">
+                                        <span className="font-bold text-slate-950">
                                             Rp {formatRupiah(expectedCash)}
                                         </span>
                                     </div>
                                     <div className="flex items-center justify-between">
                                         <span>Uang fisik</span>
-                                        <span className="font-black text-slate-950">
+                                        <span className="font-bold text-slate-950">
                                             Rp{' '}
                                             {formatRupiah(
                                                 Number(
@@ -1574,7 +1574,7 @@ export default function TabletPOS({ products, categories, cashierSession }: { pr
                                     </div>
                                     <div className="flex items-center justify-between">
                                         <span>Total transaksi</span>
-                                        <span className="font-black text-slate-950">
+                                        <span className="font-bold text-slate-950">
                                             {sessionState?.transactions_count ||
                                                 0}
                                         </span>
@@ -1586,14 +1586,14 @@ export default function TabletPOS({ products, categories, cashierSession }: { pr
                         <div className="mt-6 flex gap-3">
                             <button
                                 onClick={() => setShowSettlementModal(false)}
-                                className="flex-1 rounded-3xl border border-slate-200 bg-white py-4 text-sm font-black text-slate-700 shadow-sm transition-all duration-200 hover:bg-slate-50 hover:shadow-md"
+                                className="flex-1 rounded-3xl border border-slate-200 bg-white py-4 text-sm font-bold text-slate-700 shadow-sm transition-all duration-200 hover:bg-slate-50 hover:shadow-md"
                             >
                                 Kembali
                             </button>
                             <button
                                 onClick={handleCloseSession}
                                 disabled={isClosingSession}
-                                className="flex-[1.2] rounded-3xl bg-slate-950 py-4 text-sm font-black text-white shadow-sm transition-all duration-200 hover:bg-slate-800 hover:shadow-md disabled:opacity-40"
+                                className="flex-[1.2] rounded-3xl bg-slate-950 py-4 text-sm font-bold text-white shadow-sm transition-all duration-200 hover:bg-slate-800 hover:shadow-md disabled:opacity-40"
                             >
                                 {isClosingSession
                                     ? 'Menyimpan...'
@@ -1607,7 +1607,7 @@ export default function TabletPOS({ products, categories, cashierSession }: { pr
             {showLogoutModal && (
                 <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/70 p-4">
                     <div className="w-full max-w-md rounded-[2rem] bg-white p-6 shadow-2xl">
-                        <div className="text-xl font-black text-slate-950">
+                        <div className="text-xl font-bold text-slate-950">
                             Keluar dari kasir?
                         </div>
                         <div className="mt-2 text-sm font-semibold text-slate-500">
@@ -1617,7 +1617,7 @@ export default function TabletPOS({ products, categories, cashierSession }: { pr
                         <div className="mt-6 flex gap-3">
                             <button
                                 onClick={() => setShowLogoutModal(false)}
-                                className="flex-1 rounded-3xl border border-slate-200 bg-white py-4 text-sm font-black text-slate-700 shadow-sm transition-all duration-200 hover:bg-slate-50 hover:shadow-md"
+                                className="flex-1 rounded-3xl border border-slate-200 bg-white py-4 text-sm font-bold text-slate-700 shadow-sm transition-all duration-200 hover:bg-slate-50 hover:shadow-md"
                             >
                                 Batal
                             </button>
@@ -1625,7 +1625,7 @@ export default function TabletPOS({ products, categories, cashierSession }: { pr
                                 href={route('logout')}
                                 method="post"
                                 as="button"
-                                className="flex-1 rounded-3xl bg-slate-950 py-4 text-sm font-black text-white shadow-sm transition-all duration-200 hover:bg-slate-800 hover:shadow-md"
+                                className="flex-1 rounded-3xl bg-slate-950 py-4 text-sm font-bold text-white shadow-sm transition-all duration-200 hover:bg-slate-800 hover:shadow-md"
                             >
                                 Ya, Keluar
                             </Link>

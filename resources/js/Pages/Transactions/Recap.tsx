@@ -155,7 +155,7 @@ export default function CashierRecap({
                             <div>
                                 <div
                                     className={cn(
-                                        'text-sm font-black tracking-[0.2em] text-slate-300 uppercase',
+                                        'text-sm font-bold tracking-[0.2em] text-slate-300 uppercase',
                                         sidebarCollapsed
                                             ? 'hidden'
                                             : 'hidden xl:block',
@@ -165,7 +165,7 @@ export default function CashierRecap({
                                 </div>
                                 <div
                                     className={cn(
-                                        'mt-1 text-lg font-black',
+                                        'mt-1 text-lg font-bold',
                                         sidebarCollapsed
                                             ? 'hidden'
                                             : 'hidden xl:block',
@@ -207,10 +207,10 @@ export default function CashierRecap({
                     {!sidebarCollapsed && (
                         <>
                             <div className="mt-5 rounded-3xl bg-white/5 p-4 lg:mt-8">
-                                <div className="text-[11px] font-black tracking-widest text-slate-400 uppercase">
+                                <div className="text-[11px] font-bold tracking-widest text-slate-400 uppercase">
                                     Status Kasir
                                 </div>
-                                <div className="mt-3 text-lg font-black lg:text-center xl:text-left">
+                                <div className="mt-3 text-lg font-bold lg:text-center xl:text-left">
                                     {cashierSession
                                         ? 'Sesi Aktif'
                                         : 'Belum Dibuka'}
@@ -227,7 +227,7 @@ export default function CashierRecap({
                                             route('transactions.create'),
                                         )
                                     }
-                                    className="mt-4 w-full rounded-2xl bg-white px-4 py-3 text-sm font-black text-slate-950 transition hover:bg-slate-200"
+                                    className="mt-4 w-full rounded-2xl bg-white px-4 py-3 text-sm font-bold text-slate-950 transition hover:bg-slate-200"
                                 >
                                     <span className="lg:hidden xl:inline">
                                         {cashierSession
@@ -241,7 +241,7 @@ export default function CashierRecap({
                             </div>
 
                             <div className="mt-5 rounded-3xl border border-white/10 p-4 lg:mt-8">
-                                <div className="text-sm font-black">
+                                <div className="text-sm font-bold">
                                     {auth?.user?.name}
                                 </div>
                                 <div className="mt-1 text-sm text-slate-400">
@@ -264,7 +264,7 @@ export default function CashierRecap({
                             onClick={() =>
                                 setSidebarCollapsed((current) => !current)
                             }
-                            className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-3 py-2 text-sm font-black text-slate-700 shadow-sm transition hover:bg-slate-50"
+                            className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-3 py-2 text-sm font-bold text-slate-700 shadow-sm transition hover:bg-slate-50"
                             title={
                                 sidebarCollapsed
                                     ? 'Buka sidebar'
@@ -285,10 +285,10 @@ export default function CashierRecap({
                     <div className="rounded-[2rem] bg-white p-5 shadow-sm">
                         <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
                             <div>
-                                <div className="text-xs font-black tracking-[0.3em] text-slate-400 uppercase">
+                                <div className="text-xs font-bold tracking-[0.3em] text-slate-400 uppercase">
                                     Rekap Penjualan
                                 </div>
-                                <div className="mt-2 text-2xl font-black text-slate-950">
+                                <div className="mt-2 text-2xl font-bold text-slate-950">
                                     Ringkasan transaksi kasir
                                 </div>
                                 <div className="mt-2 text-sm font-semibold text-slate-500">
@@ -305,7 +305,7 @@ export default function CashierRecap({
                                             route('transactions.create'),
                                         )
                                     }
-                                    className="rounded-3xl border border-slate-200 bg-white px-4 py-3 text-sm font-black text-slate-700"
+                                    className="rounded-3xl border border-slate-200 bg-white px-4 py-3 text-sm font-bold text-slate-700"
                                 >
                                     Kembali ke Kasir
                                 </button>
@@ -326,7 +326,7 @@ export default function CashierRecap({
                                             return;
                                         }
                                     }}
-                                    className="rounded-3xl bg-slate-950 px-4 py-3 text-sm font-black text-white"
+                                    className="rounded-3xl bg-slate-950 px-4 py-3 text-sm font-bold text-white"
                                 >
                                     Keluar
                                 </Link>
@@ -336,42 +336,42 @@ export default function CashierRecap({
 
                     <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-5">
                         <div className="rounded-3xl bg-white p-4 shadow-sm">
-                            <div className="text-[11px] font-black tracking-widest text-slate-400 uppercase">
+                            <div className="text-[11px] font-bold tracking-widest text-slate-400 uppercase">
                                 Total Transaksi
                             </div>
-                            <div className="mt-2 text-2xl font-black text-slate-950">
+                            <div className="mt-2 text-2xl font-bold text-slate-950">
                                 {summary.total_transactions}
                             </div>
                         </div>
                         <div className="rounded-3xl bg-white p-4 shadow-sm">
-                            <div className="text-[11px] font-black tracking-widest text-slate-400 uppercase">
+                            <div className="text-[11px] font-bold tracking-widest text-slate-400 uppercase">
                                 Omzet
                             </div>
-                            <div className="mt-2 text-2xl font-black text-slate-950">
+                            <div className="mt-2 text-2xl font-bold text-slate-950">
                                 Rp {formatRupiah(summary.revenue_total)}
                             </div>
                         </div>
                         <div className="rounded-3xl bg-white p-4 shadow-sm">
-                            <div className="text-[11px] font-black tracking-widest text-slate-400 uppercase">
+                            <div className="text-[11px] font-bold tracking-widest text-slate-400 uppercase">
                                 Profit
                             </div>
-                            <div className="mt-2 text-2xl font-black text-slate-950">
+                            <div className="mt-2 text-2xl font-bold text-slate-950">
                                 Rp {formatRupiah(summary.profit_total)}
                             </div>
                         </div>
                         <div className="rounded-3xl bg-white p-4 shadow-sm">
-                            <div className="text-[11px] font-black tracking-widest text-slate-400 uppercase">
+                            <div className="text-[11px] font-bold tracking-widest text-slate-400 uppercase">
                                 Tunai
                             </div>
-                            <div className="mt-2 text-2xl font-black text-slate-950">
+                            <div className="mt-2 text-2xl font-bold text-slate-950">
                                 Rp {formatRupiah(summary.cash_total)}
                             </div>
                         </div>
                         <div className="rounded-3xl bg-slate-950 p-4 text-white shadow-sm">
-                            <div className="text-[11px] font-black tracking-widest text-slate-400 uppercase">
+                            <div className="text-[11px] font-bold tracking-widest text-slate-400 uppercase">
                                 Non Tunai
                             </div>
-                            <div className="mt-2 text-2xl font-black">
+                            <div className="mt-2 text-2xl font-bold">
                                 Rp {formatRupiah(summary.non_cash_total)}
                             </div>
                         </div>
@@ -379,7 +379,7 @@ export default function CashierRecap({
 
                     <div className="grid gap-5 xl:grid-cols-[1.1fr_0.9fr]">
                         <div className="rounded-[2rem] bg-white p-5 shadow-sm">
-                            <div className="text-lg font-black text-slate-950">
+                            <div className="text-lg font-bold text-slate-950">
                                 Transaksi Terbaru
                             </div>
                             <div className="mt-4 space-y-3">
@@ -396,7 +396,7 @@ export default function CashierRecap({
                                     >
                                         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                                             <div>
-                                                <div className="text-sm font-black text-slate-950">
+                                                <div className="text-sm font-bold text-slate-950">
                                                     {transaction.invoice_number}
                                                 </div>
                                                 <div className="mt-1 text-xs font-semibold text-slate-500">
@@ -412,13 +412,13 @@ export default function CashierRecap({
                                                 </div>
                                             </div>
                                             <div className="text-right">
-                                                <div className="text-lg font-black text-slate-950">
+                                                <div className="text-lg font-bold text-slate-950">
                                                     Rp{' '}
                                                     {formatRupiah(
                                                         transaction.total_amount,
                                                     )}
                                                 </div>
-                                                <div className="mt-1 text-xs font-black text-slate-400 uppercase">
+                                                <div className="mt-1 text-xs font-bold text-slate-400 uppercase">
                                                     {transaction.payment_method}
                                                 </div>
                                             </div>
@@ -429,7 +429,7 @@ export default function CashierRecap({
                         </div>
 
                         <div className="rounded-[2rem] bg-white p-5 shadow-sm">
-                            <div className="text-lg font-black text-slate-950">
+                            <div className="text-lg font-bold text-slate-950">
                                 Produk Paling Laku
                             </div>
                             <div className="mt-4 space-y-3">
@@ -453,7 +453,7 @@ export default function CashierRecap({
                                             className="h-16 w-16 rounded-2xl border border-slate-200 bg-white object-cover"
                                         />
                                         <div className="min-w-0 flex-1">
-                                            <div className="line-clamp-2 text-sm font-black text-slate-950">
+                                            <div className="line-clamp-2 text-sm font-bold text-slate-950">
                                                 {product.product_name}
                                             </div>
                                             <div className="mt-1 text-xs font-semibold text-slate-500">
@@ -461,7 +461,7 @@ export default function CashierRecap({
                                             </div>
                                         </div>
                                         <div className="text-right">
-                                            <div className="text-sm font-black text-slate-950">
+                                            <div className="text-sm font-bold text-slate-950">
                                                 Rp{' '}
                                                 {formatRupiah(product.revenue)}
                                             </div>
@@ -477,7 +477,7 @@ export default function CashierRecap({
             {showLogoutModal && (
                 <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/70 p-4">
                     <div className="w-full max-w-md rounded-[2rem] bg-white p-6 shadow-2xl">
-                        <div className="text-xl font-black text-slate-950">
+                        <div className="text-xl font-bold text-slate-950">
                             Keluar dari kasir?
                         </div>
                         <div className="mt-2 text-sm font-semibold text-slate-500">
@@ -487,7 +487,7 @@ export default function CashierRecap({
                         <div className="mt-6 flex gap-3">
                             <button
                                 onClick={() => setShowLogoutModal(false)}
-                                className="flex-1 rounded-3xl border border-slate-200 bg-white py-4 text-sm font-black text-slate-700 shadow-sm transition-all duration-200 hover:bg-slate-50 hover:shadow-md"
+                                className="flex-1 rounded-3xl border border-slate-200 bg-white py-4 text-sm font-bold text-slate-700 shadow-sm transition-all duration-200 hover:bg-slate-50 hover:shadow-md"
                             >
                                 Batal
                             </button>
@@ -495,7 +495,7 @@ export default function CashierRecap({
                                 href={route('logout')}
                                 method="post"
                                 as="button"
-                                className="flex-1 rounded-3xl bg-slate-950 py-4 text-sm font-black text-white shadow-sm transition-all duration-200 hover:bg-slate-800 hover:shadow-md"
+                                className="flex-1 rounded-3xl bg-slate-950 py-4 text-sm font-bold text-white shadow-sm transition-all duration-200 hover:bg-slate-800 hover:shadow-md"
                             >
                                 Ya, Keluar
                             </Link>
