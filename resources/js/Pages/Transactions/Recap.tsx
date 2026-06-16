@@ -16,6 +16,8 @@ import {
     Scale,
     BarChart3,
 } from 'lucide-react';
+import { PosSidebar } from '@/Components/pos/pos-sidebar';
+import { LogoutModal } from '@/Components/pos/logout-modal';
 
 interface CashierSession {
     id?: number;
@@ -133,121 +135,28 @@ export default function CashierRecap({
                         : 'lg:grid-cols-[88px_minmax(0,1fr)] xl:grid-cols-[260px_minmax(0,1fr)]',
                 )}
             >
-                <aside className="w-full border-b border-slate-200 bg-slate-950 px-4 py-4 text-white lg:min-h-screen lg:border-r lg:border-b-0 lg:px-3 lg:py-5 xl:px-5 xl:py-6">
-                    <div className="flex items-center justify-between gap-3">
-                        <div className="flex items-center gap-3">
-                            <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-white/10">
-                                <img
-                                    src="/GrahaMesran-light.png"
-                                    alt="Graha Motor"
-                                    className="h-9 w-9 object-contain"
-                                />
-                            </div>
-                            <div>
-                                <div
-                                    className={cn(
-                                        'text-sm font-bold tracking-[0.2em] text-slate-300 uppercase',
-                                        sidebarCollapsed
-                                            ? 'hidden'
-                                            : 'hidden xl:block',
-                                    )}
-                                >
-                                    Graha Motor
-                                </div>
-                                <div
-                                    className={cn(
-                                        'mt-1 text-lg font-bold',
-                                        sidebarCollapsed
-                                            ? 'hidden'
-                                            : 'hidden xl:block',
-                                    )}
-                                >
-                                    Kasir POS
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div className="mt-5 flex gap-2 overflow-x-auto pb-1 lg:mt-8 lg:block lg:space-y-2 lg:overflow-visible lg:pb-0">
-                        {menuItems.map((item) => (
-                            <button
-                                key={item.id}
-                                onClick={item.onClick}
-                                className={cn(
-                                    'flex shrink-0 items-center gap-3 rounded-2xl px-4 py-3 text-left text-sm font-bold transition-all duration-200 lg:w-full lg:justify-center lg:px-0',
-                                    !sidebarCollapsed &&
-                                        'xl:justify-start xl:px-4',
-                                    activeMenu === item.id
-                                        ? 'bg-white text-slate-950'
-                                        : 'text-slate-300 hover:bg-white/10 hover:text-white',
-                                )}
-                            >
-                                <item.icon />
-                                <span
-                                    className={cn(
-                                        'whitespace-nowrap lg:hidden',
-                                        !sidebarCollapsed && 'xl:inline',
-                                    )}
-                                >
-                                    {item.label}
-                                </span>
-                            </button>
-                        ))}
-                    </div>
-
-                    {!sidebarCollapsed && (
-                        <>
-                            <div className="mt-5 rounded-3xl bg-white/5 p-4 lg:mt-8">
-                                <div className="text-[11px] font-bold tracking-widest text-slate-400 uppercase">
-                                    Status Kasir
-                                </div>
-                                <div className="mt-3 text-lg font-bold lg:text-center xl:text-left">
-                                    {cashierSession
-                                        ? 'Sesi Aktif'
-                                        : 'Belum Dibuka'}
-                                </div>
-                                <div className="mt-1 text-sm text-slate-300 lg:hidden xl:block">
-                                    {cashierSession
-                                        ? `Dibuka ${formatDateTime(cashierSession.opened_at)}`
-                                        : 'Rekap ditampilkan dari transaksi terakhir yang tersedia.'}
-                                </div>
-
-                                <button
-                                    onClick={() =>
-                                        router.visit(
-                                            route('transactions.create'),
-                                        )
-                                    }
-                                    className="mt-4 w-full rounded-2xl bg-white px-4 py-3 text-sm font-bold text-slate-950 transition hover:bg-slate-200"
-                                >
-                                    <span className="lg:hidden xl:inline">
-                                        {cashierSession
-                                            ? 'Kembali ke Kasir'
-                                            : 'Buka Kasir'}
-                                    </span>
-                                    <span className="hidden lg:inline xl:hidden">
-                                        {cashierSession ? 'Kasir' : 'Buka'}
-                                    </span>
-                                </button>
-                            </div>
-
-                            <div className="mt-5 rounded-3xl border border-white/10 p-4 lg:mt-8">
-                                <div className="text-sm font-bold">
-                                    {auth?.user?.name}
-                                </div>
-                                <div className="mt-1 text-sm text-slate-400">
-                                    Kasir aktif
-                                </div>
-                                <div className="mt-4 hidden text-xs font-semibold text-slate-400 xl:block">
-                                    {STORE_CONFIG.address}
-                                </div>
-                                <div className="hidden text-xs font-semibold text-slate-400 xl:block">
-                                    {STORE_CONFIG.phone}
-                                </div>
-                            </div>
-                        </>
-                    )}
-                </aside>
+                <PosSidebar
+                    activeMenu={activeMenu}
+                    sidebarCollapsed={sidebarCollapsed}
+                    hasOpenSession={hasOpenSession}
+                    sessionOpenedAt={cashierSession?.opened_at}
+                    user={auth?.user ?? { name: '' }}
+                    storeAddress={STORE_CONFIG.address}
+                    storePhone={STORE_CONFIG.phone}
+                    menuItems={menuItems}
+                    statusCardDescription="Rekap ditampilkan dari transaksi terakhir yang tersedia."
+                    sessionButtonLabel={
+                        hasOpenSession
+                            ? 'Kembali ke Kasir'
+                            : 'Buka Kasir'
+                    }
+                    sessionButtonCollapsedLabel={
+                        hasOpenSession ? 'Kasir' : 'Buka'
+                    }
+                    onSessionButtonClick={() =>
+                        router.visit(route('transactions.create'))
+                    }
+                />
 
                 <main className="space-y-5 p-4 sm:p-5 xl:p-6">
                     <div className="hidden lg:block">
@@ -465,35 +374,10 @@ export default function CashierRecap({
                 </main>
             </div>
 
-            {showLogoutModal && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/70 p-4">
-                    <div className="w-full max-w-md rounded-[2rem] bg-white p-6 shadow-2xl">
-                        <div className="text-xl font-bold text-slate-950">
-                            Keluar dari kasir?
-                        </div>
-                        <div className="mt-2 text-sm font-semibold text-slate-500">
-                            Gunakan logout hanya jika tidak ada sesi kasir yang
-                            sedang aktif.
-                        </div>
-                        <div className="mt-6 flex gap-3">
-                            <button
-                                onClick={() => setShowLogoutModal(false)}
-                                className="flex-1 rounded-3xl border border-slate-200 bg-white py-4 text-sm font-bold text-slate-700 shadow-sm transition-all duration-200 hover:bg-slate-50 hover:shadow-md"
-                            >
-                                Batal
-                            </button>
-                            <Link
-                                href={route('logout')}
-                                method="post"
-                                as="button"
-                                className="flex-1 rounded-3xl bg-slate-950 py-4 text-sm font-bold text-white shadow-sm transition-all duration-200 hover:bg-slate-800 hover:shadow-md"
-                            >
-                                Ya, Keluar
-                            </Link>
-                        </div>
-                    </div>
-                </div>
-            )}
+            <LogoutModal
+                show={showLogoutModal}
+                onClose={() => setShowLogoutModal(false)}
+            />
         </div>
     );
 }
