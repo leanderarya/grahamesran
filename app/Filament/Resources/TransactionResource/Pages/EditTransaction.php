@@ -59,10 +59,10 @@ class EditTransaction extends EditRecord
 
     private function recalculateTotals(Transaction $transaction): void
     {
-        $transaction->load('items');
+        $transaction->load('transactionItems');
 
-        $totalAmount = $transaction->items->sum(fn ($item) => $item->quantity * $item->price_at_time);
-        $totalProfit = $transaction->items->sum(fn ($item) => $item->quantity * ($item->price_at_time - $item->cost_at_time));
+        $totalAmount = $transaction->transactionItems->sum(fn ($item) => $item->quantity * $item->price_at_time);
+        $totalProfit = $transaction->transactionItems->sum(fn ($item) => $item->quantity * ($item->price_at_time - $item->cost_at_time));
         $amountPaid = max((float) ($transaction->amount_paid ?? 0), (float) $totalAmount);
 
         $transaction->updateQuietly([

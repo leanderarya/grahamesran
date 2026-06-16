@@ -58,12 +58,6 @@ class Transaction extends Model
         return $this->hasMany(TransactionItem::class);
     }
 
-    // Relasi: Nota ini berisi item apa saja?
-    public function items(): HasMany
-    {
-        return $this->hasMany(TransactionItem::class);
-    }
-
     public function reportMonth(): Carbon
     {
         return Carbon::parse($this->created_at)->startOfMonth();

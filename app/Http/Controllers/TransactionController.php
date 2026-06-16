@@ -57,7 +57,7 @@ class TransactionController extends Controller
         ];
 
         $topProducts = $transactions
-            ->flatMap(fn (Transaction $transaction) => $transaction->items)
+            ->flatMap(fn (Transaction $transaction) => $transaction->transactionItems)
             ->groupBy('product_id')
             ->map(function ($items) {
                 /** @var \App\Models\TransactionItem $firstItem */
@@ -86,7 +86,7 @@ class TransactionController extends Controller
                     'payment_method' => $transaction->payment_method,
                     'customer_type' => $transaction->customer_type,
                     'total_amount' => (float) $transaction->total_amount,
-                    'items_count' => $transaction->items->sum('quantity'),
+                    'items_count' => $transaction->transactionItems->sum('quantity'),
                 ];
             }),
             'topProducts' => $topProducts,
