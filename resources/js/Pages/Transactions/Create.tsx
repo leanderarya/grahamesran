@@ -53,16 +53,12 @@ interface CashierSession {
     opened_at?: string;
 }
 
-interface ReceiptData {
-    invoice: string;
-    date: string;
-    items: CartItem[];
-    total: number;
-    payAmount: number;
-    change: number;
-    paymentMethod: string;
-    cashier?: string;
-    customerType: string;
+interface ActiveDraft {
+    id: number;
+    transaction_items?: {
+        product: Product;
+        quantity: number;
+    }[];
 }
 
 const STORE_CONFIG = {
@@ -74,16 +70,13 @@ const STORE_CONFIG = {
 const formSurface =
 'border border-slate-200 bg-white transition-all duration-200 ease-out';
 
-export default function TabletPOS({ products, categories, cashierSession }: { products: Product[]; categories: string[]; cashierSession: CashierSession | null }) {
+export default function TabletPOS({ products, cashierSession, activeDraft }: { products: Product[]; categories?: string[]; cashierSession: CashierSession | null; activeDraft?: ActiveDraft | null }) {
     const { auth, flash } = usePage<SharedData>().props;
     const [activeMenu, setActiveMenu] = useState('cashier');
     const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
     const [search, setSearch] = useState('');
     const [showMobileCheckout, setShowMobileCheckout] = useState(false);
     const [customerType, setCustomerType] = useState('general');
-    const [paymentMethod, setPaymentMethod] = useState('cash');
-    const [cashReceived, setCashReceived] = useState('');
-    const [receiptData, setReceiptData] = useState<ReceiptData | null>(null);
     const [showLogoutModal, setShowLogoutModal] = useState(false);
     const [showOpenSessionModal, setShowOpenSessionModal] =
         useState(!cashierSession);
@@ -94,7 +87,6 @@ export default function TabletPOS({ products, categories, cashierSession }: { pr
     const [closingNotes, setClosingNotes] = useState('');
     const [isOpeningSession, setIsOpeningSession] = useState(false);
     const [isClosingSession, setIsClosingSession] = useState(false);
-    const [isProcessing, setIsProcessing] = useState(false);
     const [sessionState, setSessionState] = useState<CashierSession | null>(cashierSession);
     const [selectedVehicle, setSelectedVehicle] = useState<string>('all');
     const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
@@ -104,6 +96,16 @@ export default function TabletPOS({ products, categories, cashierSession }: { pr
         setSessionState(cashierSession ?? null);
         setShowOpenSessionModal(!cashierSession);
     }, [cashierSession]);
+
+    useEffect(() => {
+        if (activeDraft && activeDraft.transaction_items) {
+            const restoredCart = activeDraft.transaction_items.map(item => ({
+                ...item.product,
+                qty: item.quantity,
+            }));
+            setData('cart', restoredCart);
+        }
+    }, [activeDraft, setData]);
 
     const hasOpenSession = Boolean(sessionState?.id);
     const isWorkshop = customerType === 'workshop';
@@ -195,36 +197,10 @@ export default function TabletPOS({ products, categories, cashierSession }: { pr
         [data.cart, getProductPrice, productById],
     );
 
-    const cashShortcutAmounts = useMemo(() => {
-        const roundUpToNearest = (amount: number, nearest: number) =>
-            Math.ceil((amount || 0) / nearest) * nearest;
-
-        const candidates = [
-            totalAmount,
-            20000,
-            50000,
-            100000,
-            200000,
-            roundUpToNearest(totalAmount, 5000),
-            roundUpToNearest(totalAmount, 10000),
-            roundUpToNearest(totalAmount, 50000),
-        ];
-
-        return [
-            ...new Set(
-                candidates.filter(
-                    (amount) => amount >= totalAmount && amount > 0,
-                ),
-            ),
-        ]
-            .sort((a, b) => a - b)
-            .slice(0, 6);
-    }, [totalAmount]);
-
-    const change = useMemo(() => {
-        if (paymentMethod !== 'cash') return 0;
-        return (Number(cashReceived || 0) || 0) - totalAmount;
-    }, [cashReceived, paymentMethod, totalAmount]);
+    const totalQty = useMemo(
+        () => data.cart.reduce((sum, item) => sum + (Number(item.qty) || 0), 0),
+        [data.cart],
+    );
 
     const expectedCash =
         Number(sessionState?.opening_cash || 0) +
@@ -371,7 +347,6 @@ export default function TabletPOS({ products, categories, cashierSession }: { pr
                     setShowOpenSessionModal(true);
                     reset();
                     setSearch('');
-                    setCashReceived('');
                 },
                 onError: (errors: Record<string, string>) => {
                     notifyError(
@@ -383,110 +358,15 @@ export default function TabletPOS({ products, categories, cashierSession }: { pr
         );
     }, [closingCashPhysical, closingNotes, data.cart.length, reset]);
 
-    const processPayment = useCallback(() => {
-        if (!hasOpenSession) {
-            setShowOpenSessionModal(true);
-            return;
-        }
+    const handleSaveDraft = useCallback(() => {
+        if (data.cart.length === 0) return;
 
-        const finalPaid =
-            paymentMethod === 'cash' ? Number(cashReceived || 0) : totalAmount;
-
-        if (paymentMethod === 'cash' && finalPaid < totalAmount) {
-            notifyWarning('Uang pembayaran kurang.', 'Pembayaran belum cukup');
-            return;
-        }
-
-        setIsProcessing(true);
-
-        const finalChange =
-            paymentMethod === 'cash' ? finalPaid - totalAmount : 0;
-        const finalCart = data.cart.map((item) => {
-            const product = productById.get(item.id);
-            return {
-                ...item,
-                name: product?.name ?? item.name,
-                volume_liter: product?.volume_liter ?? item.volume_liter,
-                sell_price: getProductPrice(product || item),
-            };
+        router.post(route('transactions.draft.save'), {
+            cart: data.cart.map(item => ({ id: item.id, qty: item.qty })),
+            customer_type: customerType,
+            draft_id: activeDraft?.id || null,
         });
-
-        router.post(
-            route('transactions.store'),
-            {
-                cart: finalCart,
-                payment_method: paymentMethod,
-                amount_paid: finalPaid,
-                change_amount: finalChange,
-                customer_type: customerType,
-            },
-            {
-                onSuccess: () => {
-                    setSessionState((current: CashierSession | null) =>
-                        current
-                            ? {
-                                  ...current,
-                                  transactions_count:
-                                      Number(current.transactions_count || 0) +
-                                      1,
-                                  cash_sales_total:
-                                      Number(current.cash_sales_total || 0) +
-                                      (paymentMethod === 'cash'
-                                          ? totalAmount
-                                          : 0),
-                                  non_cash_sales_total:
-                                      Number(
-                                          current.non_cash_sales_total || 0,
-                                      ) +
-                                      (paymentMethod === 'cash'
-                                          ? 0
-                                          : totalAmount),
-                              }
-                            : current,
-                    );
-
-                    setReceiptData({
-                        invoice: `INV-${Math.floor(Date.now() / 1000)}`,
-                        date: new Date().toLocaleString('id-ID'),
-                        items: finalCart,
-                        total: totalAmount,
-                        payAmount: finalPaid,
-                        change: finalChange,
-                        paymentMethod: paymentMethod.toUpperCase(),
-                        cashier: auth?.user?.name,
-                        customerType:
-                            customerType === 'workshop' ? 'BENGKEL' : 'UMUM',
-                    });
-
-                    setTimeout(() => {
-                        window.print();
-                        reset();
-                        setCashReceived('');
-                    }, 250);
-                },
-                onError: (errors: Record<string, string>) => {
-                    const message =
-                        errors?.cart ||
-                        errors?.payment_method ||
-                        errors?.amount_paid ||
-                        'Gagal memproses transaksi.';
-                    notifyError(message);
-                },
-                onFinish: () => setIsProcessing(false),
-            },
-        );
-    }, [
-        auth?.user?.name,
-        cashReceived,
-        customerType,
-        data.cart,
-        getProductPrice,
-        hasOpenSession,
-        paymentMethod,
-        productById,
-        reset,
-        totalAmount,
-    ]);
+    }, [data.cart, customerType, activeDraft]);
 
     const menuItems = [
         {
@@ -776,16 +656,10 @@ export default function TabletPOS({ products, categories, cashierSession }: { pr
                         removeItem={removeItem}
                         updateQty={updateQty}
                         totalAmount={totalAmount}
-                        paymentMethod={paymentMethod}
-                        onPaymentMethodChange={setPaymentMethod}
-                        cashReceived={cashReceived}
-                        onCashReceivedChange={setCashReceived}
-                        cashShortcutAmounts={cashShortcutAmounts}
-                        change={change}
+                        totalQty={totalQty}
                         isWorkshop={isWorkshop}
                         hasOpenSession={hasOpenSession}
-                        isProcessing={isProcessing}
-                        onProcessPayment={processPayment}
+                        onSaveDraft={handleSaveDraft}
                         showMobileCheckout={showMobileCheckout}
                         onCloseMobileCheckout={() => setShowMobileCheckout(false)}
                     />
@@ -836,7 +710,7 @@ export default function TabletPOS({ products, categories, cashierSession }: { pr
             />
 
             <PrintReceipt
-                receiptData={receiptData}
+                receiptData={null}
                 storeName={STORE_CONFIG.name}
                 storeAddress={STORE_CONFIG.address}
                 storePhone={STORE_CONFIG.phone}
