@@ -3,7 +3,7 @@ import {
     notifyError,
     notifyWarning,
 } from '@/Components/app-notifications';
-import { Head, Link, router, useForm, usePage } from '@inertiajs/react';
+import { Head, router, useForm, usePage } from '@inertiajs/react';
 import {
     useCallback,
     useDeferredValue,
@@ -14,7 +14,7 @@ import {
 import { route } from 'ziggy-js';
 import type { SharedData } from '@/types';
 import { cn } from '@/lib/utils';
-import { ShoppingCart, Search, Trash2, Minus, Plus, Calculator, FileText, LogOut, ChevronLeft, ChevronRight } from 'lucide-react';
+import { ShoppingCart, Search, Calculator, FileText, LogOut, ChevronLeft, ChevronRight } from 'lucide-react';
 import { ProductCard } from '@/Components/pos/product-card';
 import { CategoryGrid } from '@/Components/pos/category-grid';
 import { VehicleFilter } from '@/Components/pos/vehicle-filter';
@@ -22,7 +22,10 @@ import { PosSidebar } from '@/Components/pos/pos-sidebar';
 import { LogoutModal } from '@/Components/pos/logout-modal';
 import { OpenSessionModal } from '@/Components/pos/open-session-modal';
 import { SettlementModal } from '@/Components/pos/settlement-modal';
-import { formatRupiah, formatDateTime } from '@/lib/format';
+import { formatRupiah, getProductLabel } from '@/lib/format';
+import { CheckoutPanel } from '@/Components/pos/checkout-panel';
+import { MobileBottomBar } from '@/Components/pos/mobile-bottom-bar';
+import { PrintReceipt } from '@/Components/pos/print-receipt';
 
 interface Product {
     id: number;
@@ -68,22 +71,6 @@ const STORE_CONFIG = {
     phone: '0812-3456-7890',
 };
 
-const sanitizeNumericInput = (value: string) => value.replace(/[^\d]/g, '');
-const formatSignedCurrency = (value: number) =>
-    `${value < 0 ? '-' : ''}Rp ${formatRupiah(Math.abs(value || 0))}`;
-const formatVolume = (value: number | string | null | undefined) => {
-    const numeric = Number(value);
-    if (!numeric) return null;
-    return `${numeric.toString().replace(/\.0+$/, '')}L`;
-};
-const getProductLabel = (product: Product | CartItem | null | undefined) => {
-    if (!product) return '';
-    const volume = formatVolume(product.volume_liter);
-    return volume ? `${product.name} (${volume})` : product.name;
-};
-const placeholderImage = '/images/product-placeholder.svg';
-const interactiveSurface =
-    'transition-all duration-200 ease-out shadow-sm hover:shadow-md';
 const formSurface =
 'border border-slate-200 bg-white transition-all duration-200 ease-out';
 
@@ -781,349 +768,41 @@ export default function TabletPOS({ products, categories, cashierSession }: { pr
                         )}
                     </section>
 
-                    <section
-                        className={cn(
-                            'space-y-5 border-t border-slate-200 bg-slate-100 p-4 pb-28 sm:p-5 sm:pb-32 lg:col-start-3 lg:border-t-0 lg:border-l lg:p-5 lg:pb-5 xl:p-6 xl:pb-6',
-                            !showMobileCheckout && 'hidden lg:block',
-                        )}
-                    >
-                        <div className="rounded-[2rem] bg-white p-5 shadow-sm lg:sticky lg:top-5 xl:top-6">
-                            <div className="flex items-start justify-between gap-4">
-                                <div>
-                                    <div className="text-xs font-bold tracking-[0.3em] text-slate-400 uppercase">
-                                        Keranjang
-                                    </div>
-                                    <div className="mt-2 text-2xl font-bold text-slate-950">
-                                        {data.cart.length} item
-                                    </div>
-                                </div>
-                                <button
-                                    onClick={clearCart}
-                                    className="rounded-2xl bg-red-50 px-3 py-3 text-sm font-bold text-red-700 shadow-sm transition-all duration-200 hover:bg-red-100 hover:shadow-md"
-                                >
-                                    Hapus Semua
-                                </button>
-                            </div>
-
-                            <div className="mt-5 max-h-[300px] space-y-3 overflow-y-auto pr-1 xl:max-h-[360px]">
-                                {data.cart.length === 0 && (
-                                    <div className="rounded-3xl border border-dashed border-slate-200 bg-slate-50 px-4 py-10 text-center">
-                                        <div className="text-base font-bold text-slate-900">
-                                            Keranjang masih kosong
-                                        </div>
-                                        <div className="mt-2 text-sm font-semibold text-slate-500">
-                                            Pilih produk di panel tengah untuk
-                                            mulai transaksi.
-                                        </div>
-                                    </div>
-                                )}
-
-                                {data.cart.map((item) => {
-                                    const product =
-                                        productById.get(item.id) || item;
-                                    const price = getProductPrice(product);
-
-                                    return (
-                                        <div
-                                            key={item.id}
-                                            className="rounded-3xl border border-slate-200 bg-slate-50 p-4"
-                                        >
-                                            <div className="flex items-start justify-between gap-3">
-                                                <div className="flex min-w-0 flex-1 gap-3">
-                                                    <img
-                                                        src={
-                                                            product.image_url ||
-                                                            item.image_url ||
-                                                            placeholderImage
-                                                        }
-                                                        alt={getProductLabel(
-                                                            item,
-                                                        )}
-                                                        className="h-14 w-14 rounded-2xl border border-slate-200 bg-white object-cover"
-                                                    />
-                                                    <div className="min-w-0">
-                                                        <div className="line-clamp-2 text-sm font-bold text-slate-900">
-                                                            {getProductLabel(
-                                                                item,
-                                                            )}
-                                                        </div>
-                                                        <div className="mt-1 text-xs font-semibold text-slate-500">
-                                                            Rp{' '}
-                                                            {formatRupiah(
-                                                                price,
-                                                            )}{' '}
-                                                            / item
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                                <button
-                                                    onClick={() =>
-                                                        removeItem(item.id)
-                                                    }
-                                                    className="rounded-2xl p-3 text-slate-400 transition-all duration-200 hover:bg-red-50 hover:text-red-600"
-                                                >
-                                                    <Trash2 />
-                                                </button>
-                                            </div>
-
-                                            <div className="mt-4 flex items-center justify-between">
-                                                <div className="flex items-center gap-2">
-                                                    <button
-                                                        onClick={() =>
-                                                            updateQty(
-                                                                item.id,
-                                                                -1,
-                                                            )
-                                                        }
-                                                        className="rounded-2xl border border-slate-200 bg-white p-3 text-slate-700 shadow-sm transition-all duration-200 hover:border-slate-300 hover:shadow-md"
-                                                    >
-                                                        <Minus />
-                                                    </button>
-                                                    <div className="min-w-[48px] text-center text-lg font-bold text-slate-900">
-                                                        {item.qty}
-                                                    </div>
-                                                    <button
-                                                        onClick={() =>
-                                                            updateQty(
-                                                                item.id,
-                                                                1,
-                                                            )
-                                                        }
-                                                        className="rounded-2xl border border-slate-200 bg-white p-3 text-slate-700 shadow-sm transition-all duration-200 hover:border-slate-300 hover:shadow-md"
-                                                    >
-                                                        <Plus />
-                                                    </button>
-                                                </div>
-                                                <div className="text-lg font-bold text-slate-950">
-                                                    Rp{' '}
-                                                    {formatRupiah(
-                                                        price *
-                                                            Number(
-                                                                item.qty || 0,
-                                                            ),
-                                                    )}
-                                                </div>
-                                            </div>
-                                        </div>
-                                    );
-                                })}
-                            </div>
-                        </div>
-
-                        <div className="rounded-[2rem] bg-white p-5 shadow-sm">
-                            <div className="text-xs font-bold tracking-[0.3em] text-slate-400 uppercase">
-                                Pembayaran
-                            </div>
-
-                            <div className="mt-4 rounded-3xl bg-slate-950 p-5 text-white">
-                                <div className="text-sm font-semibold text-slate-400">
-                                    Total tagihan
-                                </div>
-                                <div className="mt-2 text-3xl font-bold">
-                                    Rp {formatRupiah(totalAmount)}
-                                </div>
-                            </div>
-
-                            <div className="mt-4 grid grid-cols-3 gap-2">
-                                {[
-                                    { id: 'cash', label: 'Tunai' },
-                                    { id: 'qris', label: 'QRIS' },
-                                    { id: 'bank', label: 'Transfer' },
-                                ].map((method) => (
-                                    <button
-                                        key={method.id}
-                                        onClick={() =>
-                                            setPaymentMethod(method.id)
-                                        }
-                                        className={cn(
-                                            'rounded-2xl px-3 py-4 text-sm font-bold shadow-sm transition-all duration-200 hover:shadow-md',
-                                            paymentMethod === method.id
-                                                ? 'bg-slate-950 text-white'
-                                                : 'bg-slate-100 text-slate-600',
-                                        )}
-                                    >
-                                        {method.label}
-                                    </button>
-                                ))}
-                            </div>
-
-                            {paymentMethod === 'cash' && (
-                                <div className="mt-4">
-                                    <label className="text-xs font-bold tracking-widest text-slate-400 uppercase">
-                                        Uang Diterima
-                                    </label>
-                                    <div
-                                        className={cn(
-                                            'mt-2 flex items-center rounded-2xl px-4 py-3',
-                                            formSurface,
-                                        )}
-                                    >
-                                        <span className="text-lg font-bold text-slate-500">
-                                            Rp
-                                        </span>
-                                        <input
-                                            type="text"
-                                            inputMode="numeric"
-                                            value={cashReceived}
-                                            onChange={(event) =>
-                                                setCashReceived(
-                                                    sanitizeNumericInput(
-                                                        event.target.value,
-                                                    ),
-                                                )
-                                            }
-                                            placeholder="0"
-                                            className="ml-3 w-full border-0 bg-transparent p-0 text-2xl font-bold text-slate-950 focus:ring-0 focus:outline-none"
-                                        />
-                                    </div>
-                                    <div className="mt-3 grid grid-cols-2 gap-2">
-                                        {cashShortcutAmounts.map(
-                                            (amount, index) => (
-                                                <button
-                                                    key={`${amount}-${index}`}
-                                                    type="button"
-                                                    onClick={() =>
-                                                        setCashReceived(
-                                                            String(amount),
-                                                        )
-                                                    }
-                                                    className={cn(
-                                                        'rounded-2xl border px-3 py-4 text-left text-sm font-bold shadow-sm transition-all duration-200 hover:shadow-md',
-                                                        Number(
-                                                            cashReceived || 0,
-                                                        ) === amount
-                                                            ? 'border-slate-950 bg-slate-950 text-white'
-                                                            : amount ===
-                                                                totalAmount
-                                                              ? 'border-emerald-200 bg-emerald-50 text-emerald-800 hover:bg-emerald-100'
-                                                              : 'border-slate-200 bg-slate-50 text-slate-700 hover:bg-slate-100',
-                                                    )}
-                                                >
-                                                    {amount === totalAmount ? (
-                                                        <div className="space-y-1">
-                                                            <div className="text-[10px] font-bold tracking-widest uppercase opacity-70">
-                                                                Uang Pas
-                                                            </div>
-                                                            <div className="text-sm font-bold">
-                                                                Rp{' '}
-                                                                {formatRupiah(
-                                                                    amount,
-                                                                )}
-                                                            </div>
-                                                        </div>
-                                                    ) : (
-                                                        <div>
-                                                            Rp{' '}
-                                                            {formatRupiah(
-                                                                amount,
-                                                            )}
-                                                        </div>
-                                                    )}
-                                                </button>
-                                            ),
-                                        )}
-                                    </div>
-                                    <div
-                                        className={cn(
-                                            'mt-3 text-sm font-bold',
-                                            change < 0
-                                                ? 'text-red-600'
-                                                : 'text-emerald-600',
-                                        )}
-                                    >
-                                        {change < 0
-                                            ? `Kurang ${formatSignedCurrency(change)}`
-                                            : `Kembali Rp ${formatRupiah(change)}`}
-                                    </div>
-                                </div>
-                            )}
-
-                            {paymentMethod !== 'cash' && (
-                                <div className="mt-4 rounded-3xl bg-slate-50 p-4 text-sm font-semibold text-slate-600">
-                                    Pembayaran non-tunai akan dianggap lunas
-                                    sesuai nominal total.
-                                </div>
-                            )}
-
-                            <div className="mt-5 grid grid-cols-2 gap-3 text-sm font-semibold text-slate-600">
-                                <div className="rounded-2xl bg-slate-50 p-4">
-                                    <div className="text-[11px] font-bold tracking-widest text-slate-400 uppercase">
-                                        Mode Harga
-                                    </div>
-                                    <div className="mt-2 font-bold text-slate-950">
-                                        {isWorkshop ? 'Bengkel' : 'Umum'}
-                                    </div>
-                                </div>
-                                <div className="rounded-2xl bg-slate-50 p-4">
-                                    <div className="text-[11px] font-bold tracking-widest text-slate-400 uppercase">
-                                        Status Sesi
-                                    </div>
-                                    <div className="mt-2 font-bold text-slate-950">
-                                        {hasOpenSession
-                                            ? 'Aktif'
-                                            : 'Belum dibuka'}
-                                    </div>
-                                </div>
-                            </div>
-
-                            <button
-                                onClick={processPayment}
-                                disabled={
-                                    !hasOpenSession ||
-                                    data.cart.length === 0 ||
-                                    isProcessing ||
-                                    (paymentMethod === 'cash' && change < 0)
-                                }
-                                className="mt-5 w-full rounded-3xl bg-slate-950 px-4 py-4 text-base font-bold text-white shadow-sm transition-all duration-200 hover:bg-slate-800 hover:shadow-md disabled:cursor-not-allowed disabled:opacity-40"
-                            >
-                                {isProcessing
-                                    ? 'Memproses...'
-                                    : 'Selesaikan Transaksi'}
-                            </button>
-
-                            <button
-                                onClick={() => setShowMobileCheckout(false)}
-                                className="mt-3 w-full rounded-3xl border border-slate-200 px-4 py-4 text-sm font-bold text-slate-700 shadow-sm transition-all duration-200 hover:bg-slate-50 hover:shadow-md lg:hidden"
-                            >
-                                Kembali ke Katalog
-                            </button>
-                        </div>
-                    </section>
+                    <CheckoutPanel
+                        cart={data.cart}
+                        productById={productById}
+                        getProductPrice={getProductPrice}
+                        clearCart={clearCart}
+                        removeItem={removeItem}
+                        updateQty={updateQty}
+                        totalAmount={totalAmount}
+                        paymentMethod={paymentMethod}
+                        onPaymentMethodChange={setPaymentMethod}
+                        cashReceived={cashReceived}
+                        onCashReceivedChange={setCashReceived}
+                        cashShortcutAmounts={cashShortcutAmounts}
+                        change={change}
+                        isWorkshop={isWorkshop}
+                        hasOpenSession={hasOpenSession}
+                        isProcessing={isProcessing}
+                        onProcessPayment={processPayment}
+                        showMobileCheckout={showMobileCheckout}
+                        onCloseMobileCheckout={() => setShowMobileCheckout(false)}
+                    />
                 </main>
             </div>
 
-            <div className="fixed inset-x-0 bottom-0 z-30 border-t border-slate-200 bg-white/95 p-3 shadow-[0_-12px_32px_rgba(15,23,42,0.08)] backdrop-blur lg:hidden">
-                <div className="mx-auto flex max-w-xl items-center gap-3">
-                    <button
-                        onClick={() =>
-                            setShowMobileCheckout((current) => !current)
-                        }
-                        className="flex-1 rounded-3xl bg-slate-950 px-4 py-4 text-left text-white shadow-sm transition-all duration-200 hover:bg-slate-800 hover:shadow-md"
-                    >
-                        <div className="text-[11px] font-bold tracking-widest text-slate-400 uppercase">
-                            Checkout Mobile
-                        </div>
-                        <div className="mt-1 flex items-center justify-between gap-3">
-                            <span className="text-sm font-bold">
-                                {data.cart.length} item di keranjang
-                            </span>
-                            <span className="text-lg font-bold">
-                                Rp {formatRupiah(totalAmount)}
-                            </span>
-                        </div>
-                    </button>
-                    <button
-                        onClick={() =>
-                            hasOpenSession
-                                ? setShowSettlementModal(true)
-                                : setShowOpenSessionModal(true)
-                        }
-                        className="rounded-3xl border border-slate-200 bg-white px-4 py-4 text-sm font-bold text-slate-700 shadow-sm transition-all duration-200 hover:bg-slate-50 hover:shadow-md"
-                    >
-                        {hasOpenSession ? 'Tutup' : 'Buka'}
-                    </button>
-                </div>
-            </div>
+            <MobileBottomBar
+                cartCount={data.cart.length}
+                totalAmount={totalAmount}
+                hasOpenSession={hasOpenSession}
+                onToggleCheckout={() => setShowMobileCheckout((current) => !current)}
+                onSessionButtonClick={() =>
+                    hasOpenSession
+                        ? setShowSettlementModal(true)
+                        : setShowOpenSessionModal(true)
+                }
+            />
 
             <OpenSessionModal
                 show={!hasOpenSession && showOpenSessionModal}
@@ -1156,77 +835,12 @@ export default function TabletPOS({ products, categories, cashierSession }: { pr
                 onClose={() => setShowLogoutModal(false)}
             />
 
-            <div
-                id="printable-area"
-                className="hidden bg-white p-2 print:block"
-            >
-                <style>{`@media print { @page { margin: 0; size: auto; } body * { visibility: hidden; } #printable-area, #printable-area * { visibility: visible; } #printable-area { position: absolute; left: 0; top: 0; width: 100%; } }`}</style>
-                <div className="mx-auto max-w-[58mm] font-mono text-[10px] leading-tight text-black">
-                    <div className="mb-2 text-center">
-                        <h2 className="text-xs font-bold uppercase">
-                            {STORE_CONFIG.name}
-                        </h2>
-                        <p>{STORE_CONFIG.address}</p>
-                        <p>{STORE_CONFIG.phone}</p>
-                    </div>
-                    <div className="mb-2 border-b border-dashed border-black" />
-                    <div className="mb-2">
-                        <div>No: {receiptData?.invoice}</div>
-                        <div>Tgl: {receiptData?.date}</div>
-                        <div>Kasir: {receiptData?.cashier}</div>
-                        <div>Plg: {receiptData?.customerType}</div>
-                    </div>
-                    <div className="mb-2 border-b border-dashed border-black" />
-                    <div className="mb-2 space-y-1">
-                        {receiptData?.items?.map((item, index) => (
-                            <div key={index}>
-                                <div className="font-bold">
-                                    {getProductLabel(item)}
-                                </div>
-                                <div className="flex justify-between pl-2">
-                                    <span>
-                                        {item.qty} x{' '}
-                                        {Number(
-                                            item.sell_price || 0,
-                                        ).toLocaleString('id-ID')}
-                                    </span>
-                                    <span>
-                                        {(
-                                            Number(item.qty || 0) *
-                                            Number(item.sell_price || 0)
-                                        ).toLocaleString('id-ID')}
-                                    </span>
-                                </div>
-                            </div>
-                        ))}
-                    </div>
-                    <div className="mb-2 border-b border-dashed border-black" />
-                    <div className="mb-1 flex justify-between text-xs font-bold">
-                        <span>TOTAL</span>
-                        <span>
-                            Rp {receiptData?.total?.toLocaleString('id-ID')}
-                        </span>
-                    </div>
-                    <div className="flex justify-between">
-                        <span>Bayar ({receiptData?.paymentMethod})</span>
-                        <span>
-                            Rp {receiptData?.payAmount?.toLocaleString('id-ID')}
-                        </span>
-                    </div>
-                    <div className="mb-4 flex justify-between">
-                        <span>Kembali</span>
-                        <span>
-                            Rp {receiptData?.change?.toLocaleString('id-ID')}
-                        </span>
-                    </div>
-                    <div className="mt-4 text-center">
-                        <p>*** TERIMA KASIH ***</p>
-                        <p>
-                            Barang yang dibeli tidak dapat ditukar/dikembalikan
-                        </p>
-                    </div>
-                </div>
-            </div>
+            <PrintReceipt
+                receiptData={receiptData}
+                storeName={STORE_CONFIG.name}
+                storeAddress={STORE_CONFIG.address}
+                storePhone={STORE_CONFIG.phone}
+            />
         </div>
     );
 }
