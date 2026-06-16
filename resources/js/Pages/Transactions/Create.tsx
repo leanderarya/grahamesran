@@ -1,4 +1,3 @@
-// @ts-nocheck
 import {
     AppNotifications,
     notifyError,
@@ -13,6 +12,44 @@ import {
     useState,
 } from 'react';
 import { route } from 'ziggy-js';
+import type { SharedData } from '@/types';
+
+interface Product {
+    id: number;
+    name: string;
+    sku?: string;
+    stock: number | string;
+    sell_price: number | string;
+    workshop_price?: number | string;
+    volume_liter?: number | string;
+    image_url?: string;
+    vehicles?: { model?: string }[];
+}
+
+interface CartItem extends Product {
+    qty: number;
+}
+
+interface CashierSession {
+    id?: number;
+    opening_cash?: number | string;
+    cash_sales_total?: number | string;
+    non_cash_sales_total?: number | string;
+    transactions_count?: number;
+    opened_at?: string;
+}
+
+interface ReceiptData {
+    invoice: string;
+    date: string;
+    items: CartItem[];
+    total: number;
+    payAmount: number;
+    change: number;
+    paymentMethod: string;
+    cashier?: string;
+    customerType: string;
+}
 
 const STORE_CONFIG = {
     name: 'GRAHA MOTOR',
@@ -20,25 +57,25 @@ const STORE_CONFIG = {
     phone: '0812-3456-7890',
 };
 
-const cx = (...classes) => classes.filter(Boolean).join(' ');
-const formatRupiah = (value) =>
-    new Intl.NumberFormat('id-ID').format(value || 0);
-const sanitizeNumericInput = (value) => value.replace(/[^\d]/g, '');
-const formatDateTime = (value) =>
+const cx = (...classes: (string | boolean | undefined | null)[]) => classes.filter(Boolean).join(' ');
+const formatRupiah = (value: number | string | null | undefined) =>
+    new Intl.NumberFormat('id-ID').format(Number(value) || 0);
+const sanitizeNumericInput = (value: string) => value.replace(/[^\d]/g, '');
+const formatDateTime = (value: string | null | undefined) =>
     value
         ? new Intl.DateTimeFormat('id-ID', {
               dateStyle: 'medium',
               timeStyle: 'short',
           }).format(new Date(value))
         : '-';
-const formatSignedCurrency = (value) =>
+const formatSignedCurrency = (value: number) =>
     `${value < 0 ? '-' : ''}Rp ${formatRupiah(Math.abs(value || 0))}`;
-const formatVolume = (value) => {
+const formatVolume = (value: number | string | null | undefined) => {
     const numeric = Number(value);
     if (!numeric) return null;
     return `${numeric.toString().replace(/\.0+$/, '')}L`;
 };
-const getProductLabel = (product) => {
+const getProductLabel = (product: Product | CartItem | null | undefined) => {
     if (!product) return '';
     const volume = formatVolume(product.volume_liter);
     return volume ? `${product.name} (${volume})` : product.name;
@@ -259,7 +296,7 @@ const Icons = {
     ),
 };
 
-const ProductCard = ({ product, customerType, onAdd }) => {
+const ProductCard = ({ product, customerType, onAdd }: { product: Product; customerType: string; onAdd: (product: Product) => void }) => {
     const stock = Number(product.stock) || 0;
     const isOut = stock <= 0;
     const workshopPrice = Number(product.workshop_price) || 0;
@@ -325,8 +362,8 @@ const ProductCard = ({ product, customerType, onAdd }) => {
     );
 };
 
-export default function TabletPOS({ products, cashierSession }) {
-    const { auth, flash } = usePage().props;
+export default function TabletPOS({ products, cashierSession }: { products: Product[]; cashierSession: CashierSession | null }) {
+    const { auth, flash } = usePage<SharedData>().props;
     const [activeMenu, setActiveMenu] = useState('cashier');
     const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
     const [search, setSearch] = useState('');
@@ -334,7 +371,7 @@ export default function TabletPOS({ products, cashierSession }) {
     const [customerType, setCustomerType] = useState('general');
     const [paymentMethod, setPaymentMethod] = useState('cash');
     const [cashReceived, setCashReceived] = useState('');
-    const [receiptData, setReceiptData] = useState(null);
+    const [receiptData, setReceiptData] = useState<ReceiptData | null>(null);
     const [showLogoutModal, setShowLogoutModal] = useState(false);
     const [showOpenSessionModal, setShowOpenSessionModal] =
         useState(!cashierSession);
@@ -346,8 +383,8 @@ export default function TabletPOS({ products, cashierSession }) {
     const [isOpeningSession, setIsOpeningSession] = useState(false);
     const [isClosingSession, setIsClosingSession] = useState(false);
     const [isProcessing, setIsProcessing] = useState(false);
-    const [sessionState, setSessionState] = useState(cashierSession);
-    const { data, setData, reset } = useForm({ cart: [] });
+    const [sessionState, setSessionState] = useState<CashierSession | null>(cashierSession);
+    const { data, setData, reset } = useForm<{ cart: CartItem[] }>({ cart: [] });
 
     useEffect(() => {
         setSessionState(cashierSession ?? null);
@@ -370,10 +407,10 @@ export default function TabletPOS({ products, cashierSession }) {
         const base = !query
             ? products
             : products.filter(
-                  (product) =>
+                  (product: Product) =>
                       product.name.toLowerCase().includes(query) ||
                       (product.sku || '').toLowerCase().includes(query) ||
-                      (product.vehicles?.some((vehicle) =>
+                      (product.vehicles?.some((vehicle: { model?: string }) =>
                           (vehicle.model || '').toLowerCase().includes(query),
                       ) ??
                           false),
@@ -383,7 +420,7 @@ export default function TabletPOS({ products, cashierSession }) {
     }, [deferredSearch, products]);
 
     const getProductPrice = useCallback(
-        (product) => {
+        (product: Product | CartItem | null | undefined) => {
             const workshopPrice = Number(product?.workshop_price) || 0;
             const sellPrice = Number(product?.sell_price) || 0;
             return customerType === 'workshop' && workshopPrice > 0
@@ -406,7 +443,7 @@ export default function TabletPOS({ products, cashierSession }) {
     );
 
     const cashShortcutAmounts = useMemo(() => {
-        const roundUpToNearest = (amount, nearest) =>
+        const roundUpToNearest = (amount: number, nearest: number) =>
             Math.ceil((amount || 0) / nearest) * nearest;
 
         const candidates = [
@@ -449,7 +486,7 @@ export default function TabletPOS({ products, cashierSession }) {
               : 'over';
 
     const addToCart = useCallback(
-        (product) => {
+        (product: Product) => {
             if (!hasOpenSession) {
                 setShowOpenSessionModal(true);
                 return;
@@ -484,7 +521,7 @@ export default function TabletPOS({ products, cashierSession }) {
     );
 
     const updateQty = useCallback(
-        (id, delta) => {
+        (id: number, delta: number) => {
             setData(
                 'cart',
                 data.cart.map((item) => {
@@ -509,7 +546,7 @@ export default function TabletPOS({ products, cashierSession }) {
     );
 
     const removeItem = useCallback(
-        (id) => {
+        (id: number) => {
             setData(
                 'cart',
                 data.cart.filter((item) => item.id !== id),
@@ -546,7 +583,7 @@ export default function TabletPOS({ products, cashierSession }) {
                     setOpeningNotes('');
                     setShowOpenSessionModal(false);
                 },
-                onError: (errors) => {
+                onError: (errors: Record<string, string>) => {
                     notifyError(errors?.opening_cash || 'Gagal membuka kasir.');
                 },
                 onFinish: () => setIsOpeningSession(false),
@@ -583,7 +620,7 @@ export default function TabletPOS({ products, cashierSession }) {
                     setSearch('');
                     setCashReceived('');
                 },
-                onError: (errors) => {
+                onError: (errors: Record<string, string>) => {
                     notifyError(
                         errors?.closing_cash_physical || 'Gagal menutup kasir.',
                     );
@@ -632,7 +669,7 @@ export default function TabletPOS({ products, cashierSession }) {
             },
             {
                 onSuccess: () => {
-                    setSessionState((current) =>
+                    setSessionState((current: CashierSession | null) =>
                         current
                             ? {
                                   ...current,
@@ -674,7 +711,7 @@ export default function TabletPOS({ products, cashierSession }) {
                         setCashReceived('');
                     }, 250);
                 },
-                onError: (errors) => {
+                onError: (errors: Record<string, string>) => {
                     const message =
                         errors?.cart ||
                         errors?.payment_method ||

@@ -1,4 +1,3 @@
-// @ts-nocheck
 import {
     AppNotifications,
     notifyWarning,
@@ -6,10 +5,41 @@ import {
 import { Head, Link, router, usePage } from '@inertiajs/react';
 import { useState } from 'react';
 import { route } from 'ziggy-js';
+import type { SharedData } from '@/types';
 
-const formatRupiah = (value) =>
-    new Intl.NumberFormat('id-ID').format(value || 0);
-const formatDateTime = (value) =>
+interface CashierSession {
+    id?: number;
+    opened_at?: string;
+}
+
+interface Summary {
+    total_transactions: number;
+    revenue_total: number;
+    profit_total: number;
+    cash_total: number;
+    non_cash_total: number;
+}
+
+interface Transaction {
+    id: number;
+    invoice_number: string;
+    created_at: string;
+    items_count: number;
+    customer_type: string;
+    total_amount: number;
+    payment_method: string;
+}
+
+interface TopProduct {
+    product_name: string;
+    image_url?: string;
+    quantity: number;
+    revenue: number;
+}
+
+const formatRupiah = (value: number | string | null | undefined) =>
+    new Intl.NumberFormat('id-ID').format(Number(value) || 0);
+const formatDateTime = (value: string | null | undefined) =>
     value
         ? new Intl.DateTimeFormat('id-ID', {
               dateStyle: 'medium',
@@ -22,7 +52,7 @@ const STORE_CONFIG = {
     phone: '0812-3456-7890',
 };
 
-const cx = (...classes) => classes.filter(Boolean).join(' ');
+const cx = (...classes: (string | boolean | undefined | null)[]) => classes.filter(Boolean).join(' ');
 
 const Icons = {
     Cashier: () => (
@@ -151,8 +181,13 @@ export default function CashierRecap({
     summary,
     transactions,
     topProducts,
+}: {
+    cashierSession: CashierSession | null;
+    summary: Summary;
+    transactions: Transaction[];
+    topProducts: TopProduct[];
 }) {
-    const { auth, flash } = usePage().props;
+    const { auth, flash } = usePage<SharedData>().props;
     const [activeMenu, setActiveMenu] = useState('report');
     const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
     const [showLogoutModal, setShowLogoutModal] = useState(false);

@@ -1,12 +1,11 @@
-// @ts-nocheck
 import InputError from '@/Components/InputError';
 import { Head, Link, useForm } from '@inertiajs/react';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { route } from 'ziggy-js';
 
-const cx = (...classes) => classes.filter(Boolean).join(' ');
+const cx = (...classes: (string | boolean | undefined | null)[]) => classes.filter(Boolean).join(' ');
 
-function IconBank({ className }) {
+function IconBank({ className }: { className?: string }) {
     return (
         <svg
             className={className}
@@ -24,7 +23,7 @@ function IconBank({ className }) {
     );
 }
 
-function IconUser({ className }) {
+function IconUser({ className }: { className?: string }) {
     return (
         <svg
             className={className}
@@ -42,7 +41,7 @@ function IconUser({ className }) {
     );
 }
 
-function IconLock({ className }) {
+function IconLock({ className }: { className?: string }) {
     return (
         <svg
             className={className}
@@ -60,7 +59,7 @@ function IconLock({ className }) {
     );
 }
 
-function IconEye({ className }) {
+function IconEye({ className }: { className?: string }) {
     return (
         <svg
             className={className}
@@ -84,7 +83,7 @@ function IconEye({ className }) {
     );
 }
 
-function IconEyeOff({ className }) {
+function IconEyeOff({ className }: { className?: string }) {
     return (
         <svg
             className={className}
@@ -108,7 +107,7 @@ function IconEyeOff({ className }) {
     );
 }
 
-function IconHelp({ className }) {
+function IconHelp({ className }: { className?: string }) {
     return (
         <svg
             className={className}
@@ -126,14 +125,14 @@ function IconHelp({ className }) {
     );
 }
 
-export default function Login({ status, canResetPassword }) {
+export default function Login({ status, canResetPassword }: { status?: string; canResetPassword?: boolean }) {
     const { data, setData, post, processing, errors, reset } = useForm({
         email: '',
         password: '',
         remember: false,
     });
 
-    const emailRef = useRef(null);
+    const emailRef = useRef<HTMLInputElement>(null);
     const [showPassword, setShowPassword] = useState(false);
 
     const greeting = useMemo(() => {
@@ -151,7 +150,7 @@ export default function Login({ status, canResetPassword }) {
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 
-    const submit = (event) => {
+    const submit = (event: React.FormEvent<HTMLFormElement>) => {
         event.preventDefault();
         post(route('login'));
     };
