@@ -23,21 +23,37 @@ class MonthlyAnalyticsStatsOverview extends StatsOverviewWidget
         $previousMonthStart = $month->copy()->subMonth()->startOfMonth();
         $previousMonthEnd = $month->copy()->subMonth()->endOfMonth();
 
-        $monthlyRevenue = (float) Transaction::whereBetween('created_at', [$monthStart, $monthEnd])->sum('total_amount');
-        $monthlyProfit = (float) Transaction::whereBetween('created_at', [$monthStart, $monthEnd])->sum('total_profit');
-        $recordCount = Transaction::whereBetween('created_at', [$monthStart, $monthEnd])->count();
-        $previousRevenue = (float) Transaction::whereBetween('created_at', [$previousMonthStart, $previousMonthEnd])->sum('total_amount');
-        $activeDays = Transaction::whereBetween('created_at', [$monthStart, $monthEnd])
-            ->selectRaw('DATE(created_at) as sales_date')
-            ->groupBy('sales_date')
-            ->get()
-            ->count();
+        // Query 1: Current month aggregate
+        $monthAgg = Transaction::query()
+            ->whereBetween('created_at', [$monthStart, $monthEnd])
+            ->selectRaw('COALESCE(SUM(total_amount), 0) as revenue')
+            ->selectRaw('COALESCE(SUM(total_profit), 0) as profit')
+            ->selectRaw('COUNT(*) as record_count')
+            ->selectRaw('COUNT(DISTINCT DATE(created_at)) as active_days')
+            ->first();
+
+        // Query 2: Best daily revenue for current month
+        $bestDaily = Transaction::query()
+            ->selectRaw('COALESCE(MAX(daily_rev), 0) as best')
+            ->fromSub(
+                Transaction::query()
+                    ->selectRaw('SUM(total_amount) as daily_rev')
+                    ->whereBetween('created_at', [$monthStart, $monthEnd])
+                    ->groupByRaw('DATE(created_at)'),
+                'daily'
+            )
+            ->value('best');
+
+        // Query 3: Previous month revenue for comparison
+        $previousRevenue = (float) Transaction::whereBetween('created_at', [$previousMonthStart, $previousMonthEnd])
+            ->sum('total_amount');
+
+        $monthlyRevenue = (float) $monthAgg->revenue;
+        $monthlyProfit = (float) $monthAgg->profit;
+        $recordCount = (int) $monthAgg->record_count;
+        $activeDays = (int) $monthAgg->active_days;
         $averageRevenue = $activeDays > 0 ? $monthlyRevenue / $activeDays : 0;
-        $bestDailyRevenue = (float) Transaction::whereBetween('created_at', [$monthStart, $monthEnd])
-            ->selectRaw('SUM(total_amount) as revenue')
-            ->groupByRaw('DATE(created_at)')
-            ->orderByDesc('revenue')
-            ->value('revenue');
+        $bestDailyRevenue = (float) $bestDaily;
 
         return [
             Stat::make('Omset '.$month->translatedFormat('F Y'), $this->formatCurrency($monthlyRevenue))
