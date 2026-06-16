@@ -12,8 +12,7 @@ use Carbon\Carbon;
 
 class StatsOverview extends BaseWidget
 {
-    // Supaya data refresh otomatis setiap 15 detik (biar kayak monitor saham)
-    protected static ?string $pollingInterval = '15s';
+    protected static ?string $pollingInterval = '60s';
 
     protected function getStats(): array
     {
