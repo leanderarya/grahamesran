@@ -11,8 +11,17 @@ use Illuminate\Support\Facades\Schema;
 
 class Transaction extends Model
 {
-    // Opsi 'Malas tapi Aman' untuk MVP: Izinkan semua kolom diisi
-    protected $guarded = [];
+    protected $fillable = [
+        'invoice_number',
+        'user_id',
+        'cashier_session_id',
+        'total_amount',
+        'customer_type',
+        'total_profit',
+        'payment_method',
+        'amount_paid',
+        'change_amount',
+    ];
 
     protected $casts = [
         'total_amount' => 'decimal:2',

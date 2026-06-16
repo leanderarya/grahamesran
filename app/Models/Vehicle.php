@@ -7,7 +7,11 @@ use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 
 class Vehicle extends Model
 {
-    protected $guarded = [];
+    protected $fillable = [
+        'brand',
+        'model',
+        'year_generation',
+    ];
 
     /**
      * Relasi: Satu tipe Mobil punya BANYAK sparepart yang kompatibel.

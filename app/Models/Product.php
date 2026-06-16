@@ -8,7 +8,16 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Product extends Model
 {
-    protected $guarded = [];
+    protected $fillable = [
+        'sku',
+        'name',
+        'image_path',
+        'volume_liter',
+        'stock',
+        'cost_price',
+        'sell_price',
+        'workshop_price',
+    ];
 
     protected $appends = [
         'image_url',

@@ -9,7 +9,15 @@ use Illuminate\Database\Eloquent\Relations\HasOne;
 
 class MonthlyReport extends Model
 {
-    protected $guarded = [];
+    protected $fillable = [
+        'month_date',
+        'notes',
+        'finalized_at',
+        'finalized_by',
+        'transaction_count',
+        'total_amount',
+        'total_profit',
+    ];
 
     protected $casts = [
         'month_date' => 'date',

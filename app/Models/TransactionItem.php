@@ -7,7 +7,13 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class TransactionItem extends Model
 {
-    protected $guarded = [];
+    protected $fillable = [
+        'transaction_id',
+        'product_id',
+        'quantity',
+        'cost_at_time',
+        'price_at_time',
+    ];
     
     // Supaya bisa akses tanggal created_at di tabel pivot ini jika perlu
     public $timestamps = true;

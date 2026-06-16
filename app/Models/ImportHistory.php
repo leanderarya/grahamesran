@@ -7,7 +7,28 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class ImportHistory extends Model
 {
-    protected $guarded = [];
+    protected $fillable = [
+        'monthly_report_id',
+        'user_id',
+        'import_month',
+        'original_file_name',
+        'stored_file_path',
+        'status',
+        'imported_days',
+        'skipped_days',
+        'created_transactions',
+        'updated_transactions',
+        'created_products',
+        'imported_items',
+        'matched_days',
+        'out_of_month_days',
+        'first_transaction_date',
+        'last_transaction_date',
+        'detected_months',
+        'validation_status',
+        'validation_notes',
+        'error_message',
+    ];
 
     protected $casts = [
         'import_month' => 'date',

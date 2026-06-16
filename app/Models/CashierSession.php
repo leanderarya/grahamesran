@@ -8,7 +8,20 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class CashierSession extends Model
 {
-    protected $guarded = [];
+    protected $fillable = [
+        'user_id',
+        'opening_cash',
+        'opened_at',
+        'cash_sales_total',
+        'non_cash_sales_total',
+        'transactions_count',
+        'closing_cash_physical',
+        'expected_cash',
+        'cash_difference',
+        'closed_at',
+        'opening_notes',
+        'closing_notes',
+    ];
 
     protected $casts = [
         'opening_cash' => 'decimal:2',

@@ -7,7 +7,15 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class Purchase extends Model
 {
-    protected $guarded = [];
+    protected $fillable = [
+        'date',
+        'supplier_name',
+        'product_id',
+        'quantity',
+        'buy_price_per_unit',
+        'total_spend',
+        'notes',
+    ];
 
     protected $casts = [
         'date' => 'date',
