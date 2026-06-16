@@ -17,13 +17,14 @@ import type { SharedData } from '@/types';
 interface Product {
     id: number;
     name: string;
+    category: string | null;
     sku?: string;
     stock: number | string;
     sell_price: number | string;
     workshop_price?: number | string;
     volume_liter?: number | string;
     image_url?: string;
-    vehicles?: { model?: string }[];
+    vehicles?: { brand?: string; model?: string }[];
 }
 
 interface CartItem extends Product {
@@ -362,7 +363,77 @@ const ProductCard = ({ product, customerType, onAdd }: { product: Product; custo
     );
 };
 
-export default function TabletPOS({ products, cashierSession }: { products: Product[]; cashierSession: CashierSession | null }) {
+function CategoryGrid({
+    groups,
+    onSelect,
+}: {
+    groups: { name: string; count: number }[];
+    onSelect: (category: string) => void;
+}) {
+    const categoryIcons: Record<string, string> = {
+        Stabilizer: '🔗',
+        'Rack end': '🔧',
+        'Drag link': '🔩',
+        'Break pad': '🛑',
+        Klip: '📎',
+        Sekering: '⚡',
+        Kabel: '🔌',
+        Soket: '🔋',
+        Kelistrikan: '💡',
+        Karet: '⬛',
+        'Komponen Mesin': '⚙️',
+        Aki: '🔋',
+        Rotak: '🔄',
+        Rem: '🛞',
+        Lainnya: '📦',
+    };
+
+    return (
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-3 xl:grid-cols-4">
+            {groups.map((group) => (
+                <button
+                    key={group.name}
+                    onClick={() => onSelect(group.name)}
+                    className="flex flex-col items-center gap-2 rounded-xl border border-neutral-200 bg-white p-4 text-center transition-all hover:border-blue-300 hover:shadow-md dark:border-neutral-700 dark:bg-neutral-800 dark:hover:border-blue-500"
+                >
+                    <span className="text-3xl">{categoryIcons[group.name] || '📦'}</span>
+                    <span className="text-sm font-semibold text-neutral-800 dark:text-neutral-100">
+                        {group.name}
+                    </span>
+                    <span className="rounded-full bg-blue-100 px-2 py-0.5 text-xs font-medium text-blue-700 dark:bg-blue-900 dark:text-blue-300">
+                        {group.count} item
+                    </span>
+                </button>
+            ))}
+        </div>
+    );
+}
+
+function VehicleFilter({
+    brands,
+    selected,
+    onChange,
+}: {
+    brands: string[];
+    selected: string;
+    onChange: (brand: string) => void;
+}) {
+    return (
+        <select
+            value={selected}
+            onChange={(e) => onChange(e.target.value)}
+            className="rounded-lg border border-neutral-300 bg-white px-3 py-2 text-sm dark:border-neutral-600 dark:bg-neutral-800"
+        >
+            {brands.map((brand) => (
+                <option key={brand} value={brand}>
+                    {brand === 'all' ? 'Semua Merk' : brand}
+                </option>
+            ))}
+        </select>
+    );
+}
+
+export default function TabletPOS({ products, categories, cashierSession }: { products: Product[]; categories: string[]; cashierSession: CashierSession | null }) {
     const { auth, flash } = usePage<SharedData>().props;
     const [activeMenu, setActiveMenu] = useState('cashier');
     const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
@@ -384,6 +455,8 @@ export default function TabletPOS({ products, cashierSession }: { products: Prod
     const [isClosingSession, setIsClosingSession] = useState(false);
     const [isProcessing, setIsProcessing] = useState(false);
     const [sessionState, setSessionState] = useState<CashierSession | null>(cashierSession);
+    const [selectedVehicle, setSelectedVehicle] = useState<string>('all');
+    const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
     const { data, setData, reset } = useForm<{ cart: CartItem[] }>({ cart: [] });
 
     useEffect(() => {
@@ -401,23 +474,62 @@ export default function TabletPOS({ products, cashierSession }: { products: Prod
         return map;
     }, [products]);
 
+    const vehicleBrands = useMemo(() => {
+        const brands = new Set<string>();
+        products.forEach((p) =>
+            p.vehicles?.forEach((v) => {
+                if (v.brand !== 'UNIVERSAL') brands.add(v.brand!);
+            }),
+        );
+        return ['all', ...Array.from(brands).sort()];
+    }, [products]);
+
+    const vehicleFilteredProducts = useMemo(() => {
+        if (selectedVehicle === 'all') return products;
+        return products.filter((p) =>
+            p.vehicles?.some((v) => v.brand === selectedVehicle),
+        );
+    }, [products, selectedVehicle]);
+
+    const categoryGroups = useMemo(() => {
+        const groups: Record<string, number> = {};
+        vehicleFilteredProducts.forEach((p) => {
+            const cat = p.category || 'Lainnya';
+            groups[cat] = (groups[cat] || 0) + 1;
+        });
+        return Object.entries(groups)
+            .sort(([a], [b]) => a.localeCompare(b))
+            .map(([name, count]) => ({ name, count }));
+    }, [vehicleFilteredProducts]);
+
+    const categoryProducts = useMemo(() => {
+        if (!selectedCategory) return [];
+        return vehicleFilteredProducts.filter(
+            (p) => (p.category || 'Lainnya') === selectedCategory,
+        );
+    }, [vehicleFilteredProducts, selectedCategory]);
+
     const filteredProducts = useMemo(() => {
         const query = deferredSearch.trim().toLowerCase();
+        if (!query) return null;
 
-        const base = !query
-            ? products
-            : products.filter(
-                  (product: Product) =>
-                      product.name.toLowerCase().includes(query) ||
-                      (product.sku || '').toLowerCase().includes(query) ||
-                      (product.vehicles?.some((vehicle: { model?: string }) =>
-                          (vehicle.model || '').toLowerCase().includes(query),
-                      ) ??
-                          false),
-              );
-
+        const base = vehicleFilteredProducts.filter(
+            (product: Product) =>
+                product.name.toLowerCase().includes(query) ||
+                (product.sku || '').toLowerCase().includes(query) ||
+                (product.vehicles?.some((vehicle: { model?: string }) =>
+                    (vehicle.model || '').toLowerCase().includes(query),
+                ) ??
+                    false),
+        );
         return base.slice(0, 40);
-    }, [deferredSearch, products]);
+    }, [deferredSearch, vehicleFilteredProducts]);
+
+    useEffect(() => {
+        if (deferredSearch.trim()) {
+            setSelectedCategory(null);
+        }
+    }, [deferredSearch]);
 
     const getProductPrice = useCallback(
         (product: Product | CartItem | null | undefined) => {
@@ -970,28 +1082,38 @@ export default function TabletPOS({ products, cashierSession }: { products: Prod
                                 </div>
 
                                 <div className="text-sm font-semibold text-slate-500">
-                                    {filteredProducts.length} produk tampil
+                                    {filteredProducts ? filteredProducts.length : vehicleFilteredProducts.length} produk tampil
                                 </div>
                             </div>
 
-                            <div
-                                className={cx(
-                                    'mt-5 flex items-center gap-3 rounded-3xl px-4 py-3',
-                                    formSurface,
-                                )}
-                            >
-                                <div className="text-slate-400">
-                                    <Icons.Search />
-                                </div>
-                                <input
-                                    type="text"
-                                    value={search}
-                                    onChange={(event) =>
-                                        setSearch(event.target.value)
-                                    }
-                                    placeholder="Cari barang, SKU, atau model motor..."
-                                    className="w-full border-0 bg-transparent p-0 text-sm font-semibold text-slate-900 placeholder:text-slate-400 focus:ring-0 focus:outline-none"
+                            <div className="mt-5 flex items-center gap-3">
+                                <VehicleFilter
+                                    brands={vehicleBrands}
+                                    selected={selectedVehicle}
+                                    onChange={(brand) => {
+                                        setSelectedVehicle(brand);
+                                        setSelectedCategory(null);
+                                    }}
                                 />
+                                 <div
+                                    className={cx(
+                                        'flex flex-1 items-center gap-3 rounded-3xl px-4 py-3',
+                                        formSurface,
+                                    )}
+                                >
+                                    <div className="text-slate-400">
+                                        <Icons.Search />
+                                    </div>
+                                    <input
+                                        type="text"
+                                        value={search}
+                                        onChange={(event) =>
+                                            setSearch(event.target.value)
+                                        }
+                                        placeholder="Cari barang, SKU, atau model motor..."
+                                        className="w-full border-0 bg-transparent p-0 text-sm font-semibold text-slate-900 placeholder:text-slate-400 focus:ring-0 focus:outline-none"
+                                    />
+                                </div>
                             </div>
                         </div>
 
@@ -1039,28 +1161,61 @@ export default function TabletPOS({ products, cashierSession }: { products: Prod
                             </div>
                         </div>
 
-                        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-2 xl:grid-cols-2 2xl:grid-cols-3">
-                            {filteredProducts.map((product) => (
-                                <ProductCard
-                                    key={product.id}
-                                    product={product}
-                                    customerType={customerType}
-                                    onAdd={addToCart}
-                                />
-                            ))}
+                        {filteredProducts ? (
+                            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-2 xl:grid-cols-2 2xl:grid-cols-3">
+                                {filteredProducts.map((product) => (
+                                    <ProductCard
+                                        key={product.id}
+                                        product={product}
+                                        customerType={customerType}
+                                        onAdd={addToCart}
+                                    />
+                                ))}
 
-                            {filteredProducts.length === 0 && (
-                                <div className="col-span-full rounded-3xl border border-dashed border-slate-300 bg-white p-10 text-center">
-                                    <div className="text-lg font-black text-slate-900">
-                                        Produk tidak ditemukan
-                                    </div>
-                                    <div className="mt-2 text-sm font-semibold text-slate-500">
-                                        Coba kata kunci lain atau kosongkan
-                                        pencarian.
-                                    </div>
+                                {filteredProducts.length === 0 && (
+                                    <p className="col-span-full py-8 text-center text-sm text-neutral-400">
+                                        Barang tidak ditemukan.
+                                    </p>
+                                )}
+                            </div>
+                        ) : selectedCategory ? (
+                            <div>
+                                <div className="mb-3 flex items-center gap-2">
+                                    <button
+                                        onClick={() => setSelectedCategory(null)}
+                                        className="flex items-center gap-1 rounded-lg px-2 py-1 text-sm text-neutral-600 hover:bg-neutral-100 dark:text-neutral-300 dark:hover:bg-neutral-700"
+                                    >
+                                        ← Kembali
+                                    </button>
+                                    <h3 className="text-base font-bold text-neutral-800 dark:text-neutral-100">
+                                        {selectedCategory}
+                                    </h3>
+                                    <span className="text-xs text-neutral-400">
+                                        {categoryProducts.length} item
+                                    </span>
                                 </div>
-                            )}
-                        </div>
+                                <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-2 xl:grid-cols-2 2xl:grid-cols-3">
+                                    {categoryProducts.map((product) => (
+                                        <ProductCard
+                                            key={product.id}
+                                            product={product}
+                                            customerType={customerType}
+                                            onAdd={addToCart}
+                                        />
+                                    ))}
+                                </div>
+                            </div>
+                        ) : (
+                            <div>
+                                <h3 className="mb-3 text-base font-bold text-neutral-800 dark:text-neutral-100">
+                                    Pilih Kategori
+                                </h3>
+                                <CategoryGrid
+                                    groups={categoryGroups}
+                                    onSelect={setSelectedCategory}
+                                />
+                            </div>
+                        )}
                     </section>
 
                     <section
