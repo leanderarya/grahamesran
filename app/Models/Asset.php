@@ -16,41 +16,35 @@ class Asset extends Model
         'price' => 'decimal:2',
     ];
 
-    // --- LOGIC OTOMATIS (SINKRONISASI KE EXPENSE) ---
+    public function expense(): \Illuminate\Database\Eloquent\Relations\HasOne
+    {
+        return $this->hasOne(Expense::class);
+    }
+
     protected static function booted()
     {
-        // 1. SAAT ASET BARU DIBUAT
-        static::created(function ($asset) {
-            \App\Models\Expense::create([
-                'name' => 'Beli Aset: ' . $asset->name, // Nama pengeluaran
-                'amount' => $asset->price,              // Jumlah uang
-                'date_expense' => $asset->purchase_date,// Tanggal
-                
-                // Karena di migrasi tipe datanya STRING, kita bebas isi teks apa saja.
-                // Kita isi 'asset' agar nanti mudah difilter di laporan.
-                'category' => 'asset', 
-                
-                // PERHATIKAN: Pakai 'notes' (ada huruf s) sesuai migrasi Anda
-                'notes' => 'Auto-generated dari Menu Aset (ID: ' . $asset->id . ')',
+        static::created(function (Asset $asset): void {
+            $asset->expense()->create([
+                'date_expense' => $asset->purchase_date,
+                'name' => 'Pembelian Aset: ' . $asset->name,
+                'category' => 'asset',
+                'amount' => $asset->price,
+                'notes' => 'Otomatis dari aset (ID: ' . $asset->id . ')',
             ]);
         });
 
-        // 2. SAAT ASET DIEDIT (Update juga pengeluarannya)
-        static::updated(function ($asset) {
-            $expense = \App\Models\Expense::where('notes', 'LIKE', '%(ID: ' . $asset->id . ')')->first();
-            
-            if ($expense) {
-                $expense->update([
-                    'name' => 'Beli Aset: ' . $asset->name,
-                    'amount' => $asset->price,
+        static::updated(function (Asset $asset): void {
+            if ($asset->expense) {
+                $asset->expense->update([
                     'date_expense' => $asset->purchase_date,
+                    'name' => 'Pembelian Aset: ' . $asset->name,
+                    'amount' => $asset->price,
                 ]);
             }
         });
 
-        // 3. SAAT ASET DIHAPUS (Hapus juga pengeluarannya/Balikin saldo)
-        static::deleted(function ($asset) {
-            \App\Models\Expense::where('notes', 'LIKE', '%(ID: ' . $asset->id . ')')->delete();
+        static::deleted(function (Asset $asset): void {
+            $asset->expense?->delete();
         });
     }
 }

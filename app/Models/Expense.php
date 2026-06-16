@@ -18,4 +18,9 @@ class Expense extends Model
         'date_expense' => 'date',
         'amount' => 'decimal:2',
     ];
+
+    public function asset(): \Illuminate\Database\Eloquent\Relations\BelongsTo
+    {
+        return $this->belongsTo(Asset::class);
+    }
 }
