@@ -371,19 +371,14 @@ function CategoryGrid({
     onSelect: (category: string) => void;
 }) {
     return (
-        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-3 xl:grid-cols-4">
+        <div className="grid grid-cols-3 gap-2 sm:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6">
             {groups.map((group) => (
                 <button
                     key={group.name}
                     onClick={() => onSelect(group.name)}
-                    className="flex flex-col items-center gap-1 rounded-xl border border-neutral-200 bg-white p-4 text-center transition-all hover:border-blue-300 hover:shadow-md dark:border-neutral-700 dark:bg-neutral-800 dark:hover:border-blue-500"
+                    className="flex items-center justify-center rounded-lg border border-neutral-200 bg-white px-3 py-3 text-center text-sm font-semibold text-neutral-800 transition-all hover:border-blue-300 hover:shadow-sm dark:border-neutral-700 dark:bg-neutral-800 dark:text-neutral-100 dark:hover:border-blue-500"
                 >
-                    <span className="text-sm font-semibold text-neutral-800 dark:text-neutral-100">
-                        {group.name}
-                    </span>
-                    <span className="rounded-full bg-blue-100 px-2 py-0.5 text-xs font-medium text-blue-700 dark:bg-blue-900 dark:text-blue-300">
-                        {group.count} item
-                    </span>
+                    {group.name}
                 </button>
             ))}
         </div>
