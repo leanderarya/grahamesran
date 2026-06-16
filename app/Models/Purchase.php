@@ -39,6 +39,8 @@ class Purchase extends Model
                 'stock' => $totalQty,
                 'cost_price' => $newAvgCost
             ]);
+
+            \Cache::forget('dashboard_asset_value');
         });
     }
 }

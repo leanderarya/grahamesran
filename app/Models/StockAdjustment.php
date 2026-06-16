@@ -31,6 +31,8 @@ class StockAdjustment extends Model
             $product->update([
                 'stock' => $adjustment->physical_stock
             ]);
+
+            \Cache::forget('dashboard_asset_value');
         });
     }
 }

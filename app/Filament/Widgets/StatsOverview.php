@@ -9,6 +9,7 @@ use App\Models\Product; // <--- Import Product buat hitung aset
 use Filament\Widgets\StatsOverviewWidget as BaseWidget;
 use Filament\Widgets\StatsOverviewWidget\Stat;
 use Carbon\Carbon;
+use Illuminate\Support\Facades\Cache;
 
 class StatsOverview extends BaseWidget
 {
@@ -61,7 +62,7 @@ class StatsOverview extends BaseWidget
         // Hitung nilai stok (Stok * HPP)
         // Ini uang yang "mati" di rak
         // Kita pakai native SQL perkalian biar cepat
-        $totalAset = Product::query()->sum(\Illuminate\Support\Facades\DB::raw('stock * cost_price'));
+        $totalAset = Cache::remember('dashboard_asset_value', 300, fn () => Product::query()->sum(\Illuminate\Support\Facades\DB::raw('stock * cost_price')));
 
         return [
             // KOTAK 1: Omset Bulan Ini (Dengan Komparasi)
