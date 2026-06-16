@@ -370,33 +370,14 @@ function CategoryGrid({
     groups: { name: string; count: number }[];
     onSelect: (category: string) => void;
 }) {
-    const categoryIcons: Record<string, string> = {
-        Stabilizer: '🔗',
-        'Rack end': '🔧',
-        'Drag link': '🔩',
-        'Break pad': '🛑',
-        Klip: '📎',
-        Sekering: '⚡',
-        Kabel: '🔌',
-        Soket: '🔋',
-        Kelistrikan: '💡',
-        Karet: '⬛',
-        'Komponen Mesin': '⚙️',
-        Aki: '🔋',
-        Rotak: '🔄',
-        Rem: '🛞',
-        Lainnya: '📦',
-    };
-
     return (
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-3 xl:grid-cols-4">
             {groups.map((group) => (
                 <button
                     key={group.name}
                     onClick={() => onSelect(group.name)}
-                    className="flex flex-col items-center gap-2 rounded-xl border border-neutral-200 bg-white p-4 text-center transition-all hover:border-blue-300 hover:shadow-md dark:border-neutral-700 dark:bg-neutral-800 dark:hover:border-blue-500"
+                    className="flex flex-col items-center gap-1 rounded-xl border border-neutral-200 bg-white p-4 text-center transition-all hover:border-blue-300 hover:shadow-md dark:border-neutral-700 dark:bg-neutral-800 dark:hover:border-blue-500"
                 >
-                    <span className="text-3xl">{categoryIcons[group.name] || '📦'}</span>
                     <span className="text-sm font-semibold text-neutral-800 dark:text-neutral-100">
                         {group.name}
                     </span>
