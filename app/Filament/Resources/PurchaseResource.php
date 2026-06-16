@@ -46,7 +46,7 @@ class PurchaseResource extends Resource
                     ->required()
                     ->live(debounce: 500) // Tunda 500ms agar tidak lag saat ketik cepat
                     ->afterStateUpdated(function ($state, callable $set, callable $get) {
-                        $price = (int) $get('buy_price_per_unit');
+                        $price = (float) $get('buy_price_per_unit');
                         $qty = (int) $state;
                         $set('total_spend', $price * $qty);
                     }),
@@ -59,7 +59,7 @@ class PurchaseResource extends Resource
                     ->live(debounce: 500) // Tunda 500ms
                     ->afterStateUpdated(function ($state, callable $set, callable $get) {
                         $qty = (int) $get('quantity');
-                        $price = (int) $state;
+                        $price = (float) $state;
                         $set('total_spend', $price * $qty);
                     }),
 
