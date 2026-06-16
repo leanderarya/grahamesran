@@ -13,6 +13,8 @@ import {
 } from 'react';
 import { route } from 'ziggy-js';
 import type { SharedData } from '@/types';
+import { cn } from '@/lib/utils';
+import { ShoppingCart, Search, Trash2, Minus, Plus, Calculator, FileText, LogOut, X, ChevronLeft, ChevronRight } from 'lucide-react';
 
 interface Product {
     id: number;
@@ -58,7 +60,6 @@ const STORE_CONFIG = {
     phone: '0812-3456-7890',
 };
 
-const cx = (...classes: (string | boolean | undefined | null)[]) => classes.filter(Boolean).join(' ');
 const formatRupiah = (value: number | string | null | undefined) =>
     new Intl.NumberFormat('id-ID').format(Number(value) || 0);
 const sanitizeNumericInput = (value: string) => value.replace(/[^\d]/g, '');
@@ -87,216 +88,6 @@ const interactiveSurface =
 const formSurface =
     'border border-slate-200 bg-white transition-all duration-200 ease-out';
 
-const Icons = {
-    Sidebar: () => (
-        <svg
-            className="h-5 w-5"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-        >
-            <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth="2"
-                d="M4 6h16M4 12h16M4 18h16"
-            />
-        </svg>
-    ),
-    ChevronLeft: () => (
-        <svg
-            className="h-4 w-4"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-        >
-            <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth="2"
-                d="M15 19l-7-7 7-7"
-            />
-        </svg>
-    ),
-    ChevronRight: () => (
-        <svg
-            className="h-4 w-4"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-        >
-            <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth="2"
-                d="M9 5l7 7-7 7"
-            />
-        </svg>
-    ),
-    Search: () => (
-        <svg
-            className="h-5 w-5"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-        >
-            <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth="2"
-                d="M21 21l-4.35-4.35m1.6-5.15a7 7 0 11-14 0 7 7 0 0114 0z"
-            />
-        </svg>
-    ),
-    Cashier: () => (
-        <svg
-            className="h-5 w-5"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-        >
-            <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth="2"
-                d="M4 7h16M6 11h12M6 15h7m-9 6h16a2 2 0 002-2V7a2 2 0 00-2-2H4a2 2 0 00-2 2v12a2 2 0 002 2z"
-            />
-        </svg>
-    ),
-    Balance: () => (
-        <svg
-            className="h-5 w-5"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-        >
-            <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth="2"
-                d="M12 8c-2.21 0-4 1.79-4 4m8 0a4 4 0 00-4-4m0 0V4m0 8l3 3m-3-3l-3 3m9 4H6"
-            />
-        </svg>
-    ),
-    Report: () => (
-        <svg
-            className="h-5 w-5"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-        >
-            <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth="2"
-                d="M9 17v-6m4 6V7m4 10v-3M5 21h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v14a2 2 0 002 2z"
-            />
-        </svg>
-    ),
-    Settings: () => (
-        <svg
-            className="h-5 w-5"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-        >
-            <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth="2"
-                d="M10.325 4.317a1 1 0 011.35-.936l1.62.66a1 1 0 00.78 0l1.62-.66a1 1 0 011.35.936l.18 1.74a1 1 0 00.54.79l1.5.84a1 1 0 01.42 1.32l-.72 1.59a1 1 0 000 .82l.72 1.59a1 1 0 01-.42 1.32l-1.5.84a1 1 0 00-.54.79l-.18 1.74a1 1 0 01-1.35.936l-1.62-.66a1 1 0 00-.78 0l-1.62.66a1 1 0 01-1.35-.936l-.18-1.74a1 1 0 00-.54-.79l-1.5-.84a1 1 0 01-.42-1.32l.72-1.59a1 1 0 000-.82l-.72-1.59a1 1 0 01.42-1.32l1.5-.84a1 1 0 00.54-.79l.18-1.74z"
-            />
-            <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth="2"
-                d="M12 15a3 3 0 100-6 3 3 0 000 6z"
-            />
-        </svg>
-    ),
-    Logout: () => (
-        <svg
-            className="h-5 w-5"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-        >
-            <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth="2"
-                d="M17 16l4-4m0 0l-4-4m4 4H9"
-            />
-            <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth="2"
-                d="M13 20H6a2 2 0 01-2-2V6a2 2 0 012-2h7"
-            />
-        </svg>
-    ),
-    Close: () => (
-        <svg
-            className="h-5 w-5"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-        >
-            <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth="2"
-                d="M6 18L18 6M6 6l12 12"
-            />
-        </svg>
-    ),
-    Minus: () => (
-        <svg
-            className="h-5 w-5"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-        >
-            <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth="2"
-                d="M20 12H4"
-            />
-        </svg>
-    ),
-    Plus: () => (
-        <svg
-            className="h-5 w-5"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-        >
-            <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth="2"
-                d="M12 4v16m8-8H4"
-            />
-        </svg>
-    ),
-    Trash: () => (
-        <svg
-            className="h-5 w-5"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-        >
-            <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth="2"
-                d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
-            />
-        </svg>
-    ),
-};
-
 const ProductCard = ({ product, customerType, onAdd }: { product: Product; customerType: string; onAdd: (product: Product) => void }) => {
     const stock = Number(product.stock) || 0;
     const isOut = stock <= 0;
@@ -311,7 +102,7 @@ const ProductCard = ({ product, customerType, onAdd }: { product: Product; custo
         <button
             type="button"
             onClick={() => !isOut && onAdd(product)}
-            className={cx(
+            className={cn(
                 'rounded-3xl border p-3 text-left',
                 interactiveSurface,
                 isOut
@@ -335,7 +126,7 @@ const ProductCard = ({ product, customerType, onAdd }: { product: Product; custo
 
                     <div className="mt-2 flex items-center gap-2">
                         <div
-                            className={cx(
+                            className={cn(
                                 'rounded-full px-2.5 py-1 text-[10px] font-black uppercase',
                                 isOut
                                     ? 'bg-red-100 text-red-700'
@@ -347,7 +138,7 @@ const ProductCard = ({ product, customerType, onAdd }: { product: Product; custo
                             {isOut ? 'Habis' : `Stok ${stock}`}
                         </div>
                         <div
-                            className={cx(
+                            className={cn(
                                 'text-sm font-black',
                                 customerType === 'workshop' && workshopPrice > 0
                                     ? 'text-amber-600'
@@ -827,13 +618,13 @@ export default function TabletPOS({ products, categories, cashierSession }: { pr
         {
             id: 'cashier',
             label: 'Transaksi Kasir',
-            icon: Icons.Cashier,
+            icon: ShoppingCart,
             onClick: () => setActiveMenu('cashier'),
         },
         {
             id: 'settlement',
             label: 'Settlement / Tutup',
-            icon: Icons.Balance,
+            icon: Calculator,
             onClick: () => {
                 setActiveMenu('settlement');
                 if (hasOpenSession) {
@@ -846,13 +637,13 @@ export default function TabletPOS({ products, categories, cashierSession }: { pr
         {
             id: 'report',
             label: 'Rekap Penjualan',
-            icon: Icons.Report,
+            icon: FileText,
             onClick: () => router.visit(route('transactions.recap')),
         },
         {
             id: 'logout',
             label: 'Keluar',
-            icon: Icons.Logout, // <-- pastikan ini ada di mapping Icons kamu
+            icon: LogOut, // <-- pastikan ini ada di mapping Icons kamu
             onClick: () => {
                 setActiveMenu('logout');
 
@@ -876,7 +667,7 @@ export default function TabletPOS({ products, categories, cashierSession }: { pr
             <AppNotifications flash={flash} />
 
             <div
-                className={cx(
+                className={cn(
                     'mx-auto min-h-screen max-w-[1800px] lg:grid',
                     sidebarCollapsed
                         ? 'lg:grid-cols-[88px_minmax(0,1fr)_360px] xl:grid-cols-[88px_minmax(0,1fr)_420px]'
@@ -895,7 +686,7 @@ export default function TabletPOS({ products, categories, cashierSession }: { pr
                             </div>
                             <div>
                                 <div
-                                    className={cx(
+                                    className={cn(
                                         'text-sm font-black tracking-[0.2em] text-slate-300 uppercase',
                                         sidebarCollapsed
                                             ? 'hidden'
@@ -905,7 +696,7 @@ export default function TabletPOS({ products, categories, cashierSession }: { pr
                                     Graha Motor
                                 </div>
                                 <div
-                                    className={cx(
+                                    className={cn(
                                         'mt-1 text-lg font-black',
                                         sidebarCollapsed
                                             ? 'hidden'
@@ -923,7 +714,7 @@ export default function TabletPOS({ products, categories, cashierSession }: { pr
                             <button
                                 key={item.id}
                                 onClick={item.onClick}
-                                className={cx(
+                                className={cn(
                                     'flex shrink-0 items-center gap-3 rounded-2xl px-4 py-4 text-left text-sm font-bold transition-all duration-200 lg:w-full lg:justify-center lg:px-0',
                                     !sidebarCollapsed &&
                                         'xl:justify-start xl:px-4',
@@ -934,7 +725,7 @@ export default function TabletPOS({ products, categories, cashierSession }: { pr
                             >
                                 <item.icon />
                                 <span
-                                    className={cx(
+                                    className={cn(
                                         'whitespace-nowrap lg:hidden',
                                         !sidebarCollapsed && 'xl:inline',
                                     )}
@@ -1014,9 +805,9 @@ export default function TabletPOS({ products, categories, cashierSession }: { pr
                                 }
                             >
                                 {sidebarCollapsed ? (
-                                    <Icons.ChevronRight />
+                                    <ChevronRight />
                                 ) : (
-                                    <Icons.ChevronLeft />
+                                    <ChevronLeft />
                                 )}
                                 <span>
                                     {sidebarCollapsed
@@ -1033,7 +824,7 @@ export default function TabletPOS({ products, categories, cashierSession }: { pr
                                         onClick={() =>
                                             setCustomerType('general')
                                         }
-                                        className={cx(
+                                        className={cn(
                                             'rounded-2xl px-4 py-3 text-sm font-black shadow-sm transition-all duration-200 hover:shadow-md',
                                             !isWorkshop
                                                 ? 'bg-slate-950 text-white'
@@ -1046,7 +837,7 @@ export default function TabletPOS({ products, categories, cashierSession }: { pr
                                         onClick={() =>
                                             setCustomerType('workshop')
                                         }
-                                        className={cx(
+                                        className={cn(
                                             'rounded-2xl px-4 py-3 text-sm font-black shadow-sm transition-all duration-200 hover:shadow-md',
                                             isWorkshop
                                                 ? 'bg-amber-500 text-white'
@@ -1072,13 +863,13 @@ export default function TabletPOS({ products, categories, cashierSession }: { pr
                                     }}
                                 />
                                  <div
-                                    className={cx(
+                                    className={cn(
                                         'flex flex-1 items-center gap-3 rounded-3xl px-4 py-3',
                                         formSurface,
                                     )}
                                 >
                                     <div className="text-slate-400">
-                                        <Icons.Search />
+                                        <Search />
                                     </div>
                                     <input
                                         type="text"
@@ -1195,7 +986,7 @@ export default function TabletPOS({ products, categories, cashierSession }: { pr
                     </section>
 
                     <section
-                        className={cx(
+                        className={cn(
                             'space-y-5 border-t border-slate-200 bg-slate-100 p-4 pb-28 sm:p-5 sm:pb-32 lg:col-start-3 lg:border-t-0 lg:border-l lg:p-5 lg:pb-5 xl:p-6 xl:pb-6',
                             !showMobileCheckout && 'hidden lg:block',
                         )}
@@ -1275,7 +1066,7 @@ export default function TabletPOS({ products, categories, cashierSession }: { pr
                                                     }
                                                     className="rounded-2xl p-3 text-slate-400 transition-all duration-200 hover:bg-red-50 hover:text-red-600"
                                                 >
-                                                    <Icons.Trash />
+                                                    <Trash2 />
                                                 </button>
                                             </div>
 
@@ -1290,7 +1081,7 @@ export default function TabletPOS({ products, categories, cashierSession }: { pr
                                                         }
                                                         className="rounded-2xl border border-slate-200 bg-white p-3 text-slate-700 shadow-sm transition-all duration-200 hover:border-slate-300 hover:shadow-md"
                                                     >
-                                                        <Icons.Minus />
+                                                        <Minus />
                                                     </button>
                                                     <div className="min-w-[48px] text-center text-lg font-black text-slate-900">
                                                         {item.qty}
@@ -1304,7 +1095,7 @@ export default function TabletPOS({ products, categories, cashierSession }: { pr
                                                         }
                                                         className="rounded-2xl border border-slate-200 bg-white p-3 text-slate-700 shadow-sm transition-all duration-200 hover:border-slate-300 hover:shadow-md"
                                                     >
-                                                        <Icons.Plus />
+                                                        <Plus />
                                                     </button>
                                                 </div>
                                                 <div className="text-lg font-black text-slate-950">
@@ -1348,7 +1139,7 @@ export default function TabletPOS({ products, categories, cashierSession }: { pr
                                         onClick={() =>
                                             setPaymentMethod(method.id)
                                         }
-                                        className={cx(
+                                        className={cn(
                                             'rounded-2xl px-3 py-4 text-sm font-black shadow-sm transition-all duration-200 hover:shadow-md',
                                             paymentMethod === method.id
                                                 ? 'bg-slate-950 text-white'
@@ -1366,7 +1157,7 @@ export default function TabletPOS({ products, categories, cashierSession }: { pr
                                         Uang Diterima
                                     </label>
                                     <div
-                                        className={cx(
+                                        className={cn(
                                             'mt-2 flex items-center rounded-2xl px-4 py-3',
                                             formSurface,
                                         )}
@@ -1400,7 +1191,7 @@ export default function TabletPOS({ products, categories, cashierSession }: { pr
                                                             String(amount),
                                                         )
                                                     }
-                                                    className={cx(
+                                                    className={cn(
                                                         'rounded-2xl border px-3 py-4 text-left text-sm font-black shadow-sm transition-all duration-200 hover:shadow-md',
                                                         Number(
                                                             cashReceived || 0,
@@ -1437,7 +1228,7 @@ export default function TabletPOS({ products, categories, cashierSession }: { pr
                                         )}
                                     </div>
                                     <div
-                                        className={cx(
+                                        className={cn(
                                             'mt-3 text-sm font-black',
                                             change < 0
                                                 ? 'text-red-600'
@@ -1559,7 +1350,7 @@ export default function TabletPOS({ products, categories, cashierSession }: { pr
                             </label>
 
                             <div
-                                className={cx(
+                                className={cn(
                                     'mt-2 flex items-center rounded-2xl px-4 py-3',
                                     formSurface,
                                 )}
@@ -1637,7 +1428,7 @@ export default function TabletPOS({ products, categories, cashierSession }: { pr
                                 onClick={() => setShowSettlementModal(false)}
                                 className="rounded-2xl bg-slate-100 p-3 text-slate-500"
                             >
-                                <Icons.Close />
+                                <X />
                             </button>
                         </div>
 
@@ -1691,7 +1482,7 @@ export default function TabletPOS({ products, categories, cashierSession }: { pr
                                     Uang Fisik Di Laci
                                 </label>
                                 <div
-                                    className={cx(
+                                    className={cn(
                                         'mt-2 flex items-center rounded-2xl px-4 py-3',
                                         formSurface,
                                     )}
@@ -1734,7 +1525,7 @@ export default function TabletPOS({ products, categories, cashierSession }: { pr
                                     Hasil Settlement
                                 </div>
                                 <div
-                                    className={cx(
+                                    className={cn(
                                         'mt-4 inline-flex rounded-full px-3 py-1 text-xs font-black uppercase',
                                         settlementStatus === 'balance'
                                             ? 'bg-emerald-100 text-emerald-700'
@@ -1751,7 +1542,7 @@ export default function TabletPOS({ products, categories, cashierSession }: { pr
                                 </div>
 
                                 <div
-                                    className={cx(
+                                    className={cn(
                                         'mt-4 text-3xl font-black',
                                         settlementStatus === 'balance'
                                             ? 'text-emerald-700'
