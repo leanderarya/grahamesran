@@ -18,12 +18,19 @@ class TransactionController extends Controller
     {
         $openSession = $this->getOpenSession();
 
+        $categories = Product::where('stock', '>', 0)
+            ->whereNotNull('category')
+            ->distinct()
+            ->pluck('category')
+            ->sort()
+            ->values();
+
         return Inertia::render('Transactions/Create', [
             'products' => Product::with('vehicles')
                 ->where('stock', '>', 0)
-                // Security: Jangan kirim cost_price (HPP) ke frontend!
-                ->select('id', 'sku', 'name', 'image_path', 'volume_liter', 'stock', 'sell_price', 'workshop_price')
+                ->select('id', 'sku', 'name', 'category', 'image_path', 'volume_liter', 'stock', 'sell_price', 'workshop_price')
                 ->get(),
+            'categories' => $categories,
             'cashierSession' => $openSession ? $this->buildSessionPayload($openSession) : null,
         ]);
     }
