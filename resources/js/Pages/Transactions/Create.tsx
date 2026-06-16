@@ -598,7 +598,7 @@ export default function TabletPOS({ products, cashierSession, activeDraft }: { p
                                         key={product.id}
                                         product={product}
                                         customerType={customerType}
-                                        onAdd={addToCart}
+                                        onAddToCart={addToCart}
                                     />
                                 ))}
 
@@ -630,7 +630,7 @@ export default function TabletPOS({ products, cashierSession, activeDraft }: { p
                                             key={product.id}
                                             product={product}
                                             customerType={customerType}
-                                            onAdd={addToCart}
+                                            onAddToCart={addToCart}
                                         />
                                     ))}
                                 </div>

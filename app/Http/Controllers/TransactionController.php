@@ -46,13 +46,24 @@ class TransactionController extends Controller
                 'invoice_number' => $activeDraft->invoice_number,
                 'customer_type' => $activeDraft->customer_type,
                 'total_amount' => (float) $activeDraft->total_amount,
-                'items' => $activeDraft->transactionItems->map(fn ($item) => [
+                'transaction_items' => $activeDraft->transactionItems->map(fn ($item) => [
                     'id' => $item->id,
                     'product_id' => $item->product_id,
-                    'product_name' => $item->product->display_name ?? $item->product->name,
                     'quantity' => $item->quantity,
                     'price_at_time' => (float) $item->price_at_time,
-                    'subtotal' => (float) ($item->quantity * $item->price_at_time),
+                    'product' => $item->product ? [
+                        'id' => $item->product->id,
+                        'sku' => $item->product->sku,
+                        'name' => $item->product->name,
+                        'category' => $item->product->category,
+                        'image_path' => $item->product->image_path,
+                        'image_url' => $item->product->image_url,
+                        'volume_liter' => $item->product->volume_liter ? (float) $item->product->volume_liter : null,
+                        'stock' => $item->product->stock,
+                        'sell_price' => (float) $item->product->sell_price,
+                        'workshop_price' => $item->product->workshop_price ? (float) $item->product->workshop_price : null,
+                        'display_name' => $item->product->display_name,
+                    ] : null,
                 ]),
             ] : null,
         ]);
