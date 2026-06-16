@@ -22,6 +22,7 @@ class Product extends Model
 
     protected $appends = [
         'image_url',
+        'display_name',
     ];
 
     protected $casts = [
