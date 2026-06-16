@@ -6,6 +6,15 @@ import { Head, Link, router, usePage } from '@inertiajs/react';
 import { useState } from 'react';
 import { route } from 'ziggy-js';
 import type { SharedData } from '@/types';
+import { cn } from '@/lib/utils';
+import {
+    ChevronLeft,
+    ChevronRight,
+    FileText,
+    LogOut,
+    Scale,
+    BarChart3,
+} from 'lucide-react';
 
 interface CashierSession {
     id?: number;
@@ -52,128 +61,6 @@ const STORE_CONFIG = {
     phone: '0812-3456-7890',
 };
 
-const cx = (...classes: (string | boolean | undefined | null)[]) => classes.filter(Boolean).join(' ');
-
-const Icons = {
-    Cashier: () => (
-        <svg
-            className="h-5 w-5"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-        >
-            <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth="2"
-                d="M4 7h16M6 11h12M6 15h7m-9 6h16a2 2 0 002-2V7a2 2 0 00-2-2H4a2 2 0 00-2 2v12a2 2 0 002 2z"
-            />
-        </svg>
-    ),
-    Balance: () => (
-        <svg
-            className="h-5 w-5"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-        >
-            <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth="2"
-                d="M12 8c-2.21 0-4 1.79-4 4m8 0a4 4 0 00-4-4m0 0V4m0 8l3 3m-3-3l-3 3m9 4H6"
-            />
-        </svg>
-    ),
-    Report: () => (
-        <svg
-            className="h-5 w-5"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-        >
-            <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth="2"
-                d="M9 17v-6m4 6V7m4 10v-3M5 21h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v14a2 2 0 002 2z"
-            />
-        </svg>
-    ),
-    Settings: () => (
-        <svg
-            className="h-5 w-5"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-        >
-            <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth="2"
-                d="M10.325 4.317a1 1 0 011.35-.936l1.62.66a1 1 0 00.78 0l1.62-.66a1 1 0 011.35.936l.18 1.74a1 1 0 00.54.79l1.5.84a1 1 0 01.42 1.32l-.72 1.59a1 1 0 000 .82l.72 1.59a1 1 0 01-.42 1.32l-1.5.84a1 1 0 00-.54.79l-.18 1.74a1 1 0 01-1.35.936l-1.62-.66a1 1 0 00-.78 0l-1.62.66a1 1 0 01-1.35-.936l-.18-1.74a1 1 0 00-.54-.79l-1.5-.84a1 1 0 01-.42-1.32l.72-1.59a1 1 0 000-.82l-.72-1.59a1 1 0 01.42-1.32l1.5-.84a1 1 0 00.54-.79l.18-1.74z"
-            />
-            <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth="2"
-                d="M12 15a3 3 0 100-6 3 3 0 000 6z"
-            />
-        </svg>
-    ),
-    Logout: () => (
-        <svg
-            className="h-5 w-5"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-        >
-            <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth="2"
-                d="M17 16l4-4m0 0l-4-4m4 4H9"
-            />
-            <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth="2"
-                d="M13 20H6a2 2 0 01-2-2V6a2 2 0 012-2h7"
-            />
-        </svg>
-    ),
-    ChevronLeft: () => (
-        <svg
-            className="h-4 w-4"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-        >
-            <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth="2"
-                d="M15 19l-7-7 7-7"
-            />
-        </svg>
-    ),
-    ChevronRight: () => (
-        <svg
-            className="h-4 w-4"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-        >
-            <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth="2"
-                d="M9 5l7 7-7 7"
-            />
-        </svg>
-    ),
-};
-
 const placeholderImage = '/images/product-placeholder.svg';
 
 export default function CashierRecap({
@@ -197,7 +84,7 @@ export default function CashierRecap({
         {
             id: 'cashier',
             label: 'Transaksi Kasir',
-            icon: Icons.Cashier,
+            icon: FileText,
             onClick: () => {
                 setActiveMenu('cashier');
                 router.visit(route('transactions.create'));
@@ -206,7 +93,7 @@ export default function CashierRecap({
         {
             id: 'settlement',
             label: 'Settlement / Tutup',
-            icon: Icons.Balance,
+            icon: Scale,
             onClick: () => {
                 setActiveMenu('settlement');
                 router.visit(route('transactions.create'));
@@ -215,7 +102,7 @@ export default function CashierRecap({
         {
             id: 'report',
             label: 'Rekap Penjualan',
-            icon: Icons.Report,
+            icon: BarChart3,
             onClick: () => {
                 setActiveMenu('report');
                 router.visit(route('transactions.recap'));
@@ -224,7 +111,7 @@ export default function CashierRecap({
         {
             id: 'logout',
             label: 'Keluar',
-            icon: Icons.Logout,
+            icon: LogOut,
             onClick: () => {
                 setActiveMenu('logout');
 
@@ -248,7 +135,7 @@ export default function CashierRecap({
             <AppNotifications flash={flash} />
 
             <div
-                className={cx(
+                className={cn(
                     'mx-auto min-h-screen max-w-[1800px] lg:grid',
                     sidebarCollapsed
                         ? 'lg:grid-cols-[88px_minmax(0,1fr)]'
@@ -267,7 +154,7 @@ export default function CashierRecap({
                             </div>
                             <div>
                                 <div
-                                    className={cx(
+                                    className={cn(
                                         'text-sm font-black tracking-[0.2em] text-slate-300 uppercase',
                                         sidebarCollapsed
                                             ? 'hidden'
@@ -277,7 +164,7 @@ export default function CashierRecap({
                                     Graha Motor
                                 </div>
                                 <div
-                                    className={cx(
+                                    className={cn(
                                         'mt-1 text-lg font-black',
                                         sidebarCollapsed
                                             ? 'hidden'
@@ -295,7 +182,7 @@ export default function CashierRecap({
                             <button
                                 key={item.id}
                                 onClick={item.onClick}
-                                className={cx(
+                                className={cn(
                                     'flex shrink-0 items-center gap-3 rounded-2xl px-4 py-3 text-left text-sm font-bold transition-all duration-200 lg:w-full lg:justify-center lg:px-0',
                                     !sidebarCollapsed &&
                                         'xl:justify-start xl:px-4',
@@ -306,7 +193,7 @@ export default function CashierRecap({
                             >
                                 <item.icon />
                                 <span
-                                    className={cx(
+                                    className={cn(
                                         'whitespace-nowrap lg:hidden',
                                         !sidebarCollapsed && 'xl:inline',
                                     )}
@@ -385,9 +272,9 @@ export default function CashierRecap({
                             }
                         >
                             {sidebarCollapsed ? (
-                                <Icons.ChevronRight />
+                                <ChevronRight />
                             ) : (
-                                <Icons.ChevronLeft />
+                                <ChevronLeft />
                             )}
                             <span>
                                 {sidebarCollapsed ? 'Buka Menu' : 'Tutup Menu'}
