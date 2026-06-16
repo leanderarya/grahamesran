@@ -73,7 +73,7 @@ const formSurface =
 export default function TabletPOS({ products, cashierSession, activeDraft }: { products: Product[]; categories?: string[]; cashierSession: CashierSession | null; activeDraft?: ActiveDraft | null }) {
     const { auth, flash } = usePage<SharedData>().props;
     const [activeMenu, setActiveMenu] = useState('cashier');
-    const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+    const [sidebarCollapsed, setSidebarCollapsed] = useState(true);
     const [search, setSearch] = useState('');
     const [showMobileCheckout, setShowMobileCheckout] = useState(false);
     const [customerType, setCustomerType] = useState('general');
@@ -547,49 +547,6 @@ export default function TabletPOS({ products, cashierSession, activeDraft }: { p
                             </div>
                         </div>
 
-                        <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-                            <div className="rounded-3xl bg-white p-4 shadow-sm">
-                                <div className="text-[11px] font-bold tracking-widest text-slate-400 uppercase">
-                                    Saldo Awal
-                                </div>
-                                <div className="mt-2 text-xl font-bold text-slate-950">
-                                    Rp{' '}
-                                    {formatRupiah(
-                                        sessionState?.opening_cash || 0,
-                                    )}
-                                </div>
-                            </div>
-                            <div className="rounded-3xl bg-white p-4 shadow-sm">
-                                <div className="text-[11px] font-bold tracking-widest text-slate-400 uppercase">
-                                    Cash Masuk
-                                </div>
-                                <div className="mt-2 text-xl font-bold text-slate-950">
-                                    Rp{' '}
-                                    {formatRupiah(
-                                        sessionState?.cash_sales_total || 0,
-                                    )}
-                                </div>
-                            </div>
-                            <div className="rounded-3xl bg-white p-4 shadow-sm">
-                                <div className="text-[11px] font-bold tracking-widest text-slate-400 uppercase">
-                                    Non Cash
-                                </div>
-                                <div className="mt-2 text-xl font-bold text-slate-950">
-                                    Rp{' '}
-                                    {formatRupiah(
-                                        sessionState?.non_cash_sales_total || 0,
-                                    )}
-                                </div>
-                            </div>
-                            <div className="rounded-3xl bg-slate-950 p-4 text-white shadow-sm">
-                                <div className="text-[11px] font-bold tracking-widest text-slate-400 uppercase">
-                                    Expected Cash
-                                </div>
-                                <div className="mt-2 text-xl font-bold">
-                                    Rp {formatRupiah(expectedCash)}
-                                </div>
-                            </div>
-                        </div>
 
                         {filteredProducts ? (
                             <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-2 xl:grid-cols-2 2xl:grid-cols-3">
