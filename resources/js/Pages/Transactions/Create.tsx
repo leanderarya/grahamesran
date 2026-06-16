@@ -15,6 +15,10 @@ import { route } from 'ziggy-js';
 import type { SharedData } from '@/types';
 import { cn } from '@/lib/utils';
 import { ShoppingCart, Search, Trash2, Minus, Plus, Calculator, FileText, LogOut, X, ChevronLeft, ChevronRight } from 'lucide-react';
+import { ProductCard } from '@/Components/pos/product-card';
+import { CategoryGrid } from '@/Components/pos/category-grid';
+import { VehicleFilter } from '@/Components/pos/vehicle-filter';
+import { formatRupiah, formatDateTime } from '@/lib/format';
 
 interface Product {
     id: number;
@@ -60,16 +64,7 @@ const STORE_CONFIG = {
     phone: '0812-3456-7890',
 };
 
-const formatRupiah = (value: number | string | null | undefined) =>
-    new Intl.NumberFormat('id-ID').format(Number(value) || 0);
 const sanitizeNumericInput = (value: string) => value.replace(/[^\d]/g, '');
-const formatDateTime = (value: string | null | undefined) =>
-    value
-        ? new Intl.DateTimeFormat('id-ID', {
-              dateStyle: 'medium',
-              timeStyle: 'short',
-          }).format(new Date(value))
-        : '-';
 const formatSignedCurrency = (value: number) =>
     `${value < 0 ? '-' : ''}Rp ${formatRupiah(Math.abs(value || 0))}`;
 const formatVolume = (value: number | string | null | undefined) => {
@@ -86,119 +81,7 @@ const placeholderImage = '/images/product-placeholder.svg';
 const interactiveSurface =
     'transition-all duration-200 ease-out shadow-sm hover:shadow-md';
 const formSurface =
-    'border border-slate-200 bg-white transition-all duration-200 ease-out';
-
-const ProductCard = ({ product, customerType, onAdd }: { product: Product; customerType: string; onAdd: (product: Product) => void }) => {
-    const stock = Number(product.stock) || 0;
-    const isOut = stock <= 0;
-    const workshopPrice = Number(product.workshop_price) || 0;
-    const sellPrice = Number(product.sell_price) || 0;
-    const activePrice =
-        customerType === 'workshop' && workshopPrice > 0
-            ? workshopPrice
-            : sellPrice;
-
-    return (
-        <button
-            type="button"
-            onClick={() => !isOut && onAdd(product)}
-            className={cn(
-                'rounded-3xl border p-3 text-left',
-                interactiveSurface,
-                isOut
-                    ? 'cursor-not-allowed border-slate-200 bg-slate-50 opacity-50'
-                    : 'border-slate-200 bg-white hover:border-slate-300 hover:shadow-sm',
-            )}
-        >
-            <div className="flex items-center gap-3">
-                <img
-                    src={product.image_url || placeholderImage}
-                    alt={getProductLabel(product)}
-                    className="h-16 w-16 rounded-2xl border border-slate-200 bg-slate-50 object-cover"
-                />
-                <div className="min-w-0 flex-1">
-                    <div className="truncate text-[11px] font-bold tracking-widest text-slate-400 uppercase">
-                        {product.sku || 'NOSKU'}
-                    </div>
-                    <div className="mt-1 line-clamp-2 text-sm font-bold text-slate-900">
-                        {getProductLabel(product)}
-                    </div>
-
-                    <div className="mt-2 flex items-center gap-2">
-                        <div
-                            className={cn(
-                                'rounded-full px-2.5 py-1 text-[10px] font-bold uppercase',
-                                isOut
-                                    ? 'bg-red-100 text-red-700'
-                                    : stock <= 5
-                                      ? 'bg-amber-100 text-amber-700'
-                                      : 'bg-emerald-100 text-emerald-700',
-                            )}
-                        >
-                            {isOut ? 'Habis' : `Stok ${stock}`}
-                        </div>
-                        <div
-                            className={cn(
-                                'text-sm font-bold',
-                                customerType === 'workshop' && workshopPrice > 0
-                                    ? 'text-amber-600'
-                                    : 'text-slate-900',
-                            )}
-                        >
-                            Rp {formatRupiah(activePrice)}
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </button>
-    );
-};
-
-function CategoryGrid({
-    groups,
-    onSelect,
-}: {
-    groups: { name: string; count: number }[];
-    onSelect: (category: string) => void;
-}) {
-    return (
-        <div className="grid grid-cols-3 gap-2 sm:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6">
-            {groups.map((group) => (
-                <button
-                    key={group.name}
-                    onClick={() => onSelect(group.name)}
-                    className="flex items-center justify-center rounded-lg border border-neutral-200 bg-white px-3 py-4 text-center text-sm font-semibold text-neutral-800 transition-all hover:border-blue-300 hover:shadow-sm dark:border-neutral-700 dark:bg-neutral-800 dark:text-neutral-100 dark:hover:border-blue-500"
-                >
-                    {group.name}
-                </button>
-            ))}
-        </div>
-    );
-}
-
-function VehicleFilter({
-    brands,
-    selected,
-    onChange,
-}: {
-    brands: string[];
-    selected: string;
-    onChange: (brand: string) => void;
-}) {
-    return (
-        <select
-            value={selected}
-            onChange={(e) => onChange(e.target.value)}
-            className="rounded-lg border border-neutral-300 bg-white px-3 py-3 text-sm dark:border-neutral-600 dark:bg-neutral-800"
-        >
-            {brands.map((brand) => (
-                <option key={brand} value={brand}>
-                    {brand === 'all' ? 'Semua Merk' : brand}
-                </option>
-            ))}
-        </select>
-    );
-}
+'border border-slate-200 bg-white transition-all duration-200 ease-out';
 
 export default function TabletPOS({ products, categories, cashierSession }: { products: Product[]; categories: string[]; cashierSession: CashierSession | null }) {
     const { auth, flash } = usePage<SharedData>().props;
