@@ -149,7 +149,6 @@ class StockAdjustmentResource extends Resource
         return [
             'index' => Pages\ListStockAdjustments::route('/'),
             'create' => Pages\CreateStockAdjustment::route('/create'),
-            // 'edit' => Pages\EditStockAdjustment::route('/{record}/edit'), // HAPUS INI
         ];
     }
 }
