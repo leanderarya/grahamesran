@@ -156,7 +156,7 @@ export default function Login({ status, canResetPassword }: { status?: string; c
     };
 
     const fieldWrapperClass =
-        'group flex items-center rounded-[22px] border border-slate-200 bg-slate-50 px-4 py-3 shadow-[0_1px_0_rgba(15,23,42,0.02)] transition-all duration-200 focus-within:border-slate-300 focus-within:bg-white focus-within:shadow-[0_16px_40px_rgba(15,23,42,0.08)]';
+        'group flex items-center rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 shadow-sm transition-all duration-200 focus-within:border-slate-300 focus-within:bg-white focus-within:shadow-lg';
 
     const inputClass =
         'ml-3 w-full border-0 bg-transparent p-0 text-[15px] font-semibold text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-0';
@@ -173,9 +173,9 @@ export default function Login({ status, canResetPassword }: { status?: string; c
 
             <main className="relative mx-auto flex min-h-screen w-full max-w-xl items-center justify-center px-4 py-8 sm:px-6">
                 <section className="mx-auto w-full max-w-md">
-                    <div className="rounded-[30px] border border-white/80 bg-white/92 p-6 shadow-[0_20px_60px_rgba(15,23,42,0.10)] backdrop-blur sm:p-8">
+                    <div className="rounded-2xl border border-white/80 bg-white/95 p-6 shadow-xl backdrop-blur sm:p-8">
                         <div className="mt-8">
-                            <div className="text-center font-['Manrope'] text-3xl font-extrabold tracking-tight text-slate-950">
+                            <div className="text-center font-sans text-3xl font-extrabold tracking-tight text-slate-950">
                                 {greeting}
                             </div>
                             <p className="mt-2 text-center text-sm font-medium text-slate-500">
@@ -184,7 +184,7 @@ export default function Login({ status, canResetPassword }: { status?: string; c
                         </div>
 
                         {status && (
-                            <div className="mt-6 rounded-[22px] border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-semibold text-emerald-800">
+                            <div className="mt-6 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-semibold text-emerald-800">
                                 {status}
                             </div>
                         )}
@@ -193,7 +193,7 @@ export default function Login({ status, canResetPassword }: { status?: string; c
                             <div>
                                 <label
                                     htmlFor="email"
-                                    className="text-xs font-black tracking-widest text-slate-400 uppercase"
+                                    className="text-xs font-bold tracking-widest text-slate-400 uppercase"
                                 >
                                     Email atau Username
                                 </label>
@@ -225,7 +225,7 @@ export default function Login({ status, canResetPassword }: { status?: string; c
                                 <div className="flex items-center justify-between gap-3">
                                     <label
                                         htmlFor="password"
-                                        className="text-xs font-black tracking-widest text-slate-400 uppercase"
+                                        className="text-xs font-bold tracking-widest text-slate-400 uppercase"
                                     >
                                         Kata Sandi
                                     </label>
@@ -233,7 +233,7 @@ export default function Login({ status, canResetPassword }: { status?: string; c
                                     {canResetPassword && (
                                         <Link
                                             href={route('password.request')}
-                                            className="text-xs font-bold text-[#0b2ba3] transition hover:text-[#1f39ae]"
+                                            className="text-xs font-bold text-slate-950 transition hover:text-slate-800"
                                         >
                                             Lupa kata sandi?
                                         </Link>
@@ -287,7 +287,7 @@ export default function Login({ status, canResetPassword }: { status?: string; c
                                 />
                             </div>
 
-                            <label className="flex items-center gap-3 rounded-[22px] bg-slate-50 px-4 py-3">
+                            <label className="flex items-center gap-3 rounded-xl bg-slate-50 px-4 py-3">
                                 <input
                                     id="remember"
                                     type="checkbox"
@@ -299,7 +299,7 @@ export default function Login({ status, canResetPassword }: { status?: string; c
                                             event.target.checked,
                                         )
                                     }
-                                    className="h-5 w-5 rounded border-slate-300 text-[#0b2ba3] focus:ring-0"
+                                    className="h-5 w-5 rounded border-slate-300 text-slate-950 focus:ring-0"
                                 />
                                 <span className="text-sm font-semibold text-slate-600">
                                     Ingat saya di perangkat ini
@@ -309,7 +309,7 @@ export default function Login({ status, canResetPassword }: { status?: string; c
                             <button
                                 type="submit"
                                 disabled={processing}
-                                className="flex w-full items-center justify-center gap-2 rounded-[22px] bg-[#0b2ba3] px-5 py-4 text-base font-black text-white shadow-[0_16px_30px_rgba(11,43,163,0.20)] transition-all duration-150 hover:bg-[#1f39ae] active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-70"
+                                className="flex w-full items-center justify-center gap-2 rounded-xl bg-slate-950 px-5 py-4 text-base font-bold text-white shadow-lg transition-all duration-150 hover:bg-slate-800 active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-70"
                             >
                                 <span>
                                     {processing
@@ -333,7 +333,7 @@ export default function Login({ status, canResetPassword }: { status?: string; c
                         </form>
 
                         <div className="mt-8 border-t border-slate-200 pt-6 text-center">
-                            <p className="mb-4 text-[11px] font-black tracking-[0.28em] text-slate-400 uppercase">
+                            <p className="mb-4 text-[11px] font-bold tracking-[0.28em] text-slate-400 uppercase">
                                 Butuh bantuan
                             </p>
                             <div className="inline-flex items-center justify-center gap-2 text-sm font-semibold text-slate-500">
