@@ -376,7 +376,7 @@ function CategoryGrid({
                 <button
                     key={group.name}
                     onClick={() => onSelect(group.name)}
-                    className="flex items-center justify-center rounded-lg border border-neutral-200 bg-white px-3 py-3 text-center text-sm font-semibold text-neutral-800 transition-all hover:border-blue-300 hover:shadow-sm dark:border-neutral-700 dark:bg-neutral-800 dark:text-neutral-100 dark:hover:border-blue-500"
+                    className="flex items-center justify-center rounded-lg border border-neutral-200 bg-white px-3 py-4 text-center text-sm font-semibold text-neutral-800 transition-all hover:border-blue-300 hover:shadow-sm dark:border-neutral-700 dark:bg-neutral-800 dark:text-neutral-100 dark:hover:border-blue-500"
                 >
                     {group.name}
                 </button>
@@ -398,7 +398,7 @@ function VehicleFilter({
         <select
             value={selected}
             onChange={(e) => onChange(e.target.value)}
-            className="rounded-lg border border-neutral-300 bg-white px-3 py-2 text-sm dark:border-neutral-600 dark:bg-neutral-800"
+            className="rounded-lg border border-neutral-300 bg-white px-3 py-3 text-sm dark:border-neutral-600 dark:bg-neutral-800"
         >
             {brands.map((brand) => (
                 <option key={brand} value={brand}>
@@ -924,7 +924,7 @@ export default function TabletPOS({ products, categories, cashierSession }: { pr
                                 key={item.id}
                                 onClick={item.onClick}
                                 className={cx(
-                                    'flex shrink-0 items-center gap-3 rounded-2xl px-4 py-3 text-left text-sm font-bold transition-all duration-200 lg:w-full lg:justify-center lg:px-0',
+                                    'flex shrink-0 items-center gap-3 rounded-2xl px-4 py-4 text-left text-sm font-bold transition-all duration-200 lg:w-full lg:justify-center lg:px-0',
                                     !sidebarCollapsed &&
                                         'xl:justify-start xl:px-4',
                                     activeMenu === item.id
@@ -968,7 +968,7 @@ export default function TabletPOS({ products, categories, cashierSession }: { pr
                                             ? setShowSettlementModal(true)
                                             : setShowOpenSessionModal(true)
                                     }
-                                    className="mt-4 w-full rounded-2xl bg-white px-4 py-3 text-sm font-black text-slate-950 transition hover:bg-slate-200"
+                                    className="mt-4 w-full rounded-2xl bg-white px-4 py-4 text-sm font-black text-slate-950 transition hover:bg-slate-200"
                                 >
                                     <span className="lg:hidden xl:inline">
                                         {hasOpenSession
@@ -1006,7 +1006,7 @@ export default function TabletPOS({ products, categories, cashierSession }: { pr
                                 onClick={() =>
                                     setSidebarCollapsed((current) => !current)
                                 }
-                                className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-3 py-2 text-sm font-black text-slate-700 shadow-sm transition hover:bg-slate-50"
+                                className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-3 py-3 text-sm font-black text-slate-700 shadow-sm transition hover:bg-slate-50"
                                 title={
                                     sidebarCollapsed
                                         ? 'Buka sidebar'
@@ -1034,7 +1034,7 @@ export default function TabletPOS({ products, categories, cashierSession }: { pr
                                             setCustomerType('general')
                                         }
                                         className={cx(
-                                            'rounded-2xl px-4 py-2 text-sm font-black shadow-sm transition-all duration-200 hover:shadow-md',
+                                            'rounded-2xl px-4 py-3 text-sm font-black shadow-sm transition-all duration-200 hover:shadow-md',
                                             !isWorkshop
                                                 ? 'bg-slate-950 text-white'
                                                 : 'bg-slate-100 text-slate-600',
@@ -1047,7 +1047,7 @@ export default function TabletPOS({ products, categories, cashierSession }: { pr
                                             setCustomerType('workshop')
                                         }
                                         className={cx(
-                                            'rounded-2xl px-4 py-2 text-sm font-black shadow-sm transition-all duration-200 hover:shadow-md',
+                                            'rounded-2xl px-4 py-3 text-sm font-black shadow-sm transition-all duration-200 hover:shadow-md',
                                             isWorkshop
                                                 ? 'bg-amber-500 text-white'
                                                 : 'bg-amber-50 text-amber-700',
@@ -1159,7 +1159,7 @@ export default function TabletPOS({ products, categories, cashierSession }: { pr
                                 <div className="mb-3 flex items-center gap-2">
                                     <button
                                         onClick={() => setSelectedCategory(null)}
-                                        className="flex items-center gap-1 rounded-lg px-2 py-1 text-sm text-neutral-600 hover:bg-neutral-100 dark:text-neutral-300 dark:hover:bg-neutral-700"
+                                        className="flex items-center gap-1 rounded-lg px-3 py-2 text-sm text-neutral-600 hover:bg-neutral-100 dark:text-neutral-300 dark:hover:bg-neutral-700"
                                     >
                                         ← Kembali
                                     </button>
@@ -1212,7 +1212,7 @@ export default function TabletPOS({ products, categories, cashierSession }: { pr
                                 </div>
                                 <button
                                     onClick={clearCart}
-                                    className="rounded-2xl bg-red-50 px-3 py-2 text-sm font-black text-red-700 shadow-sm transition-all duration-200 hover:bg-red-100 hover:shadow-md"
+                                    className="rounded-2xl bg-red-50 px-3 py-3 text-sm font-black text-red-700 shadow-sm transition-all duration-200 hover:bg-red-100 hover:shadow-md"
                                 >
                                     Hapus Semua
                                 </button>
@@ -1273,7 +1273,7 @@ export default function TabletPOS({ products, categories, cashierSession }: { pr
                                                     onClick={() =>
                                                         removeItem(item.id)
                                                     }
-                                                    className="rounded-2xl p-2 text-slate-400 transition-all duration-200 hover:bg-red-50 hover:text-red-600"
+                                                    className="rounded-2xl p-3 text-slate-400 transition-all duration-200 hover:bg-red-50 hover:text-red-600"
                                                 >
                                                     <Icons.Trash />
                                                 </button>
@@ -1288,7 +1288,7 @@ export default function TabletPOS({ products, categories, cashierSession }: { pr
                                                                 -1,
                                                             )
                                                         }
-                                                        className="rounded-2xl border border-slate-200 bg-white p-2 text-slate-700 shadow-sm transition-all duration-200 hover:border-slate-300 hover:shadow-md"
+                                                        className="rounded-2xl border border-slate-200 bg-white p-3 text-slate-700 shadow-sm transition-all duration-200 hover:border-slate-300 hover:shadow-md"
                                                     >
                                                         <Icons.Minus />
                                                     </button>
@@ -1302,7 +1302,7 @@ export default function TabletPOS({ products, categories, cashierSession }: { pr
                                                                 1,
                                                             )
                                                         }
-                                                        className="rounded-2xl border border-slate-200 bg-white p-2 text-slate-700 shadow-sm transition-all duration-200 hover:border-slate-300 hover:shadow-md"
+                                                        className="rounded-2xl border border-slate-200 bg-white p-3 text-slate-700 shadow-sm transition-all duration-200 hover:border-slate-300 hover:shadow-md"
                                                     >
                                                         <Icons.Plus />
                                                     </button>
@@ -1349,7 +1349,7 @@ export default function TabletPOS({ products, categories, cashierSession }: { pr
                                             setPaymentMethod(method.id)
                                         }
                                         className={cx(
-                                            'rounded-2xl px-3 py-3 text-sm font-black shadow-sm transition-all duration-200 hover:shadow-md',
+                                            'rounded-2xl px-3 py-4 text-sm font-black shadow-sm transition-all duration-200 hover:shadow-md',
                                             paymentMethod === method.id
                                                 ? 'bg-slate-950 text-white'
                                                 : 'bg-slate-100 text-slate-600',
@@ -1401,7 +1401,7 @@ export default function TabletPOS({ products, categories, cashierSession }: { pr
                                                         )
                                                     }
                                                     className={cx(
-                                                        'rounded-2xl border px-3 py-3 text-left text-sm font-black shadow-sm transition-all duration-200 hover:shadow-md',
+                                                        'rounded-2xl border px-3 py-4 text-left text-sm font-black shadow-sm transition-all duration-200 hover:shadow-md',
                                                         Number(
                                                             cashReceived || 0,
                                                         ) === amount
@@ -1496,7 +1496,7 @@ export default function TabletPOS({ products, categories, cashierSession }: { pr
 
                             <button
                                 onClick={() => setShowMobileCheckout(false)}
-                                className="mt-3 w-full rounded-3xl border border-slate-200 px-4 py-3 text-sm font-black text-slate-700 shadow-sm transition-all duration-200 hover:bg-slate-50 hover:shadow-md lg:hidden"
+                                className="mt-3 w-full rounded-3xl border border-slate-200 px-4 py-4 text-sm font-black text-slate-700 shadow-sm transition-all duration-200 hover:bg-slate-50 hover:shadow-md lg:hidden"
                             >
                                 Kembali ke Katalog
                             </button>
@@ -1635,7 +1635,7 @@ export default function TabletPOS({ products, categories, cashierSession }: { pr
                             </div>
                             <button
                                 onClick={() => setShowSettlementModal(false)}
-                                className="rounded-2xl bg-slate-100 p-2 text-slate-500"
+                                className="rounded-2xl bg-slate-100 p-3 text-slate-500"
                             >
                                 <Icons.Close />
                             </button>
