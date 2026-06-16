@@ -17,6 +17,7 @@ class Transaction extends Model
         'cashier_session_id',
         'total_amount',
         'customer_type',
+        'status',
         'total_profit',
         'payment_method',
         'amount_paid',
@@ -70,6 +71,26 @@ class Transaction extends Model
         }
 
         return app(MonthlyReportService::class)->isFinalized($this->reportMonth());
+    }
+
+    public function scopePaid($query)
+    {
+        return $query->where('status', 'paid');
+    }
+
+    public function scopeDraft($query)
+    {
+        return $query->where('status', 'draft');
+    }
+
+    public function isDraft(): bool
+    {
+        return $this->status === 'draft';
+    }
+
+    public function isPaid(): bool
+    {
+        return $this->status === 'paid';
     }
 
     private function syncMonthlyReports(): void
