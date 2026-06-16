@@ -48,7 +48,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     // Rute Kasir
     Route::get('/pos', [TransactionController::class, 'create'])->name('transactions.create');
     Route::get('/pos/recap', [TransactionController::class, 'recap'])->name('transactions.recap');
-    Route::post('/pos', [TransactionController::class, 'store'])->name('transactions.store');
+    Route::post('/pos', [TransactionController::class, 'store'])->name('transactions.store')->middleware('throttle:30,1');
     Route::post('/pos/session/open', [TransactionController::class, 'openSession'])->name('transactions.session.open');
     Route::post('/pos/session/close', [TransactionController::class, 'closeSession'])->name('transactions.session.close');
 });
