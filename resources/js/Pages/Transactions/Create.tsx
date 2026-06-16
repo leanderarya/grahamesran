@@ -736,7 +736,7 @@ export default function TabletPOS({ products, categories, cashierSession }: { pr
                                 ))}
 
                                 {filteredProducts.length === 0 && (
-                                    <p className="col-span-full py-8 text-center text-sm text-neutral-400">
+                                    <p className="col-span-full py-8 text-center text-sm text-slate-400">
                                         Barang tidak ditemukan.
                                     </p>
                                 )}
@@ -746,14 +746,14 @@ export default function TabletPOS({ products, categories, cashierSession }: { pr
                                 <div className="mb-3 flex items-center gap-2">
                                     <button
                                         onClick={() => setSelectedCategory(null)}
-                                        className="flex items-center gap-1 rounded-lg px-3 py-2 text-sm text-neutral-600 hover:bg-neutral-100 dark:text-neutral-300 dark:hover:bg-neutral-700"
+                                        className="flex items-center gap-1 rounded-lg px-3 py-2 text-sm text-slate-600 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-700"
                                     >
                                         ← Kembali
                                     </button>
-                                    <h3 className="text-base font-bold text-neutral-800 dark:text-neutral-100">
+                                    <h3 className="text-base font-bold text-slate-800 dark:text-slate-100">
                                         {selectedCategory}
                                     </h3>
-                                    <span className="text-xs text-neutral-400">
+                                    <span className="text-xs text-slate-400">
                                         {categoryProducts.length} item
                                     </span>
                                 </div>
@@ -770,7 +770,7 @@ export default function TabletPOS({ products, categories, cashierSession }: { pr
                             </div>
                         ) : (
                             <div>
-                                <h3 className="mb-3 text-base font-bold text-neutral-800 dark:text-neutral-100">
+                                <h3 className="mb-3 text-base font-bold text-slate-800 dark:text-slate-100">
                                     Pilih Kategori
                                 </h3>
                                 <CategoryGrid
