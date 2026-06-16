@@ -14,10 +14,14 @@ import {
 import { route } from 'ziggy-js';
 import type { SharedData } from '@/types';
 import { cn } from '@/lib/utils';
-import { ShoppingCart, Search, Trash2, Minus, Plus, Calculator, FileText, LogOut, X, ChevronLeft, ChevronRight } from 'lucide-react';
+import { ShoppingCart, Search, Trash2, Minus, Plus, Calculator, FileText, LogOut, ChevronLeft, ChevronRight } from 'lucide-react';
 import { ProductCard } from '@/Components/pos/product-card';
 import { CategoryGrid } from '@/Components/pos/category-grid';
 import { VehicleFilter } from '@/Components/pos/vehicle-filter';
+import { PosSidebar } from '@/Components/pos/pos-sidebar';
+import { LogoutModal } from '@/Components/pos/logout-modal';
+import { OpenSessionModal } from '@/Components/pos/open-session-modal';
+import { SettlementModal } from '@/Components/pos/settlement-modal';
 import { formatRupiah, formatDateTime } from '@/lib/format';
 
 interface Product {
@@ -557,121 +561,30 @@ export default function TabletPOS({ products, categories, cashierSession }: { pr
                         : 'lg:grid-cols-[88px_minmax(0,1fr)_360px] xl:grid-cols-[260px_minmax(0,1fr)_420px]',
                 )}
             >
-                <aside className="w-full border-b border-slate-200 bg-slate-950 px-4 py-4 text-white lg:min-h-screen lg:border-r lg:border-b-0 lg:px-3 lg:py-5 xl:px-5 xl:py-6">
-                    <div className="flex items-center justify-between gap-3">
-                        <div className="flex items-center gap-3">
-                            <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-white/10">
-                                <img
-                                    src="/GrahaMesran-light.png"
-                                    alt="Graha Motor"
-                                    className="h-9 w-9 object-contain"
-                                />
-                            </div>
-                            <div>
-                                <div
-                                    className={cn(
-                                        'text-sm font-bold tracking-[0.2em] text-slate-300 uppercase',
-                                        sidebarCollapsed
-                                            ? 'hidden'
-                                            : 'hidden xl:block',
-                                    )}
-                                >
-                                    Graha Motor
-                                </div>
-                                <div
-                                    className={cn(
-                                        'mt-1 text-lg font-bold',
-                                        sidebarCollapsed
-                                            ? 'hidden'
-                                            : 'hidden xl:block',
-                                    )}
-                                >
-                                    Kasir POS
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div className="mt-5 flex gap-2 overflow-x-auto pb-1 lg:mt-8 lg:block lg:space-y-2 lg:overflow-visible lg:pb-0">
-                        {menuItems.map((item) => (
-                            <button
-                                key={item.id}
-                                onClick={item.onClick}
-                                className={cn(
-                                    'flex shrink-0 items-center gap-3 rounded-2xl px-4 py-4 text-left text-sm font-bold transition-all duration-200 lg:w-full lg:justify-center lg:px-0',
-                                    !sidebarCollapsed &&
-                                        'xl:justify-start xl:px-4',
-                                    activeMenu === item.id
-                                        ? 'bg-white text-slate-950'
-                                        : 'text-slate-300 hover:bg-white/10 hover:text-white',
-                                )}
-                            >
-                                <item.icon />
-                                <span
-                                    className={cn(
-                                        'whitespace-nowrap lg:hidden',
-                                        !sidebarCollapsed && 'xl:inline',
-                                    )}
-                                >
-                                    {item.label}
-                                </span>
-                            </button>
-                        ))}
-                    </div>
-
-                    {!sidebarCollapsed && (
-                        <>
-                            <div className="mt-5 rounded-3xl bg-white/5 p-4 lg:mt-8">
-                                <div className="text-[11px] font-bold tracking-widest text-slate-400 uppercase">
-                                    Status Kasir
-                                </div>
-                                <div className="mt-3 text-lg font-bold lg:text-center xl:text-left">
-                                    {hasOpenSession
-                                        ? 'Sesi Aktif'
-                                        : 'Belum Dibuka'}
-                                </div>
-                                <div className="mt-1 text-sm text-slate-300 lg:hidden xl:block">
-                                    {hasOpenSession
-                                        ? `Dibuka ${formatDateTime(sessionState?.opened_at)}`
-                                        : 'Masukkan saldo awal sebelum transaksi.'}
-                                </div>
-
-                                <button
-                                    onClick={() =>
-                                        hasOpenSession
-                                            ? setShowSettlementModal(true)
-                                            : setShowOpenSessionModal(true)
-                                    }
-                                    className="mt-4 w-full rounded-2xl bg-white px-4 py-4 text-sm font-bold text-slate-950 transition hover:bg-slate-200"
-                                >
-                                    <span className="lg:hidden xl:inline">
-                                        {hasOpenSession
-                                            ? 'Settlement / Tutup Kasir'
-                                            : 'Buka Kasir'}
-                                    </span>
-                                    <span className="hidden lg:inline xl:hidden">
-                                        {hasOpenSession ? 'Tutup' : 'Buka'}
-                                    </span>
-                                </button>
-                            </div>
-
-                            <div className="mt-5 rounded-3xl border border-white/10 p-4 lg:mt-8">
-                                <div className="text-sm font-bold">
-                                    {auth?.user?.name}
-                                </div>
-                                <div className="mt-1 text-sm text-slate-400">
-                                    Kasir aktif
-                                </div>
-                                <div className="mt-4 hidden text-xs font-semibold text-slate-400 xl:block">
-                                    {STORE_CONFIG.address}
-                                </div>
-                                <div className="hidden text-xs font-semibold text-slate-400 xl:block">
-                                    {STORE_CONFIG.phone}
-                                </div>
-                            </div>
-                        </>
-                    )}
-                </aside>
+                <PosSidebar
+                    activeMenu={activeMenu}
+                    sidebarCollapsed={sidebarCollapsed}
+                    hasOpenSession={hasOpenSession}
+                    sessionOpenedAt={sessionState?.opened_at}
+                    user={auth?.user ?? { name: '' }}
+                    storeAddress={STORE_CONFIG.address}
+                    storePhone={STORE_CONFIG.phone}
+                    menuItems={menuItems}
+                    statusCardDescription="Masukkan saldo awal sebelum transaksi."
+                    sessionButtonLabel={
+                        hasOpenSession
+                            ? 'Settlement / Tutup Kasir'
+                            : 'Buka Kasir'
+                    }
+                    sessionButtonCollapsedLabel={
+                        hasOpenSession ? 'Tutup' : 'Buka'
+                    }
+                    onSessionButtonClick={() =>
+                        hasOpenSession
+                            ? setShowSettlementModal(true)
+                            : setShowOpenSessionModal(true)
+                    }
+                />
 
                 <main className="contents">
                     <section className="space-y-5 p-4 pb-28 sm:p-5 sm:pb-32 lg:col-start-2 lg:p-5 lg:pb-5 xl:p-6 xl:pb-6">
@@ -1212,310 +1125,36 @@ export default function TabletPOS({ products, categories, cashierSession }: { pr
                 </div>
             </div>
 
-            {!hasOpenSession && showOpenSessionModal && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/70 p-4">
-                    <div className="w-full max-w-lg rounded-[2rem] bg-white p-6 shadow-2xl">
-                        <div className="text-xs font-bold tracking-[0.3em] text-slate-400 uppercase">
-                            Buka Kasir
-                        </div>
-                        <div className="mt-2 text-2xl font-bold text-slate-950">
-                            Masukkan uang awal di laci
-                        </div>
-                        <div className="mt-2 text-sm font-semibold text-slate-500">
-                            Nilai ini akan menjadi dasar expected cash saat
-                            settlement nanti.
-                        </div>
+            <OpenSessionModal
+                show={!hasOpenSession && showOpenSessionModal}
+                onClose={() => setShowOpenSessionModal(false)}
+                openingCash={openingCash}
+                openingNotes={openingNotes}
+                onOpeningCashChange={setOpeningCash}
+                onOpeningNotesChange={setOpeningNotes}
+                onSubmit={handleOpenSession}
+                isOpeningSession={isOpeningSession}
+            />
 
-                        <div className="mt-6 rounded-3xl bg-slate-50 p-5">
-                            {/* CASH AWAL */}
-                            <label className="text-xs font-bold tracking-widest text-slate-400 uppercase">
-                                Cash Awal
-                            </label>
+            <SettlementModal
+                show={showSettlementModal && hasOpenSession}
+                onClose={() => setShowSettlementModal(false)}
+                sessionState={sessionState}
+                closingCash={closingCashPhysical}
+                closingNotes={closingNotes}
+                onClosingCashChange={setClosingCashPhysical}
+                onClosingNotesChange={setClosingNotes}
+                onSubmit={handleCloseSession}
+                isClosingSession={isClosingSession}
+                expectedCash={expectedCash}
+                settlementDifference={settlementDifference}
+                settlementStatus={settlementStatus}
+            />
 
-                            <div
-                                className={cn(
-                                    'mt-2 flex items-center rounded-2xl px-4 py-3',
-                                    formSurface,
-                                )}
-                            >
-                                <span className="text-lg font-bold text-slate-500">
-                                    Rp
-                                </span>
-
-                                <input
-                                    type="text"
-                                    inputMode="numeric"
-                                    value={openingCash}
-                                    onChange={(event) =>
-                                        setOpeningCash(
-                                            sanitizeNumericInput(
-                                                event.target.value,
-                                            ),
-                                        )
-                                    }
-                                    placeholder="0"
-                                    className="ml-3 w-full border-0 bg-transparent p-0 text-2xl font-bold text-slate-950 focus:ring-0 focus:outline-none"
-                                />
-                            </div>
-
-                            {/* CATATAN */}
-                            <label className="mt-4 block text-xs font-bold tracking-widest text-slate-400 uppercase">
-                                Catatan Awal
-                            </label>
-
-                            <textarea
-                                rows={3}
-                                value={openingNotes}
-                                onChange={(event) =>
-                                    setOpeningNotes(event.target.value)
-                                }
-                                placeholder="Opsional"
-                                className="mt-2 w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm font-semibold text-slate-700 focus:ring-0 focus:outline-none"
-                            />
-                        </div>
-
-                        <div className="mt-6 flex gap-3">
-                            <Link
-                                href={route('logout')}
-                                method="post"
-                                as="button"
-                                className="flex-1 rounded-3xl border border-slate-200 bg-white py-4 text-sm font-bold text-slate-700 shadow-sm transition-all duration-200 hover:bg-slate-50 hover:shadow-md"
-                            >
-                                Keluar
-                            </Link>
-                            <button
-                                onClick={handleOpenSession}
-                                disabled={isOpeningSession}
-                                className="flex-[1.2] rounded-3xl bg-slate-950 py-4 text-sm font-bold text-white shadow-sm transition-all duration-200 hover:bg-slate-800 hover:shadow-md disabled:opacity-40"
-                            >
-                                {isOpeningSession ? 'Membuka...' : 'Buka Kasir'}
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            )}
-
-            {showSettlementModal && hasOpenSession && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/70 p-4">
-                    <div className="w-full max-w-3xl rounded-[2rem] bg-white p-6 shadow-2xl">
-                        <div className="flex items-start justify-between gap-4">
-                            <div>
-                                <div className="text-xs font-bold tracking-[0.3em] text-slate-400 uppercase">
-                                    Settlement
-                                </div>
-                                <div className="mt-2 text-2xl font-bold text-slate-950">
-                                    Tutup kasir dan cocokkan uang fisik
-                                </div>
-                            </div>
-                            <button
-                                onClick={() => setShowSettlementModal(false)}
-                                className="rounded-2xl bg-slate-100 p-3 text-slate-500"
-                            >
-                                <X />
-                            </button>
-                        </div>
-
-                        <div className="mt-6 grid gap-4 md:grid-cols-4">
-                            <div className="rounded-3xl bg-slate-50 p-4">
-                                <div className="text-[11px] font-bold tracking-widest text-slate-400 uppercase">
-                                    Saldo Awal
-                                </div>
-                                <div className="mt-2 text-xl font-bold text-slate-950">
-                                    Rp{' '}
-                                    {formatRupiah(
-                                        sessionState?.opening_cash || 0,
-                                    )}
-                                </div>
-                            </div>
-                            <div className="rounded-3xl bg-slate-50 p-4">
-                                <div className="text-[11px] font-bold tracking-widest text-slate-400 uppercase">
-                                    Cash Sales
-                                </div>
-                                <div className="mt-2 text-xl font-bold text-slate-950">
-                                    Rp{' '}
-                                    {formatRupiah(
-                                        sessionState?.cash_sales_total || 0,
-                                    )}
-                                </div>
-                            </div>
-                            <div className="rounded-3xl bg-slate-50 p-4">
-                                <div className="text-[11px] font-bold tracking-widest text-slate-400 uppercase">
-                                    Non Cash
-                                </div>
-                                <div className="mt-2 text-xl font-bold text-slate-950">
-                                    Rp{' '}
-                                    {formatRupiah(
-                                        sessionState?.non_cash_sales_total || 0,
-                                    )}
-                                </div>
-                            </div>
-                            <div className="rounded-3xl bg-slate-950 p-4 text-white">
-                                <div className="text-[11px] font-bold tracking-widest text-slate-400 uppercase">
-                                    Expected Cash
-                                </div>
-                                <div className="mt-2 text-xl font-bold">
-                                    Rp {formatRupiah(expectedCash)}
-                                </div>
-                            </div>
-                        </div>
-
-                        <div className="mt-6 grid gap-5 md:grid-cols-[1.1fr_0.9fr]">
-                            <div className="rounded-3xl bg-slate-50 p-5">
-                                <label className="text-xs font-bold tracking-widest text-slate-400 uppercase">
-                                    Uang Fisik Di Laci
-                                </label>
-                                <div
-                                    className={cn(
-                                        'mt-2 flex items-center rounded-2xl px-4 py-3',
-                                        formSurface,
-                                    )}
-                                >
-                                    <span className="text-lg font-bold text-slate-500">
-                                        Rp
-                                    </span>
-                                    <input
-                                        type="text"
-                                        inputMode="numeric"
-                                        value={closingCashPhysical}
-                                        onChange={(event) =>
-                                            setClosingCashPhysical(
-                                                sanitizeNumericInput(
-                                                    event.target.value,
-                                                ),
-                                            )
-                                        }
-                                        placeholder="0"
-                                        className="ml-3 w-full border-0 bg-transparent p-0 text-2xl font-bold text-slate-950 focus:ring-0 focus:outline-none"
-                                    />
-                                </div>
-
-                                <label className="mt-4 block text-xs font-bold tracking-widest text-slate-400 uppercase">
-                                    Catatan Settlement
-                                </label>
-                                <textarea
-                                    rows={4}
-                                    value={closingNotes}
-                                    onChange={(event) =>
-                                        setClosingNotes(event.target.value)
-                                    }
-                                    placeholder="Opsional"
-                                    className="mt-2 w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm font-semibold text-slate-700 focus:ring-0 focus:outline-none"
-                                />
-                            </div>
-
-                            <div className="rounded-3xl border border-slate-200 p-5">
-                                <div className="text-xs font-bold tracking-widest text-slate-400 uppercase">
-                                    Hasil Settlement
-                                </div>
-                                <div
-                                    className={cn(
-                                        'mt-4 inline-flex rounded-full px-3 py-1 text-xs font-bold uppercase',
-                                        settlementStatus === 'balance'
-                                            ? 'bg-emerald-100 text-emerald-700'
-                                            : settlementStatus === 'minus'
-                                              ? 'bg-red-100 text-red-700'
-                                              : 'bg-amber-100 text-amber-700',
-                                    )}
-                                >
-                                    {settlementStatus === 'balance'
-                                        ? 'Balance'
-                                        : settlementStatus === 'minus'
-                                          ? 'Minus'
-                                          : 'Lebih'}
-                                </div>
-
-                                <div
-                                    className={cn(
-                                        'mt-4 text-3xl font-bold',
-                                        settlementStatus === 'balance'
-                                            ? 'text-emerald-700'
-                                            : settlementStatus === 'minus'
-                                              ? 'text-red-700'
-                                              : 'text-amber-700',
-                                    )}
-                                >
-                                    {formatSignedCurrency(settlementDifference)}
-                                </div>
-
-                                <div className="mt-6 space-y-3 text-sm font-semibold text-slate-600">
-                                    <div className="flex items-center justify-between">
-                                        <span>Expected cash</span>
-                                        <span className="font-bold text-slate-950">
-                                            Rp {formatRupiah(expectedCash)}
-                                        </span>
-                                    </div>
-                                    <div className="flex items-center justify-between">
-                                        <span>Uang fisik</span>
-                                        <span className="font-bold text-slate-950">
-                                            Rp{' '}
-                                            {formatRupiah(
-                                                Number(
-                                                    closingCashPhysical || 0,
-                                                ),
-                                            )}
-                                        </span>
-                                    </div>
-                                    <div className="flex items-center justify-between">
-                                        <span>Total transaksi</span>
-                                        <span className="font-bold text-slate-950">
-                                            {sessionState?.transactions_count ||
-                                                0}
-                                        </span>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-
-                        <div className="mt-6 flex gap-3">
-                            <button
-                                onClick={() => setShowSettlementModal(false)}
-                                className="flex-1 rounded-3xl border border-slate-200 bg-white py-4 text-sm font-bold text-slate-700 shadow-sm transition-all duration-200 hover:bg-slate-50 hover:shadow-md"
-                            >
-                                Kembali
-                            </button>
-                            <button
-                                onClick={handleCloseSession}
-                                disabled={isClosingSession}
-                                className="flex-[1.2] rounded-3xl bg-slate-950 py-4 text-sm font-bold text-white shadow-sm transition-all duration-200 hover:bg-slate-800 hover:shadow-md disabled:opacity-40"
-                            >
-                                {isClosingSession
-                                    ? 'Menyimpan...'
-                                    : 'Simpan Settlement & Tutup Kasir'}
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            )}
-
-            {showLogoutModal && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/70 p-4">
-                    <div className="w-full max-w-md rounded-[2rem] bg-white p-6 shadow-2xl">
-                        <div className="text-xl font-bold text-slate-950">
-                            Keluar dari kasir?
-                        </div>
-                        <div className="mt-2 text-sm font-semibold text-slate-500">
-                            Gunakan logout hanya jika tidak ada sesi kasir yang
-                            sedang aktif.
-                        </div>
-                        <div className="mt-6 flex gap-3">
-                            <button
-                                onClick={() => setShowLogoutModal(false)}
-                                className="flex-1 rounded-3xl border border-slate-200 bg-white py-4 text-sm font-bold text-slate-700 shadow-sm transition-all duration-200 hover:bg-slate-50 hover:shadow-md"
-                            >
-                                Batal
-                            </button>
-                            <Link
-                                href={route('logout')}
-                                method="post"
-                                as="button"
-                                className="flex-1 rounded-3xl bg-slate-950 py-4 text-sm font-bold text-white shadow-sm transition-all duration-200 hover:bg-slate-800 hover:shadow-md"
-                            >
-                                Ya, Keluar
-                            </Link>
-                        </div>
-                    </div>
-                </div>
-            )}
+            <LogoutModal
+                show={showLogoutModal}
+                onClose={() => setShowLogoutModal(false)}
+            />
 
             <div
                 id="printable-area"
