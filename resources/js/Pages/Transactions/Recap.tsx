@@ -7,6 +7,7 @@ import { useState } from 'react';
 import { route } from 'ziggy-js';
 import type { SharedData } from '@/types';
 import { cn } from '@/lib/utils';
+import { formatRupiah, formatDateTime } from '@/lib/format';
 import {
     ChevronLeft,
     ChevronRight,
@@ -45,16 +46,6 @@ interface TopProduct {
     quantity: number;
     revenue: number;
 }
-
-const formatRupiah = (value: number | string | null | undefined) =>
-    new Intl.NumberFormat('id-ID').format(Number(value) || 0);
-const formatDateTime = (value: string | null | undefined) =>
-    value
-        ? new Intl.DateTimeFormat('id-ID', {
-              dateStyle: 'medium',
-              timeStyle: 'short',
-          }).format(new Date(value))
-        : '-';
 
 const STORE_CONFIG = {
     address: 'Jl. Raya Pertamina No. 1',
