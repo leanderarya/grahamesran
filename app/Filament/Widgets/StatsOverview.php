@@ -43,11 +43,19 @@ class StatsOverview extends BaseWidget
         $netProfit = $grossProfit - $expenses;
 
         // --- 4. DATA GRAFIK (Omset 7 Hari Terakhir) ---
-        // Kita buat array angka omset harian untuk chart
+        // Consolidated from 7 queries to 1 grouped query
+        $dailyTotals = Transaction::query()
+            ->selectRaw('DATE(created_at) as sale_date')
+            ->selectRaw('SUM(total_amount) as total')
+            ->whereBetween('created_at', [now()->subDays(6)->startOfDay(), now()->endOfDay()])
+            ->groupBy('sale_date')
+            ->get()
+            ->keyBy('sale_date');
+
         $chartData = [];
         for ($i = 6; $i >= 0; $i--) {
             $date = $now->copy()->subDays($i)->format('Y-m-d');
-            $chartData[] = Transaction::whereDate('created_at', $date)->sum('total_amount');
+            $chartData[] = (float) ($dailyTotals[$date]->total ?? 0);
         }
 
         // --- 5. DATA ASET GUDANG (Snapshot Saat Ini) ---
