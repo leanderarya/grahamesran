@@ -47,7 +47,7 @@ export function ProductCard({ product, customerType, onAddToCart, className }: P
                 {product.sku || 'NOSKU'}
             </div>
 
-            <div className="mt-1 flex-1 text-sm font-semibold leading-snug text-slate-900 line-clamp-2">
+            <div className="mt-1 flex-1 text-sm font-semibold leading-snug text-slate-950 line-clamp-2">
                 {product.display_name}
             </div>
 
@@ -70,7 +70,7 @@ export function ProductCard({ product, customerType, onAddToCart, className }: P
                             'text-sm font-bold',
                             customerType === 'workshop' && workshopPrice > 0
                                 ? 'text-amber-600'
-                                : 'text-slate-900',
+                                : 'text-slate-950',
                         )}
                     >
                         Rp {formatRupiah(activePrice)}
