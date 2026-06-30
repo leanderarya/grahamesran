@@ -1,6 +1,6 @@
 import { cn } from '@/lib/utils';
 import { formatRupiah, getProductLabel } from '@/lib/format';
-import { Trash2, Minus, Plus } from 'lucide-react';
+import { Trash2, Minus, Plus, X } from 'lucide-react';
 
 interface CartItem {
     id: number;
@@ -28,6 +28,7 @@ interface CheckoutPanelProps {
     customerType: string;
     onCustomerTypeChange: (type: string) => void;
     onSaveDraft: () => void;
+    onCloseDesktop?: () => void;
     showMobileCheckout: boolean;
     onCloseMobileCheckout: () => void;
 }
@@ -46,6 +47,7 @@ export function CheckoutPanel({
     customerType,
     onCustomerTypeChange,
     onSaveDraft,
+    onCloseDesktop,
     showMobileCheckout,
     onCloseMobileCheckout,
 }: CheckoutPanelProps) {
@@ -67,6 +69,16 @@ export function CheckoutPanel({
                         </span>
                     )}
                 </div>
+                <div className="flex items-center gap-1">
+                {onCloseDesktop && (
+                    <button
+                        onClick={onCloseDesktop}
+                        className="rounded-lg p-1.5 text-slate-400 transition-colors hover:bg-slate-100 lg:block"
+                        title="Tutup keranjang"
+                    >
+                        <X className="h-4 w-4" />
+                    </button>
+                )}
                 {cart.length > 0 && (
                     <button
                         onClick={clearCart}
@@ -75,6 +87,7 @@ export function CheckoutPanel({
                         <Trash2 className="h-4 w-4" />
                     </button>
                 )}
+                </div>
             </div>
 
             {/* Cart Items */}

@@ -13,15 +13,17 @@ import {
 } from 'react';
 import { route } from 'ziggy-js';
 import type { SharedData } from '@/types';
+import { cn } from '@/lib/utils';
 import { ProductCard } from '@/Components/pos/product-card';
 import { CategoryChips } from '@/Components/pos/category-chips';
 import { TopBar } from '@/Components/pos/top-bar';
 import { OpenSessionModal } from '@/Components/pos/open-session-modal';
 import { SettlementModal } from '@/Components/pos/settlement-modal';
-import { getProductLabel } from '@/lib/format';
+import { getProductLabel, formatRupiah } from '@/lib/format';
 import { CheckoutPanel } from '@/Components/pos/checkout-panel';
 import { MobileBottomBar } from '@/Components/pos/mobile-bottom-bar';
 import { PrintReceipt } from '@/Components/pos/print-receipt';
+import { ShoppingCart } from 'lucide-react';
 
 interface Product {
     id: number;
@@ -76,6 +78,7 @@ export default function TabletPOS({ products, cashierSession, activeDraft }: { p
     const { auth, flash } = usePage<SharedData>().props;
     const [search, setSearch] = useState('');
     const [showMobileCheckout, setShowMobileCheckout] = useState(false);
+    const [showDesktopCheckout, setShowDesktopCheckout] = useState(true);
     const [customerType, setCustomerType] = useState('general');
     const [showOpenSessionModal, setShowOpenSessionModal] =
         useState(!cashierSession);
@@ -395,7 +398,10 @@ export default function TabletPOS({ products, cashierSession, activeDraft }: { p
 
                     {/* Product Grid */}
                     <div className="flex-1 overflow-y-auto p-4">
-                        <div className="grid grid-cols-4 gap-2">
+                        <div className={cn(
+                            'grid gap-2',
+                            showDesktopCheckout ? 'grid-cols-4' : 'grid-cols-5',
+                        )}>
                             {displayProducts.map((product) => (
                                 <ProductCard
                                     key={product.id}
@@ -414,8 +420,8 @@ export default function TabletPOS({ products, cashierSession, activeDraft }: { p
                     </div>
                 </main>
 
-                {/* Right Panel: Checkout */}
-                <CheckoutPanel
+                {/* Right Panel: Checkout — collapsible on desktop */}
+                {showDesktopCheckout && <CheckoutPanel
                     cart={data.cart}
                     productById={productById}
                     getProductPrice={getProductPrice}
@@ -429,10 +435,22 @@ export default function TabletPOS({ products, cashierSession, activeDraft }: { p
                     customerType={customerType}
                     onCustomerTypeChange={setCustomerType}
                     onSaveDraft={handleSaveDraft}
+                    onCloseDesktop={() => setShowDesktopCheckout(false)}
                     showMobileCheckout={showMobileCheckout}
                     onCloseMobileCheckout={() => setShowMobileCheckout(false)}
-                />
+                />}
             </div>
+
+            {/* Floating Cart Button — visible when desktop checkout is hidden */}
+            {!showDesktopCheckout && data.cart.length > 0 && (
+                <button
+                    onClick={() => setShowDesktopCheckout(true)}
+                    className="fixed bottom-6 right-6 z-30 flex items-center gap-2 rounded-lg bg-indigo-600 px-4 py-3 text-sm font-bold text-white shadow-lg transition-colors hover:bg-indigo-700"
+                >
+                    <ShoppingCart className="h-4 w-4" />
+                    {data.cart.length} item · Rp {formatRupiah(totalAmount)}
+                </button>
+            )}
 
             {/* Mobile Bottom Bar */}
             <MobileBottomBar
