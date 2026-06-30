@@ -138,8 +138,17 @@ export function CheckoutPanel({
                                     </button>
                                 </div>
 
-                                <div className="text-sm font-bold text-slate-950 whitespace-nowrap">
-                                    Rp {formatRupiah(price * Number(item.qty || 0))}
+                                <div className="flex flex-col items-end gap-1">
+                                    <div className="text-sm font-bold text-slate-950 whitespace-nowrap">
+                                        Rp {formatRupiah(price * Number(item.qty || 0))}
+                                    </div>
+                                    <button
+                                        onClick={() => removeItem(item.id)}
+                                        className="rounded-lg p-1 text-slate-400 transition-colors hover:bg-red-50 hover:text-red-500"
+                                        title="Hapus item"
+                                    >
+                                        <Trash2 className="h-3.5 w-3.5" />
+                                    </button>
                                 </div>
                             </div>
                             {index < cart.length - 1 && (
