@@ -237,24 +237,32 @@ export default function TabletPOS({ products, cashierSession, activeDraft }: { p
 
     const updateQty = useCallback(
         (id: number, delta: number) => {
+            const item = data.cart.find((i) => i.id === id);
+            if (!item) return;
+
+            const currentQty = Number(item.qty || 1);
+            const nextQty = currentQty + delta;
+
+            // If qty would go to 0 or below, remove the item
+            if (nextQty <= 0) {
+                setData('cart', data.cart.filter((i) => i.id !== id));
+                return;
+            }
+
+            const stock = Number(productById.get(id)?.stock || 0);
+            if (nextQty > stock) {
+                notifyWarning(
+                    `Jumlah maksimal untuk item ini adalah ${stock}.`,
+                    'Melebihi stok',
+                );
+                return;
+            }
+
             setData(
                 'cart',
-                data.cart.map((item) => {
-                    if (item.id !== id) return item;
-
-                    const stock = Number(productById.get(id)?.stock || 0);
-                    const nextQty = Math.max(1, Number(item.qty || 1) + delta);
-
-                    if (nextQty > stock) {
-                        notifyWarning(
-                            `Jumlah maksimal untuk item ini adalah ${stock}.`,
-                            'Melebihi stok',
-                        );
-                        return item;
-                    }
-
-                    return { ...item, qty: nextQty };
-                }),
+                data.cart.map((i) =>
+                    i.id === id ? { ...i, qty: nextQty } : i,
+                ),
             );
         },
         [data.cart, productById, setData],
