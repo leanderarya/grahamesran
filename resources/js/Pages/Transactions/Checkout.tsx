@@ -153,18 +153,18 @@ export default function Checkout({ draft, cashierSession }: CheckoutProps) {
         `${value < 0 ? '-' : ''}Rp ${formatRupiah(Math.abs(value || 0))}`;
 
     return (
-        <div className="min-h-screen bg-slate-100 text-slate-900">
+        <div className="min-h-screen bg-white text-slate-900">
             <Head title={`Checkout ${draft.invoice_number} - Graha Motor`} />
             <AppNotifications flash={flash} />
 
-            <div className="mx-auto min-h-screen max-w-[1400px] px-4 py-5 sm:px-6 lg:grid lg:grid-cols-[1fr_440px] lg:gap-6 lg:px-8 xl:grid-cols-[1fr_480px]">
+            <div className="mx-auto min-h-screen max-w-[1400px] px-4 py-5 sm:px-6 lg:grid lg:grid-cols-[55%_45%] lg:gap-6 lg:px-8">
                 {/* Left Column: Order Summary */}
                 <section className="space-y-5">
                     {/* Header */}
                     <div className="flex items-center justify-between gap-4">
                         <Link
                             href={route('transactions.create')}
-                            className="inline-flex items-center gap-2 rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm font-bold text-slate-700 shadow-sm transition-all duration-200 hover:bg-slate-50 hover:shadow-md"
+                            className="inline-flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-4 py-3 text-sm font-bold text-slate-700 transition-all duration-200 hover:bg-slate-50"
                         >
                             <ArrowLeft className="h-4 w-4" />
                             Kembali ke Transaksi
@@ -175,7 +175,7 @@ export default function Checkout({ draft, cashierSession }: CheckoutProps) {
                     </div>
 
                     {/* Order Summary Card */}
-                    <div className="rounded-[2rem] bg-white p-5 shadow-sm sm:p-6">
+                    <div className="rounded-xl border border-slate-200 bg-white p-5 sm:p-6">
                         <div className="flex items-start justify-between gap-4">
                             <div>
                                 <div className="text-xs font-bold tracking-[0.3em] text-slate-400 uppercase">
@@ -187,7 +187,7 @@ export default function Checkout({ draft, cashierSession }: CheckoutProps) {
                             </div>
                             <div
                                 className={cn(
-                                    'rounded-2xl px-4 py-2 text-sm font-bold',
+                                    'rounded-lg px-4 py-2 text-sm font-bold',
                                     draft.customer_type === 'workshop'
                                         ? 'bg-amber-50 text-amber-700'
                                         : 'bg-slate-100 text-slate-600',
@@ -204,7 +204,7 @@ export default function Checkout({ draft, cashierSession }: CheckoutProps) {
                             {draft.items.map((item) => (
                                 <div
                                     key={item.id}
-                                    className="rounded-3xl border border-slate-200 bg-slate-50 p-4"
+                                    className="rounded-lg border border-slate-200 bg-slate-50 p-4"
                                 >
                                     <div className="flex items-start justify-between gap-3">
                                         <div className="min-w-0 flex-1">
@@ -225,7 +225,7 @@ export default function Checkout({ draft, cashierSession }: CheckoutProps) {
                         </div>
 
                         {/* Total */}
-                        <div className="mt-5 rounded-3xl bg-slate-950 p-5 text-white">
+                        <div className="mt-5 rounded-xl bg-indigo-600 p-5 text-white">
                             <div className="text-sm font-semibold text-slate-400">
                                 Total Tagihan
                             </div>
@@ -238,7 +238,7 @@ export default function Checkout({ draft, cashierSession }: CheckoutProps) {
 
                 {/* Right Column: Payment */}
                 <section className="space-y-5 lg:sticky lg:top-5">
-                    <div className="rounded-[2rem] bg-white p-5 shadow-sm sm:p-6">
+                    <div className="rounded-xl border border-slate-200 bg-white p-5 sm:p-6">
                         <div className="text-xs font-bold tracking-[0.3em] text-slate-400 uppercase">
                             Pembayaran
                         </div>
@@ -254,9 +254,9 @@ export default function Checkout({ draft, cashierSession }: CheckoutProps) {
                                             setPaymentMethod(method.id)
                                         }
                                         className={cn(
-                                            'flex flex-col items-center gap-2 rounded-2xl border-2 px-3 py-4 text-sm font-bold shadow-sm transition-all duration-200 hover:shadow-md',
+                                            'flex flex-col items-center gap-2 rounded-lg border-2 px-3 py-3 text-sm font-bold transition-all duration-200',
                                             paymentMethod === method.id
-                                                ? 'border-slate-950 bg-slate-950 text-white'
+                                                ? 'border-indigo-600 bg-indigo-600 text-white'
                                                 : 'border-slate-200 bg-white text-slate-600',
                                         )}
                                     >
@@ -275,7 +275,7 @@ export default function Checkout({ draft, cashierSession }: CheckoutProps) {
                                 </label>
                                 <div
                                     className={cn(
-                                        'mt-2 flex items-center rounded-2xl px-4 py-3',
+                                        'mt-2 flex items-center rounded-lg px-4 py-3',
                                         formSurface,
                                     )}
                                 >
@@ -311,11 +311,11 @@ export default function Checkout({ draft, cashierSession }: CheckoutProps) {
                                                     )
                                                 }
                                                 className={cn(
-                                                    'rounded-2xl border px-3 py-3 text-sm font-bold shadow-sm transition-all duration-200 hover:shadow-md',
+                                                    'rounded-lg border px-3 py-3 text-sm font-bold transition-all duration-200',
                                                     Number(
                                                         cashReceived || 0,
                                                     ) === amount
-                                                        ? 'border-slate-950 bg-slate-950 text-white'
+                                                        ? 'border-indigo-600 bg-indigo-600 text-white'
                                                         : amount ===
                                                             totalAmount
                                                           ? 'border-emerald-200 bg-emerald-50 text-emerald-800 hover:bg-emerald-100'
@@ -333,7 +333,7 @@ export default function Checkout({ draft, cashierSession }: CheckoutProps) {
                                 {/* Change Display */}
                                 <div
                                     className={cn(
-                                        'mt-3 rounded-2xl p-4 text-sm font-bold',
+                                        'mt-3 rounded-lg p-4 text-sm font-bold',
                                         change < 0
                                             ? 'bg-red-50 text-red-600'
                                             : 'bg-emerald-50 text-emerald-600',
@@ -348,7 +348,7 @@ export default function Checkout({ draft, cashierSession }: CheckoutProps) {
 
                         {/* QRIS / Transfer Placeholder */}
                         {paymentMethod !== 'cash' && (
-                            <div className="mt-5 rounded-3xl bg-slate-50 p-5 text-center">
+                            <div className="mt-5 rounded-lg bg-slate-50 p-5 text-center">
                                 <div className="text-sm font-semibold text-slate-600">
                                     Pembayaran non-tunai akan dianggap lunas
                                     sesuai nominal total.
@@ -370,7 +370,7 @@ export default function Checkout({ draft, cashierSession }: CheckoutProps) {
                                     (paymentMethod === 'cash' &&
                                         change < 0)
                                 }
-                                className="w-full rounded-3xl bg-slate-950 px-4 py-4 text-base font-bold text-white shadow-sm transition-all duration-200 hover:bg-slate-800 hover:shadow-md disabled:cursor-not-allowed disabled:opacity-40"
+                                className="w-full rounded-lg bg-indigo-600 px-4 py-4 text-base font-bold text-white transition-all duration-200 hover:bg-indigo-700 disabled:cursor-not-allowed disabled:opacity-40"
                             >
                                 {isProcessing
                                     ? 'Memproses...'
@@ -379,7 +379,7 @@ export default function Checkout({ draft, cashierSession }: CheckoutProps) {
 
                             <Link
                                 href={route('transactions.create')}
-                                className="block w-full rounded-3xl border border-slate-200 px-4 py-4 text-center text-sm font-bold text-slate-700 shadow-sm transition-all duration-200 hover:bg-slate-50 hover:shadow-md"
+                                className="block w-full rounded-lg border border-slate-200 px-4 py-4 text-center text-sm font-bold text-slate-700 transition-all duration-200 hover:bg-slate-50"
                             >
                                 Kembali ke Transaksi
                             </Link>
