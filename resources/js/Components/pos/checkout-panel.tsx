@@ -59,7 +59,7 @@ export function CheckoutPanel({
         >
             {/* Header */}
             <div className="flex items-center justify-between border-b border-slate-200 px-4 py-3">
-                <div className="text-sm font-bold text-slate-900">
+                <div className="text-sm font-bold text-slate-950">
                     Keranjang
                     {cart.length > 0 && (
                         <span className="ml-1.5 text-slate-400">
@@ -99,7 +99,7 @@ export function CheckoutPanel({
                         <div key={item.id}>
                             <div className="flex items-start gap-3 px-4 py-3">
                                 <div className="min-w-0 flex-1">
-                                    <div className="text-sm font-semibold text-slate-900 line-clamp-1">
+                                    <div className="text-sm font-semibold text-slate-950 line-clamp-1">
                                         {getProductLabel(item)}
                                     </div>
                                     <div className="mt-0.5 text-xs text-slate-500">
@@ -114,7 +114,7 @@ export function CheckoutPanel({
                                     >
                                         <Minus className="h-3.5 w-3.5" />
                                     </button>
-                                    <span className="w-8 text-center text-sm font-bold text-slate-900">
+                                    <span className="w-8 text-center text-sm font-bold text-slate-950">
                                         {item.qty}
                                     </span>
                                     <button
@@ -125,7 +125,7 @@ export function CheckoutPanel({
                                     </button>
                                 </div>
 
-                                <div className="text-sm font-bold text-slate-900 whitespace-nowrap">
+                                <div className="text-sm font-bold text-slate-950 whitespace-nowrap">
                                     Rp {formatRupiah(price * Number(item.qty || 0))}
                                 </div>
                             </div>
@@ -146,7 +146,7 @@ export function CheckoutPanel({
                         className={cn(
                             'flex-1 rounded-md py-1.5 text-xs font-semibold transition-colors',
                             !isWorkshop
-                                ? 'bg-white text-slate-900 shadow-sm'
+                                ? 'bg-white text-slate-950 border border-slate-200'
                                 : 'text-slate-500',
                         )}
                     >
@@ -157,7 +157,7 @@ export function CheckoutPanel({
                         className={cn(
                             'flex-1 rounded-md py-1.5 text-xs font-semibold transition-colors',
                             isWorkshop
-                                ? 'bg-white text-amber-700 shadow-sm'
+                                ? 'bg-white text-amber-700 border border-slate-200'
                                 : 'text-slate-500',
                         )}
                     >
