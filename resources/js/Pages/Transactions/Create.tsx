@@ -13,34 +13,39 @@ import {
 } from 'react';
 import { route } from 'ziggy-js';
 import type { SharedData } from '@/types';
-import { cn } from '@/lib/utils';
-import { ShoppingCart, Search, Calculator, FileText, LogOut, ChevronLeft, ChevronRight } from 'lucide-react';
 import { ProductCard } from '@/Components/pos/product-card';
-import { CategoryGrid } from '@/Components/pos/category-grid';
-import { VehicleFilter } from '@/Components/pos/vehicle-filter';
-import { PosSidebar } from '@/Components/pos/pos-sidebar';
-import { LogoutModal } from '@/Components/pos/logout-modal';
+import { CategoryChips } from '@/Components/pos/category-chips';
+import { TopBar } from '@/Components/pos/top-bar';
 import { OpenSessionModal } from '@/Components/pos/open-session-modal';
 import { SettlementModal } from '@/Components/pos/settlement-modal';
-import { formatRupiah, getProductLabel } from '@/lib/format';
+import { getProductLabel } from '@/lib/format';
 import { CheckoutPanel } from '@/Components/pos/checkout-panel';
 import { MobileBottomBar } from '@/Components/pos/mobile-bottom-bar';
 import { PrintReceipt } from '@/Components/pos/print-receipt';
 
 interface Product {
     id: number;
+    sku: string;
     name: string;
     category: string | null;
+    image_url: string | null;
+    volume_liter: number | null;
+    stock: number;
+    sell_price: number;
+    workshop_price: number | null;
+    display_name: string;
+    vehicles?: { brand?: string; model?: string }[];
+}
+
+interface CartItem {
+    id: number;
+    name: string;
     sku?: string;
     stock: number | string;
     sell_price: number | string;
     workshop_price?: number | string;
     volume_liter?: number | string;
     image_url?: string;
-    vehicles?: { brand?: string; model?: string }[];
-}
-
-interface CartItem extends Product {
     qty: number;
 }
 
@@ -67,17 +72,11 @@ const STORE_CONFIG = {
     phone: '0812-3456-7890',
 };
 
-const formSurface =
-'border border-slate-200 bg-white transition-all duration-200 ease-out';
-
-export default function TabletPOS({ products, cashierSession, activeDraft }: { products: Product[]; categories?: string[]; cashierSession: CashierSession | null; activeDraft?: ActiveDraft | null }) {
+export default function TabletPOS({ products, cashierSession, activeDraft }: { products: Product[]; cashierSession: CashierSession | null; activeDraft?: ActiveDraft | null }) {
     const { auth, flash } = usePage<SharedData>().props;
-    const [activeMenu, setActiveMenu] = useState('cashier');
-    const [sidebarCollapsed, setSidebarCollapsed] = useState(true);
     const [search, setSearch] = useState('');
     const [showMobileCheckout, setShowMobileCheckout] = useState(false);
     const [customerType, setCustomerType] = useState('general');
-    const [showLogoutModal, setShowLogoutModal] = useState(false);
     const [showOpenSessionModal, setShowOpenSessionModal] =
         useState(!cashierSession);
     const [showSettlementModal, setShowSettlementModal] = useState(false);
@@ -88,7 +87,6 @@ export default function TabletPOS({ products, cashierSession, activeDraft }: { p
     const [isOpeningSession, setIsOpeningSession] = useState(false);
     const [isClosingSession, setIsClosingSession] = useState(false);
     const [sessionState, setSessionState] = useState<CashierSession | null>(cashierSession);
-    const [selectedVehicle, setSelectedVehicle] = useState<string>('all');
     const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
     const { data, setData, reset } = useForm<{ cart: CartItem[] }>({ cart: [] });
 
@@ -102,7 +100,7 @@ export default function TabletPOS({ products, cashierSession, activeDraft }: { p
             const restoredCart = activeDraft.transaction_items.map(item => ({
                 ...item.product,
                 qty: item.quantity,
-            }));
+            })) as CartItem[];
             setData('cart', restoredCart);
         }
     }, [activeDraft, setData]);
@@ -117,56 +115,44 @@ export default function TabletPOS({ products, cashierSession, activeDraft }: { p
         return map;
     }, [products]);
 
-    const vehicleBrands = useMemo(() => {
-        const brands = new Set<string>();
-        products.forEach((p) =>
-            p.vehicles?.forEach((v) => {
-                if (v.brand !== 'UNIVERSAL') brands.add(v.brand!);
-            }),
-        );
-        return ['all', ...Array.from(brands).sort()];
-    }, [products]);
-
-    const vehicleFilteredProducts = useMemo(() => {
-        if (selectedVehicle === 'all') return products;
-        return products.filter((p) =>
-            p.vehicles?.some((v) => v.brand === selectedVehicle),
-        );
-    }, [products, selectedVehicle]);
-
     const categoryGroups = useMemo(() => {
         const groups: Record<string, number> = {};
-        vehicleFilteredProducts.forEach((p) => {
+        products.forEach((p) => {
             const cat = p.category || 'Lainnya';
             groups[cat] = (groups[cat] || 0) + 1;
         });
         return Object.entries(groups)
             .sort(([a], [b]) => a.localeCompare(b))
             .map(([name, count]) => ({ name, count }));
-    }, [vehicleFilteredProducts]);
+    }, [products]);
 
-    const categoryProducts = useMemo(() => {
-        if (!selectedCategory) return [];
-        return vehicleFilteredProducts.filter(
-            (p) => (p.category || 'Lainnya') === selectedCategory,
-        );
-    }, [vehicleFilteredProducts, selectedCategory]);
-
-    const filteredProducts = useMemo(() => {
+    const displayProducts = useMemo(() => {
         const query = deferredSearch.trim().toLowerCase();
-        if (!query) return null;
 
-        const base = vehicleFilteredProducts.filter(
-            (product: Product) =>
-                product.name.toLowerCase().includes(query) ||
-                (product.sku || '').toLowerCase().includes(query) ||
-                (product.vehicles?.some((vehicle: { model?: string }) =>
-                    (vehicle.model || '').toLowerCase().includes(query),
-                ) ??
-                    false),
-        );
-        return base.slice(0, 40);
-    }, [deferredSearch, vehicleFilteredProducts]);
+        let base = products;
+
+        // Filter by category if selected
+        if (selectedCategory && !query) {
+            base = base.filter(
+                (p) => (p.category || 'Lainnya') === selectedCategory,
+            );
+        }
+
+        // Filter by search
+        if (query) {
+            base = base.filter(
+                (product: Product) =>
+                    product.name.toLowerCase().includes(query) ||
+                    (product.sku || '').toLowerCase().includes(query) ||
+                    (product.vehicles?.some((vehicle: { model?: string }) =>
+                        (vehicle.model || '').toLowerCase().includes(query),
+                    ) ?? false),
+            );
+            base = base.slice(0, 40);
+        }
+
+        return base;
+    }, [products, deferredSearch, selectedCategory]);
 
     useEffect(() => {
         if (deferredSearch.trim()) {
@@ -244,7 +230,7 @@ export default function TabletPOS({ products, cashierSession, activeDraft }: { p
                 return;
             }
 
-            setData('cart', [...data.cart, { ...product, qty: 1 }]);
+            setData('cart', [...data.cart, { ...product, qty: 1 } as CartItem]);
         },
         [data.cart, hasOpenSession, setData],
     );
@@ -368,261 +354,79 @@ export default function TabletPOS({ products, cashierSession, activeDraft }: { p
         });
     }, [data.cart, customerType, activeDraft]);
 
-    const menuItems = [
-        {
-            id: 'cashier',
-            label: 'Transaksi Kasir',
-            icon: ShoppingCart,
-            onClick: () => setActiveMenu('cashier'),
-        },
-        {
-            id: 'settlement',
-            label: 'Settlement / Tutup',
-            icon: Calculator,
-            onClick: () => {
-                setActiveMenu('settlement');
-                if (hasOpenSession) {
-                    setShowSettlementModal(true);
-                } else {
-                    setShowOpenSessionModal(true);
-                }
-            },
-        },
-        {
-            id: 'report',
-            label: 'Rekap Penjualan',
-            icon: FileText,
-            onClick: () => router.visit(route('transactions.recap')),
-        },
-        {
-            id: 'logout',
-            label: 'Keluar',
-            icon: LogOut, // <-- pastikan ini ada di mapping Icons kamu
-            onClick: () => {
-                setActiveMenu('logout');
-
-                if (hasOpenSession) {
-                    notifyWarning(
-                        'Kasir masih terbuka. Selesaikan settlement / tutup kasir terlebih dahulu sebelum logout.',
-                        'Logout diblokir',
-                    );
-                    setShowSettlementModal(true);
-                    return;
-                }
-
-                setShowLogoutModal(true);
-            },
-        },
-    ];
-
     return (
-        <div className="min-h-screen bg-slate-100 text-slate-900">
+        <div className="flex h-screen flex-col bg-white">
             <Head title="Kasir - Graha Motor" />
             <AppNotifications flash={flash} />
 
-            <div
-                className={cn(
-                    'mx-auto min-h-screen max-w-[1800px] lg:grid',
-                    sidebarCollapsed
-                        ? 'lg:grid-cols-[88px_minmax(0,1fr)_360px] xl:grid-cols-[88px_minmax(0,1fr)_420px]'
-                        : 'lg:grid-cols-[88px_minmax(0,1fr)_360px] xl:grid-cols-[260px_minmax(0,1fr)_420px]',
-                )}
-            >
-                <PosSidebar
-                    activeMenu={activeMenu}
-                    sidebarCollapsed={sidebarCollapsed}
-                    hasOpenSession={hasOpenSession}
-                    sessionOpenedAt={sessionState?.opened_at}
-                    user={auth?.user ?? { name: '' }}
-                    storeAddress={STORE_CONFIG.address}
-                    storePhone={STORE_CONFIG.phone}
-                    menuItems={menuItems}
-                    statusCardDescription="Masukkan saldo awal sebelum transaksi."
-                    sessionButtonLabel={
-                        hasOpenSession
-                            ? 'Settlement / Tutup Kasir'
-                            : 'Buka Kasir'
-                    }
-                    sessionButtonCollapsedLabel={
-                        hasOpenSession ? 'Tutup' : 'Buka'
-                    }
-                    onSessionButtonClick={() =>
-                        hasOpenSession
-                            ? setShowSettlementModal(true)
-                            : setShowOpenSessionModal(true)
-                    }
-                />
+            {/* Top Bar */}
+            <TopBar
+                search={search}
+                onSearchChange={setSearch}
+                hasOpenSession={hasOpenSession}
+                userName={auth?.user?.name || ''}
+                onSettlementClick={() =>
+                    hasOpenSession
+                        ? setShowSettlementModal(true)
+                        : setShowOpenSessionModal(true)
+                }
+            />
 
-                <main className="contents">
-                    <section className="space-y-5 p-4 pb-28 sm:p-5 sm:pb-32 lg:col-start-2 lg:p-5 lg:pb-5 xl:p-6 xl:pb-6">
-                        <div className="hidden lg:block">
-                            <button
-                                onClick={() =>
-                                    setSidebarCollapsed((current) => !current)
-                                }
-                                className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-3 py-3 text-sm font-bold text-slate-700 shadow-sm transition hover:bg-slate-50"
-                                title={
-                                    sidebarCollapsed
-                                        ? 'Buka sidebar'
-                                        : 'Tutup sidebar'
-                                }
-                            >
-                                {sidebarCollapsed ? (
-                                    <ChevronRight />
-                                ) : (
-                                    <ChevronLeft />
-                                )}
-                                <span>
-                                    {sidebarCollapsed
-                                        ? 'Buka Menu'
-                                        : 'Tutup Menu'}
-                                </span>
-                            </button>
-                        </div>
+            {/* Two-Panel Layout */}
+            <div className="flex flex-1 overflow-hidden">
+                {/* Left Panel: Category + Products */}
+                <main className="flex flex-1 flex-col overflow-hidden">
+                    {/* Category Chips */}
+                    <div className="shrink-0 border-b border-slate-200 px-4 py-2.5">
+                        <CategoryChips
+                            groups={categoryGroups}
+                            selected={selectedCategory}
+                            onSelect={setSelectedCategory}
+                        />
+                    </div>
 
-                        <div className="rounded-[2rem] bg-white p-5 shadow-sm">
-                            <div className="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
-                                <div className="flex flex-wrap gap-2">
-                                    <button
-                                        onClick={() =>
-                                            setCustomerType('general')
-                                        }
-                                        className={cn(
-                                            'rounded-2xl px-4 py-3 text-sm font-bold shadow-sm transition-all duration-200 hover:shadow-md',
-                                            !isWorkshop
-                                                ? 'bg-slate-950 text-white'
-                                                : 'bg-slate-100 text-slate-600',
-                                        )}
-                                    >
-                                        Pelanggan Umum
-                                    </button>
-                                    <button
-                                        onClick={() =>
-                                            setCustomerType('workshop')
-                                        }
-                                        className={cn(
-                                            'rounded-2xl px-4 py-3 text-sm font-bold shadow-sm transition-all duration-200 hover:shadow-md',
-                                            isWorkshop
-                                                ? 'bg-amber-500 text-white'
-                                                : 'bg-amber-50 text-amber-700',
-                                        )}
-                                    >
-                                        Bengkel
-                                    </button>
-                                </div>
-
-                                <div className="text-sm font-semibold text-slate-500">
-                                    {filteredProducts ? filteredProducts.length : vehicleFilteredProducts.length} produk tampil
-                                </div>
-                            </div>
-
-                            <div className="mt-5 flex items-center gap-3">
-                                <VehicleFilter
-                                    brands={vehicleBrands}
-                                    selected={selectedVehicle}
-                                    onChange={(brand) => {
-                                        setSelectedVehicle(brand);
-                                        setSelectedCategory(null);
-                                    }}
+                    {/* Product Grid */}
+                    <div className="flex-1 overflow-y-auto p-4">
+                        <div className="grid grid-cols-4 gap-2">
+                            {displayProducts.map((product) => (
+                                <ProductCard
+                                    key={product.id}
+                                    product={product}
+                                    customerType={customerType}
+                                    onAddToCart={addToCart}
                                 />
-                                 <div
-                                    className={cn(
-                                        'flex flex-1 items-center gap-3 rounded-3xl px-4 py-3',
-                                        formSurface,
-                                    )}
-                                >
-                                    <div className="text-slate-400">
-                                        <Search />
-                                    </div>
-                                    <input
-                                        type="text"
-                                        value={search}
-                                        onChange={(event) =>
-                                            setSearch(event.target.value)
-                                        }
-                                        placeholder="Cari barang, SKU, atau model motor..."
-                                        className="w-full border-0 bg-transparent p-0 text-sm font-semibold text-slate-900 placeholder:text-slate-400 focus:ring-0 focus:outline-none"
-                                    />
-                                </div>
-                            </div>
+                            ))}
+
+                            {displayProducts.length === 0 && (
+                                <p className="col-span-full py-12 text-center text-sm text-slate-400">
+                                    Barang tidak ditemukan.
+                                </p>
+                            )}
                         </div>
-
-
-                        {filteredProducts ? (
-                            <div className="grid gap-2 sm:grid-cols-3 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-4">
-                                {filteredProducts.map((product) => (
-                                    <ProductCard
-                                        key={product.id}
-                                        product={product}
-                                        customerType={customerType}
-                                        onAddToCart={addToCart}
-                                    />
-                                ))}
-
-                                {filteredProducts.length === 0 && (
-                                    <p className="col-span-full py-8 text-center text-sm text-slate-400">
-                                        Barang tidak ditemukan.
-                                    </p>
-                                )}
-                            </div>
-                        ) : selectedCategory ? (
-                            <div>
-                                <div className="mb-3 flex items-center gap-2">
-                                    <button
-                                        onClick={() => setSelectedCategory(null)}
-                                        className="flex items-center gap-1 rounded-lg px-3 py-2 text-sm text-slate-600 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-700"
-                                    >
-                                        ← Kembali
-                                    </button>
-                                    <h3 className="text-base font-bold text-slate-800 dark:text-slate-100">
-                                        {selectedCategory}
-                                    </h3>
-                                    <span className="text-xs text-slate-400">
-                                        {categoryProducts.length} item
-                                    </span>
-                                </div>
-                                <div className="grid gap-2 sm:grid-cols-3 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-4">
-                                    {categoryProducts.map((product) => (
-                                        <ProductCard
-                                            key={product.id}
-                                            product={product}
-                                            customerType={customerType}
-                                            onAddToCart={addToCart}
-                                        />
-                                    ))}
-                                </div>
-                            </div>
-                        ) : (
-                            <div>
-                                <h3 className="mb-3 text-base font-bold text-slate-800 dark:text-slate-100">
-                                    Pilih Kategori
-                                </h3>
-                                <CategoryGrid
-                                    groups={categoryGroups}
-                                    onSelect={setSelectedCategory}
-                                />
-                            </div>
-                        )}
-                    </section>
-
-                    <CheckoutPanel
-                        cart={data.cart}
-                        productById={productById}
-                        getProductPrice={getProductPrice}
-                        clearCart={clearCart}
-                        removeItem={removeItem}
-                        updateQty={updateQty}
-                        totalAmount={totalAmount}
-                        totalQty={totalQty}
-                        isWorkshop={isWorkshop}
-                        hasOpenSession={hasOpenSession}
-                        onSaveDraft={handleSaveDraft}
-                        showMobileCheckout={showMobileCheckout}
-                        onCloseMobileCheckout={() => setShowMobileCheckout(false)}
-                    />
+                    </div>
                 </main>
+
+                {/* Right Panel: Checkout */}
+                <CheckoutPanel
+                    cart={data.cart}
+                    productById={productById}
+                    getProductPrice={getProductPrice}
+                    clearCart={clearCart}
+                    removeItem={removeItem}
+                    updateQty={updateQty}
+                    totalAmount={totalAmount}
+                    totalQty={totalQty}
+                    isWorkshop={isWorkshop}
+                    hasOpenSession={hasOpenSession}
+                    customerType={customerType}
+                    onCustomerTypeChange={setCustomerType}
+                    onSaveDraft={handleSaveDraft}
+                    showMobileCheckout={showMobileCheckout}
+                    onCloseMobileCheckout={() => setShowMobileCheckout(false)}
+                />
             </div>
 
+            {/* Mobile Bottom Bar */}
             <MobileBottomBar
                 cartCount={data.cart.length}
                 totalAmount={totalAmount}
@@ -635,6 +439,7 @@ export default function TabletPOS({ products, cashierSession, activeDraft }: { p
                 }
             />
 
+            {/* Modals */}
             <OpenSessionModal
                 show={!hasOpenSession && showOpenSessionModal}
                 onClose={() => setShowOpenSessionModal(false)}
@@ -659,11 +464,6 @@ export default function TabletPOS({ products, cashierSession, activeDraft }: { p
                 expectedCash={expectedCash}
                 settlementDifference={settlementDifference}
                 settlementStatus={settlementStatus}
-            />
-
-            <LogoutModal
-                show={showLogoutModal}
-                onClose={() => setShowLogoutModal(false)}
             />
 
             <PrintReceipt
