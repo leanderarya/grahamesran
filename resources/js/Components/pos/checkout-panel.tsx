@@ -30,7 +30,6 @@ interface CheckoutPanelProps {
     onCloseMobileCheckout: () => void;
 }
 
-const placeholderImage = '/images/product-placeholder.svg';
 
 export function CheckoutPanel({
     cart,
@@ -93,23 +92,12 @@ export function CheckoutPanel({
                                 className="rounded-3xl border border-slate-200 bg-slate-50 p-4"
                             >
                                 <div className="flex items-start justify-between gap-3">
-                                    <div className="flex min-w-0 flex-1 gap-3">
-                                        <img
-                                            src={
-                                                product.image_url ||
-                                                item.image_url ||
-                                                placeholderImage
-                                            }
-                                            alt={getProductLabel(item)}
-                                            className="h-14 w-14 rounded-2xl border border-slate-200 bg-white object-cover"
-                                        />
-                                        <div className="min-w-0">
-                                            <div className="line-clamp-2 text-sm font-bold text-slate-900">
-                                                {getProductLabel(item)}
-                                            </div>
-                                            <div className="mt-1 text-xs font-semibold text-slate-500">
-                                                Rp {formatRupiah(price)} / item
-                                            </div>
+                                    <div className="min-w-0 flex-1">
+                                        <div className="line-clamp-2 text-sm font-bold text-slate-900">
+                                            {getProductLabel(item)}
+                                        </div>
+                                        <div className="mt-1 text-xs font-semibold text-slate-500">
+                                            Rp {formatRupiah(price)} / item
                                         </div>
                                     </div>
                                     <button

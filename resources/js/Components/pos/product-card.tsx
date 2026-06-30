@@ -36,45 +36,39 @@ export function ProductCard({ product, customerType, onAddToCart, className }: P
             type="button"
             onClick={() => !isOut && onAddToCart(product)}
             className={cn(
-                'rounded-lg border p-3 text-left transition-all',
+                'flex flex-col rounded-xl border p-3 text-left transition-all',
                 isOut
                     ? 'cursor-not-allowed border-slate-200 bg-slate-50 opacity-50'
-                    : 'border-slate-200 bg-white hover:border-slate-300 hover:shadow-sm',
+                    : 'border-slate-200 bg-white hover:border-slate-300 hover:shadow-md',
                 className,
             )}
             disabled={isOut}
         >
-            <div className="flex items-center gap-3">
-                <img
-                    src={product.image_url || '/placeholder.svg'}
-                    alt={product.display_name}
-                    className="h-16 w-16 rounded-lg border border-slate-200 bg-slate-50 object-cover"
-                />
-                <div className="min-w-0 flex-1">
-                    <div className="truncate text-[11px] font-semibold tracking-widest text-slate-400 uppercase">
-                        {product.sku || 'NOSKU'}
-                    </div>
-                    <div className="mt-1 line-clamp-2 text-sm font-semibold text-slate-900">
-                        {product.display_name}
-                    </div>
+            <div className="text-[11px] font-semibold tracking-widest text-slate-400 uppercase">
+                {product.sku || 'NOSKU'}
+            </div>
 
-                    <div className="mt-2 flex items-center gap-2">
-                        <StockBadge stock={stock} />
-                        <span
-                            className={cn(
-                                'text-sm font-semibold',
-                                customerType === 'workshop' && workshopPrice > 0
-                                    ? 'text-amber-600'
-                                    : 'text-slate-900',
-                            )}
-                        >
-                            Rp {formatRupiah(activePrice)}
-                        </span>
-                    </div>
+            <div className="mt-1.5 flex-1 text-sm font-bold leading-snug text-slate-900 line-clamp-2">
+                {product.display_name}
+            </div>
+
+            <div className="mt-3 flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                    <StockBadge stock={stock} />
+                    <span
+                        className={cn(
+                            'text-sm font-bold',
+                            customerType === 'workshop' && workshopPrice > 0
+                                ? 'text-amber-600'
+                                : 'text-slate-900',
+                        )}
+                    >
+                        Rp {formatRupiah(activePrice)}
+                    </span>
                 </div>
 
                 {!isOut && (
-                    <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-blue-600 text-white transition-colors hover:bg-blue-700">
+                    <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-slate-950 text-white transition-colors hover:bg-slate-800">
                         <Plus className="h-4 w-4" />
                     </div>
                 )}

@@ -42,7 +42,7 @@ export function TopBar({
                     alt="Graha Motor"
                     className="h-7 w-7 object-contain"
                 />
-                <span className="text-base font-bold text-slate-900">
+                <span className="text-base font-bold text-slate-950">
                     Graha Motor
                 </span>
             </div>
@@ -56,7 +56,7 @@ export function TopBar({
                         value={search}
                         onChange={(e) => onSearchChange(e.target.value)}
                         placeholder="Cari barang, SKU, model..."
-                        className="w-full border-0 bg-transparent p-0 text-sm text-slate-900 placeholder:text-slate-400 focus:ring-0 focus:outline-none"
+                        className="w-full border-0 bg-transparent p-0 text-sm text-slate-950 placeholder:text-slate-400 focus:ring-0 focus:outline-none"
                     />
                 </div>
             </div>
@@ -88,9 +88,9 @@ export function TopBar({
                     </button>
 
                     {dropdownOpen && (
-                        <div className="absolute right-0 top-full z-50 mt-1 w-52 rounded-xl border border-slate-200 bg-white py-1 shadow-lg">
+                        <div className="absolute right-0 top-full z-50 mt-1 w-52 rounded-xl border border-slate-200 bg-white py-1">
                             <div className="px-4 py-2.5">
-                                <div className="text-sm font-semibold text-slate-900">
+                                <div className="text-sm font-semibold text-slate-950">
                                     {userName}
                                 </div>
                                 <div className="text-xs text-slate-500">
@@ -103,7 +103,7 @@ export function TopBar({
                                     setDropdownOpen(false);
                                     router.visit(route('transactions.recap'));
                                 }}
-                                className="flex w-full items-center gap-3 px-4 py-2.5 text-sm text-slate-700 hover:bg-slate-50"
+                                className="flex w-full items-center gap-3 px-4 py-2.5 text-sm text-slate-950 hover:bg-slate-50"
                             >
                                 <BarChart3 className="h-4 w-4 text-slate-400" />
                                 Rekap Penjualan
@@ -113,7 +113,7 @@ export function TopBar({
                                     setDropdownOpen(false);
                                     onSettlementClick();
                                 }}
-                                className="flex w-full items-center gap-3 px-4 py-2.5 text-sm text-slate-700 hover:bg-slate-50"
+                                className="flex w-full items-center gap-3 px-4 py-2.5 text-sm text-slate-950 hover:bg-slate-50"
                             >
                                 <Calculator className="h-4 w-4 text-slate-400" />
                                 Settlement

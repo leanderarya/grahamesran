@@ -44,7 +44,7 @@ export function PosSidebar({
                 <div className="flex items-center gap-3">
                     <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-white/10">
                         <img
-                            src="/GrahaMesran-light.png"
+                            src="/Grahamotor-light.png"
                             alt="Graha Motor"
                             className="h-9 w-9 object-contain"
                         />

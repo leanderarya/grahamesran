@@ -10,7 +10,7 @@ export function CategoryGrid({
     className?: string;
 }) {
     return (
-        <div className={cn('grid grid-cols-3 gap-2 sm:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6', className)}>
+        <div className={cn('grid grid-cols-3 gap-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-4', className)}>
             {groups.map((group) => (
                 <button
                     key={group.name}

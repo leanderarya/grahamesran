@@ -33,8 +33,8 @@ class AdminPanelProvider extends PanelProvider
 
             // --- 1. BRANDING PROFESIONAL ---
             ->brandName('Graha Motor') // Ganti tulisan Filament
-            ->brandLogo(asset('GrahaMesran-light.png'))
-            ->darkModeBrandLogo(asset('GrahaMesran-dark.png'))
+            ->brandLogo(asset('Grahamotor-light.png'))
+            ->darkModeBrandLogo(asset('Grahamotor-dark.png'))
             ->brandLogoHeight('4rem')
             ->sidebarCollapsibleOnDesktop()
             // ->brandLogo(asset('images/logo.png')) // (Opsional) Kalau ada logo gambar
