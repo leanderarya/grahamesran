@@ -2,9 +2,6 @@ import { cn } from '@/lib/utils';
 import { formatRupiah } from '@/lib/format';
 import { X } from 'lucide-react';
 
-const formSurface =
-    'border border-slate-200 bg-white transition-all duration-200 ease-out';
-
 const sanitizeNumericInput = (value: string) => value.replace(/[^\d]/g, '');
 
 const formatSignedCurrency = (value: number) =>
@@ -51,81 +48,69 @@ export function SettlementModal({
     if (!show) return null;
 
     return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/70 p-4">
-            <div className="w-full max-w-3xl rounded-[2rem] bg-white p-6 shadow-2xl">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
+            <div className="w-full max-w-2xl rounded-xl bg-white p-6 shadow-2xl">
                 <div className="flex items-start justify-between gap-4">
                     <div>
-                        <div className="text-xs font-bold tracking-[0.3em] text-slate-400 uppercase">
+                        <div className="text-xs font-bold tracking-widest text-slate-400 uppercase">
                             Settlement
                         </div>
-                        <div className="mt-2 text-2xl font-bold text-slate-950">
+                        <div className="mt-1 text-xl font-bold text-slate-950">
                             Tutup kasir dan cocokkan uang fisik
                         </div>
                     </div>
                     <button
                         onClick={onClose}
-                        className="rounded-2xl bg-slate-100 p-3 text-slate-500"
+                        className="rounded-lg p-2 text-slate-400 hover:bg-slate-100"
                     >
-                        <X />
+                        <X className="h-4 w-4" />
                     </button>
                 </div>
 
-                <div className="mt-6 grid gap-4 md:grid-cols-4">
-                    <div className="rounded-3xl bg-slate-50 p-4">
-                        <div className="text-[11px] font-bold tracking-widest text-slate-400 uppercase">
+                {/* 2x2 Stat Grid */}
+                <div className="mt-5 grid grid-cols-2 gap-3">
+                    <div className="rounded-xl bg-slate-50 p-3.5">
+                        <div className="text-[10px] font-bold tracking-widest text-slate-400 uppercase">
                             Saldo Awal
                         </div>
-                        <div className="mt-2 text-xl font-bold text-slate-950">
-                            Rp{' '}
-                            {formatRupiah(
-                                sessionState?.opening_cash || 0,
-                            )}
+                        <div className="mt-1.5 text-lg font-bold text-slate-950">
+                            Rp {formatRupiah(sessionState?.opening_cash || 0)}
                         </div>
                     </div>
-                    <div className="rounded-3xl bg-slate-50 p-4">
-                        <div className="text-[11px] font-bold tracking-widest text-slate-400 uppercase">
+                    <div className="rounded-xl bg-slate-50 p-3.5">
+                        <div className="text-[10px] font-bold tracking-widest text-slate-400 uppercase">
                             Cash Sales
                         </div>
-                        <div className="mt-2 text-xl font-bold text-slate-950">
-                            Rp{' '}
-                            {formatRupiah(
-                                sessionState?.cash_sales_total || 0,
-                            )}
+                        <div className="mt-1.5 text-lg font-bold text-slate-950">
+                            Rp {formatRupiah(sessionState?.cash_sales_total || 0)}
                         </div>
                     </div>
-                    <div className="rounded-3xl bg-slate-50 p-4">
-                        <div className="text-[11px] font-bold tracking-widest text-slate-400 uppercase">
+                    <div className="rounded-xl bg-slate-50 p-3.5">
+                        <div className="text-[10px] font-bold tracking-widest text-slate-400 uppercase">
                             Non Cash
                         </div>
-                        <div className="mt-2 text-xl font-bold text-slate-950">
-                            Rp{' '}
-                            {formatRupiah(
-                                sessionState?.non_cash_sales_total || 0,
-                            )}
+                        <div className="mt-1.5 text-lg font-bold text-slate-950">
+                            Rp {formatRupiah(sessionState?.non_cash_sales_total || 0)}
                         </div>
                     </div>
-                    <div className="rounded-3xl bg-slate-950 p-4 text-white">
-                        <div className="text-[11px] font-bold tracking-widest text-slate-400 uppercase">
+                    <div className="rounded-xl bg-slate-900 p-3.5 text-white">
+                        <div className="text-[10px] font-bold tracking-widest text-slate-400 uppercase">
                             Expected Cash
                         </div>
-                        <div className="mt-2 text-xl font-bold">
+                        <div className="mt-1.5 text-lg font-bold">
                             Rp {formatRupiah(expectedCash)}
                         </div>
                     </div>
                 </div>
 
-                <div className="mt-6 grid gap-5 md:grid-cols-[1.1fr_0.9fr]">
-                    <div className="rounded-3xl bg-slate-50 p-5">
+                {/* Input Section */}
+                <div className="mt-5 grid gap-4 md:grid-cols-2">
+                    <div>
                         <label className="text-xs font-bold tracking-widest text-slate-400 uppercase">
                             Uang Fisik Di Laci
                         </label>
-                        <div
-                            className={cn(
-                                'mt-2 flex items-center rounded-2xl px-4 py-3',
-                                formSurface,
-                            )}
-                        >
-                            <span className="text-lg font-bold text-slate-500">
+                        <div className="mt-1.5 flex items-center gap-2 rounded-lg border border-slate-200 px-3 py-2.5">
+                            <span className="text-sm font-bold text-slate-400">
                                 Rp
                             </span>
                             <input
@@ -134,37 +119,35 @@ export function SettlementModal({
                                 value={closingCash}
                                 onChange={(event) =>
                                     onClosingCashChange(
-                                        sanitizeNumericInput(
-                                            event.target.value,
-                                        ),
+                                        sanitizeNumericInput(event.target.value),
                                     )
                                 }
                                 placeholder="0"
-                                className="ml-3 w-full border-0 bg-transparent p-0 text-2xl font-bold text-slate-950 focus:ring-0 focus:outline-none"
+                                className="w-full border-0 bg-transparent p-0 text-xl font-bold text-slate-950 focus:ring-0 focus:outline-none"
                             />
                         </div>
 
-                        <label className="mt-4 block text-xs font-bold tracking-widest text-slate-400 uppercase">
-                            Catatan Settlement
+                        <label className="mt-3 block text-xs font-bold tracking-widest text-slate-400 uppercase">
+                            Catatan
                         </label>
                         <textarea
-                            rows={4}
+                            rows={2}
                             value={closingNotes}
                             onChange={(event) =>
                                 onClosingNotesChange(event.target.value)
                             }
                             placeholder="Opsional"
-                            className="mt-2 w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm font-semibold text-slate-700 focus:ring-0 focus:outline-none"
+                            className="mt-1.5 w-full rounded-lg border border-slate-200 px-3 py-2 text-sm text-slate-700 focus:ring-0 focus:outline-none"
                         />
                     </div>
 
-                    <div className="rounded-3xl border border-slate-200 p-5">
+                    <div className="rounded-xl border border-slate-200 p-4">
                         <div className="text-xs font-bold tracking-widest text-slate-400 uppercase">
-                            Hasil Settlement
+                            Hasil
                         </div>
                         <div
                             className={cn(
-                                'mt-4 inline-flex rounded-full px-3 py-1 text-xs font-bold uppercase',
+                                'mt-2 inline-flex rounded-md px-2 py-1 text-xs font-bold uppercase',
                                 settlementStatus === 'balance'
                                     ? 'bg-emerald-100 text-emerald-700'
                                     : settlementStatus === 'minus'
@@ -178,10 +161,9 @@ export function SettlementModal({
                                   ? 'Minus'
                                   : 'Lebih'}
                         </div>
-
                         <div
                             className={cn(
-                                'mt-4 text-3xl font-bold',
+                                'mt-3 text-2xl font-bold',
                                 settlementStatus === 'balance'
                                     ? 'text-emerald-700'
                                     : settlementStatus === 'minus'
@@ -191,51 +173,43 @@ export function SettlementModal({
                         >
                             {formatSignedCurrency(settlementDifference)}
                         </div>
-
-                        <div className="mt-6 space-y-3 text-sm font-semibold text-slate-600">
-                            <div className="flex items-center justify-between">
-                                <span>Expected cash</span>
-                                <span className="font-bold text-slate-950">
+                        <div className="mt-4 space-y-2 text-xs text-slate-500">
+                            <div className="flex justify-between">
+                                <span>Expected</span>
+                                <span className="font-bold text-slate-900">
                                     Rp {formatRupiah(expectedCash)}
                                 </span>
                             </div>
-                            <div className="flex items-center justify-between">
-                                <span>Uang fisik</span>
-                                <span className="font-bold text-slate-950">
-                                    Rp{' '}
-                                    {formatRupiah(
-                                        Number(
-                                            closingCash || 0,
-                                        ),
-                                    )}
+                            <div className="flex justify-between">
+                                <span>Fisik</span>
+                                <span className="font-bold text-slate-900">
+                                    Rp {formatRupiah(Number(closingCash || 0))}
                                 </span>
                             </div>
-                            <div className="flex items-center justify-between">
-                                <span>Total transaksi</span>
-                                <span className="font-bold text-slate-950">
-                                    {sessionState?.transactions_count ||
-                                        0}
+                            <div className="flex justify-between">
+                                <span>Transaksi</span>
+                                <span className="font-bold text-slate-900">
+                                    {sessionState?.transactions_count || 0}
                                 </span>
                             </div>
                         </div>
                     </div>
                 </div>
 
-                <div className="mt-6 flex gap-3">
+                {/* Actions */}
+                <div className="mt-5 flex gap-3">
                     <button
                         onClick={onClose}
-                        className="flex-1 rounded-3xl border border-slate-200 bg-white py-4 text-sm font-bold text-slate-700 shadow-sm transition-all duration-200 hover:bg-slate-50 hover:shadow-md"
+                        className="flex-1 rounded-lg border border-slate-200 py-3 text-sm font-bold text-slate-700 transition-colors hover:bg-slate-50"
                     >
                         Kembali
                     </button>
                     <button
                         onClick={onSubmit}
                         disabled={isClosingSession}
-                        className="flex-[1.2] rounded-3xl bg-slate-950 py-4 text-sm font-bold text-white shadow-sm transition-all duration-200 hover:bg-slate-800 hover:shadow-md disabled:opacity-40"
+                        className="flex-[1.2] rounded-lg bg-indigo-600 py-3 text-sm font-bold text-white transition-colors hover:bg-indigo-700 disabled:opacity-40"
                     >
-                        {isClosingSession
-                            ? 'Menyimpan...'
-                            : 'Simpan Settlement & Tutup Kasir'}
+                        {isClosingSession ? 'Menyimpan...' : 'Simpan & Tutup Kasir'}
                     </button>
                 </div>
             </div>
