@@ -1,6 +1,7 @@
 import { cn } from '@/lib/utils';
 import { formatRupiah } from '@/lib/format';
 import { Plus } from 'lucide-react';
+import { useCallback, useRef } from 'react';
 
 interface Product {
     id: number;
@@ -30,10 +31,26 @@ export function ProductCard({ product, customerType, onAddToCart, className }: P
     const activePrice =
         customerType === 'workshop' && workshopPrice > 0 ? workshopPrice : sellPrice;
 
+    const cardRef = useRef<HTMLButtonElement>(null);
+
+    const handleClick = useCallback(() => {
+        if (isOut) return;
+        onAddToCart(product);
+        // Trigger flash animation
+        const card = cardRef.current;
+        if (card) {
+            card.classList.remove('cart-flash');
+            // Force reflow to restart animation
+            void card.offsetWidth;
+            card.classList.add('cart-flash');
+        }
+    }, [isOut, onAddToCart, product]);
+
     return (
         <button
+            ref={cardRef}
             type="button"
-            onClick={() => !isOut && onAddToCart(product)}
+            onClick={handleClick}
             className={cn(
                 'flex flex-col rounded-xl border p-3 text-left transition-all active:scale-[0.97]',
                 isOut

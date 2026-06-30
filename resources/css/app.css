@@ -101,6 +101,15 @@
     --color-sidebar-ring: var(--sidebar-ring);
 }
 
+@keyframes cart-flash {
+    0% { background-color: #f0fdf4; border-color: #86efac; }
+    100% { background-color: transparent; border-color: #e2e8f0; }
+}
+
+.cart-flash {
+    animation: cart-flash 0.4s ease-out;
+}
+
 :root {
     --background: oklch(1 0 0);
     --foreground: oklch(0.145 0.017 285.823);
