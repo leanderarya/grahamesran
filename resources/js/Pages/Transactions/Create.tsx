@@ -402,14 +402,18 @@ export default function TabletPOS({ products, cashierSession, activeDraft }: { p
                             'grid gap-2',
                             showDesktopCheckout ? 'grid-cols-4' : 'grid-cols-5',
                         )}>
-                            {displayProducts.map((product) => (
-                                <ProductCard
-                                    key={product.id}
-                                    product={product}
-                                    customerType={customerType}
-                                    onAddToCart={addToCart}
-                                />
-                            ))}
+                            {displayProducts.map((product) => {
+                                const cartItem = data.cart.find((item) => item.id === product.id);
+                                return (
+                                    <ProductCard
+                                        key={product.id}
+                                        product={product}
+                                        customerType={customerType}
+                                        onAddToCart={addToCart}
+                                        inCartQty={cartItem?.qty || 0}
+                                    />
+                                );
+                            })}
 
                             {displayProducts.length === 0 && (
                                 <p className="col-span-full py-12 text-center text-sm text-slate-400">
