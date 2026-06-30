@@ -383,40 +383,45 @@ export default function TabletPOS({ products, cashierSession, activeDraft }: { p
                 }
             />
 
-            {/* Product Area — always full width */}
-            <main className="flex flex-1 flex-col overflow-hidden">
-                {/* Category Chips */}
-                <div className="shrink-0 border-b border-slate-200 px-4 py-2.5">
-                    <CategoryChips
-                        groups={categoryGroups}
-                        selected={selectedCategory}
-                        onSelect={setSelectedCategory}
-                    />
-                </div>
-
-                {/* Product Grid */}
-                <div className="flex-1 overflow-y-auto p-4">
-                    <div className="grid grid-cols-4 gap-2">
-                        {displayProducts.map((product) => (
-                            <ProductCard
-                                key={product.id}
-                                product={product}
-                                customerType={customerType}
-                                onAddToCart={addToCart}
-                            />
-                        ))}
-
-                        {displayProducts.length === 0 && (
-                            <p className="col-span-full py-12 text-center text-sm text-slate-400">
-                                Barang tidak ditemukan.
-                            </p>
-                        )}
+            {/* Two-Panel Layout */}
+            <div className="flex flex-1 overflow-hidden">
+                {/* Left Panel: Category + Products */}
+                <main className="flex flex-1 flex-col overflow-hidden">
+                    {/* Category Chips */}
+                    <div className="shrink-0 border-b border-slate-200 px-4 py-2.5">
+                        <CategoryChips
+                            groups={categoryGroups}
+                            selected={selectedCategory}
+                            onSelect={setSelectedCategory}
+                        />
                     </div>
-                </div>
-            </main>
 
-            {/* Right Sidebar: Checkout — fixed to right edge */}
-            {showDesktopCheckout && <CheckoutPanel
+                    {/* Product Grid */}
+                    <div className="flex-1 overflow-y-auto p-4">
+                        <div className={cn(
+                            'grid gap-2',
+                            showDesktopCheckout ? 'grid-cols-4' : 'grid-cols-5',
+                        )}>
+                            {displayProducts.map((product) => (
+                                <ProductCard
+                                    key={product.id}
+                                    product={product}
+                                    customerType={customerType}
+                                    onAddToCart={addToCart}
+                                />
+                            ))}
+
+                            {displayProducts.length === 0 && (
+                                <p className="col-span-full py-12 text-center text-sm text-slate-400">
+                                    Barang tidak ditemukan.
+                                </p>
+                            )}
+                        </div>
+                    </div>
+                </main>
+
+                {/* Right Panel: Checkout — collapsible on desktop */}
+                {showDesktopCheckout && <CheckoutPanel
                     cart={data.cart}
                     productById={productById}
                     getProductPrice={getProductPrice}
@@ -434,6 +439,7 @@ export default function TabletPOS({ products, cashierSession, activeDraft }: { p
                     showMobileCheckout={showMobileCheckout}
                     onCloseMobileCheckout={() => setShowMobileCheckout(false)}
                 />}
+            </div>
 
             {/* Floating Cart Button — visible when desktop checkout is hidden */}
             {!showDesktopCheckout && data.cart.length > 0 && (
