@@ -1,5 +1,4 @@
 import { cn } from '@/lib/utils';
-import { useRef } from 'react';
 
 interface CategoryChipsProps {
     groups: { name: string; count: number }[];
@@ -14,11 +13,8 @@ export function CategoryChips({
     onSelect,
     className,
 }: CategoryChipsProps) {
-    const scrollRef = useRef<HTMLDivElement>(null);
-
     return (
         <div
-            ref={scrollRef}
             className={cn(
                 'flex gap-2 overflow-x-auto scrollbar-none',
                 className,
@@ -30,7 +26,7 @@ export function CategoryChips({
                 className={cn(
                     'shrink-0 rounded-lg px-4 py-2 text-sm font-semibold transition-colors',
                     selected === null
-                        ? 'bg-slate-900 text-white'
+                        ? 'bg-indigo-600 text-white'
                         : 'border border-slate-200 bg-white text-slate-600 hover:bg-slate-50',
                 )}
             >
@@ -44,7 +40,7 @@ export function CategoryChips({
                     className={cn(
                         'shrink-0 rounded-lg px-4 py-2 text-sm font-semibold transition-colors',
                         selected === group.name
-                            ? 'bg-slate-900 text-white'
+                            ? 'bg-indigo-600 text-white'
                             : 'border border-slate-200 bg-white text-slate-600 hover:bg-slate-50',
                     )}
                 >
