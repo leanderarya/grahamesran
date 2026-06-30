@@ -1,6 +1,5 @@
 import { cn } from '@/lib/utils';
 import { formatRupiah } from '@/lib/format';
-import { StockBadge } from '@/components/stock-badge';
 import { Plus } from 'lucide-react';
 
 interface Product {
@@ -36,25 +35,36 @@ export function ProductCard({ product, customerType, onAddToCart, className }: P
             type="button"
             onClick={() => !isOut && onAddToCart(product)}
             className={cn(
-                'flex flex-col rounded-xl border p-3 text-left transition-all',
+                'flex flex-col rounded-xl border p-3 text-left transition-all active:scale-[0.97]',
                 isOut
-                    ? 'cursor-not-allowed border-slate-200 bg-slate-50 opacity-50'
-                    : 'border-slate-200 bg-white hover:border-slate-300 hover:shadow-md',
+                    ? 'cursor-not-allowed border-slate-200 bg-slate-50 opacity-40'
+                    : 'border-slate-200 bg-white hover:border-slate-300',
                 className,
             )}
             disabled={isOut}
         >
-            <div className="text-[11px] font-semibold tracking-widest text-slate-400 uppercase">
+            <div className="text-[10px] font-semibold tracking-widest text-slate-400 uppercase">
                 {product.sku || 'NOSKU'}
             </div>
 
-            <div className="mt-1.5 flex-1 text-sm font-bold leading-snug text-slate-900 line-clamp-2">
+            <div className="mt-1 flex-1 text-sm font-semibold leading-snug text-slate-900 line-clamp-2">
                 {product.display_name}
             </div>
 
-            <div className="mt-3 flex items-center justify-between">
+            <div className="mt-2.5 flex items-center justify-between">
                 <div className="flex items-center gap-2">
-                    <StockBadge stock={stock} />
+                    <span
+                        className={cn(
+                            'rounded-md px-1.5 py-0.5 text-[10px] font-semibold',
+                            stock > 5
+                                ? 'bg-emerald-100 text-emerald-700'
+                                : stock > 0
+                                  ? 'bg-amber-100 text-amber-700'
+                                  : 'bg-red-100 text-red-700',
+                        )}
+                    >
+                        {stock > 0 ? `Stok: ${stock}` : 'Habis'}
+                    </span>
                     <span
                         className={cn(
                             'text-sm font-bold',
@@ -68,8 +78,8 @@ export function ProductCard({ product, customerType, onAddToCart, className }: P
                 </div>
 
                 {!isOut && (
-                    <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-slate-950 text-white transition-colors hover:bg-slate-800">
-                        <Plus className="h-4 w-4" />
+                    <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md bg-indigo-600 text-white transition-colors hover:bg-indigo-700">
+                        <Plus className="h-3.5 w-3.5" />
                     </div>
                 )}
             </div>
