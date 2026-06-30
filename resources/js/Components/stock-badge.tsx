@@ -4,7 +4,7 @@ export function StockBadge({ stock, className }: { stock: number; className?: st
     return (
         <span
             className={cn(
-                'rounded-full px-2 py-0.5 text-xs font-semibold',
+                'rounded-md px-1.5 py-0.5 text-[10px] font-semibold',
                 stock > 5
                     ? 'bg-emerald-100 text-emerald-700'
                     : stock > 0
