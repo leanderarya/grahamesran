@@ -54,9 +54,9 @@ export function CheckoutPanel({
     return (
         <section
             className={cn(
-                'flex w-[40%] min-w-[340px] flex-col border-l border-slate-200 bg-white',
-                !showMobileCheckout && 'hidden lg:flex',
-                showMobileCheckout && 'fixed inset-0 z-40 lg:static lg:z-auto',
+                'flex w-[320px] flex-col border-l border-slate-200 bg-white',
+                !showMobileCheckout && 'fixed right-0 top-14 bottom-0 z-30 hidden lg:flex',
+                showMobileCheckout && 'fixed inset-0 z-40',
             )}
         >
             {/* Header */}
