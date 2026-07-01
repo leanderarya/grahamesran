@@ -112,7 +112,10 @@ export function CheckoutPanel({
                         <div key={item.id}>
                             <div className="flex items-start gap-3 px-4 py-3">
                                 <div className="min-w-0 flex-1">
-                                    <div className="text-sm font-semibold text-slate-950 line-clamp-1">
+                                    <div
+                                        className="text-sm font-semibold text-slate-950 line-clamp-1"
+                                        title={getProductLabel(item)}
+                                    >
                                         {getProductLabel(item)}
                                     </div>
                                     <div className="mt-0.5 text-xs text-slate-500">
