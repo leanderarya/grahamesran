@@ -69,40 +69,39 @@ export function ProductCard({ product, customerType, onAddToCart, inCartQty = 0,
                 </div>
             )}
 
-            <div className="text-[10px] font-semibold tracking-widest text-slate-400 uppercase">
-                {product.sku || 'NOSKU'}
+            <div className="flex items-center justify-between">
+                <div className="text-[10px] font-semibold tracking-widest text-slate-400 uppercase">
+                    {product.sku || 'NOSKU'}
+                </div>
+                <span
+                    className={cn(
+                        'rounded-md px-1.5 py-0.5 text-[10px] font-semibold',
+                        stock > 5
+                            ? 'bg-emerald-100 text-emerald-700'
+                            : stock > 0
+                              ? 'bg-amber-100 text-amber-700'
+                              : 'bg-red-100 text-red-700',
+                    )}
+                >
+                    {stock > 0 ? `Stok: ${stock}` : 'Habis'}
+                </span>
             </div>
 
             <div className="mt-1 flex-1 text-sm font-semibold leading-snug text-slate-950 line-clamp-2">
                 {product.display_name}
             </div>
 
-            <div className="mt-2.5 flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                    <span
-                        className={cn(
-                            'rounded-md px-1.5 py-0.5 text-[10px] font-semibold',
-                            stock > 5
-                                ? 'bg-emerald-100 text-emerald-700'
-                                : stock > 0
-                                  ? 'bg-amber-100 text-amber-700'
-                                  : 'bg-red-100 text-red-700',
-                        )}
-                    >
-                        {stock > 0 ? `Stok: ${stock}` : 'Habis'}
-                    </span>
-                    <span
-                        className={cn(
-                            'text-sm font-bold',
-                            customerType === 'workshop' && workshopPrice > 0
-                                ? 'text-amber-600'
-                                : 'text-slate-950',
-                        )}
-                    >
-                        Rp {formatRupiah(activePrice)}
-                    </span>
-                </div>
-
+            <div className="mt-2">
+                <span
+                    className={cn(
+                        'text-sm font-bold',
+                        customerType === 'workshop' && workshopPrice > 0
+                            ? 'text-amber-600'
+                            : 'text-slate-950',
+                    )}
+                >
+                    Rp {formatRupiah(activePrice)}
+                </span>
             </div>
         </button>
     );
