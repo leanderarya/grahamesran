@@ -1,10 +1,10 @@
 import {
     AppNotifications,
-    notifyWarning,
 } from '@/Components/app-notifications';
 import { Head, Link, router, usePage } from '@inertiajs/react';
 import { route } from 'ziggy-js';
 import { useMemo, useState } from 'react';
+import { ArrowLeft } from 'lucide-react';
 import type { SharedData } from '@/types';
 import { formatRupiah, formatDateTime } from '@/lib/format';
 import { TopBar } from '@/Components/pos/top-bar';
@@ -90,61 +90,33 @@ export default function CashierRecap({
 
             <main className="flex-1 overflow-y-auto p-4 lg:p-6">
                 {/* Header */}
-                <div className="rounded-xl border border-slate-200 bg-white p-5">
-                    <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+                <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                        <Link
+                            href={route('transactions.create')}
+                            className="flex h-9 w-9 items-center justify-center rounded-lg border border-slate-200 text-slate-600 transition-colors hover:bg-slate-50"
+                        >
+                            <ArrowLeft className="h-4 w-4" />
+                        </Link>
                         <div>
-                            <div className="text-xs font-bold tracking-[0.3em] text-slate-400 uppercase">
+                            <div className="text-xs font-bold tracking-widest text-slate-400 uppercase">
                                 Rekap Penjualan
                             </div>
-                            <div className="mt-2 text-2xl font-bold text-slate-950">
+                            <div className="text-lg font-bold text-slate-950">
                                 Ringkasan transaksi kasir
                             </div>
                         </div>
-
-                        <div className="flex items-center gap-3">
-                            <select
-                                value={period}
-                                onChange={(e) => setPeriod(e.target.value)}
-                                className="rounded-lg border border-slate-200 bg-white px-3 py-2.5 text-sm font-semibold text-slate-950"
-                            >
-                                <option value="today">Hari Ini</option>
-                                <option value="week">Minggu Ini</option>
-                                <option value="month">Bulan Ini</option>
-                                <option value="all">Semua</option>
-                            </select>
-                            <button
-                                onClick={() =>
-                                    router.visit(
-                                        route('transactions.create'),
-                                    )
-                                }
-                                className="rounded-lg border border-slate-200 bg-white px-4 py-2.5 text-sm font-bold text-slate-950 transition-colors hover:bg-slate-50"
-                            >
-                                Kembali ke Kasir
-                            </button>
-                            <Link
-                                href={route('logout')}
-                                method="post"
-                                as="button"
-                                onClick={(event) => {
-                                    if (hasOpenSession) {
-                                        event.preventDefault();
-                                        notifyWarning(
-                                            'Kasir masih terbuka. Selesaikan settlement / tutup kasir terlebih dahulu sebelum logout.',
-                                            'Logout diblokir',
-                                        );
-                                        router.visit(
-                                            route('transactions.create'),
-                                        );
-                                        return;
-                                    }
-                                }}
-                                className="rounded-lg bg-indigo-600 px-4 py-2.5 text-sm font-bold text-white transition-colors hover:bg-indigo-700"
-                            >
-                                Keluar
-                            </Link>
-                        </div>
                     </div>
+                    <select
+                        value={period}
+                        onChange={(e) => setPeriod(e.target.value)}
+                        className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-950"
+                    >
+                        <option value="today">Hari Ini</option>
+                        <option value="week">Minggu Ini</option>
+                        <option value="month">Bulan Ini</option>
+                        <option value="all">Semua</option>
+                    </select>
                 </div>
 
                 {/* Stat Cards */}
