@@ -1,6 +1,5 @@
 import { cn } from '@/lib/utils';
 import { formatRupiah } from '@/lib/format';
-import { Plus } from 'lucide-react';
 import { useCallback, useRef } from 'react';
 
 interface Product {
@@ -111,11 +110,6 @@ export function ProductCard({ product, customerType, onAddToCart, inCartQty = 0,
                     </span>
                 </div>
 
-                {!isOut && (
-                    <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md bg-indigo-600 text-white transition-colors hover:bg-indigo-700">
-                        <Plus className="h-3.5 w-3.5" />
-                    </div>
-                )}
             </div>
         </button>
     );
