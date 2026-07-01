@@ -252,7 +252,7 @@ class TransactionController extends Controller
 
     public function show(Transaction $transaction)
     {
-        $transaction->load('items.product');
+        $transaction->load('transactionItems.product');
 
         return Inertia::render('Transactions/Show', [
             'transaction' => [
@@ -264,7 +264,7 @@ class TransactionController extends Controller
                 'total_amount' => (float) $transaction->total_amount,
                 'amount_paid' => (float) $transaction->amount_paid,
                 'change_amount' => (float) $transaction->change_amount,
-                'items' => $transaction->items->map(function ($item) {
+                'items' => $transaction->transactionItems->map(function ($item) {
                     return [
                         'id' => $item->id,
                         'product_name' => $item->product?->display_name ?? 'Produk terhapus',
