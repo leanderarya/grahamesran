@@ -9,6 +9,7 @@ export function useNetwork() {
     useEffect(() => {
         const handleOnline = () => setIsOnline(true);
         const handleOffline = () => setIsOnline(false);
+        let networkHandle: { remove: () => void } | undefined;
 
         window.addEventListener('online', handleOnline);
         window.addEventListener('offline', handleOffline);
@@ -22,6 +23,9 @@ export function useNetwork() {
 
                 Network.addListener('networkStatusChange', (status) => {
                     setIsOnline(status.connected);
+                }).then((handle) => {
+                    // Store handle for cleanup
+                    networkHandle = handle;
                 });
             });
         }
@@ -29,6 +33,7 @@ export function useNetwork() {
         return () => {
             window.removeEventListener('online', handleOnline);
             window.removeEventListener('offline', handleOffline);
+            networkHandle?.remove();
         };
     }, []);
 
