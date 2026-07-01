@@ -136,12 +136,12 @@ class TransactionController extends Controller
             return $draft;
         });
 
-        return redirect()->route('transactions.checkout', ['draft' => $draft->id]);
+        return redirect()->route('transactions.checkout', ['transaction' => $draft->id]);
     }
 
-    public function checkout(Request $request)
+    public function checkout(Request $request, $transactionId = null)
     {
-        $draftId = $request->query('draft');
+        $draftId = $transactionId ?? $request->query('draft');
 
         if (! $draftId) {
             return redirect()->route('transactions.create');

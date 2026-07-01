@@ -52,7 +52,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::post('/pos', [TransactionController::class, 'store'])->name('transactions.store')->middleware('throttle:30,1');
     Route::post('/pos/session/open', [TransactionController::class, 'openSession'])->name('transactions.session.open');
     Route::post('/pos/session/close', [TransactionController::class, 'closeSession'])->name('transactions.session.close');
-    Route::get('/pos/checkout', [TransactionController::class, 'checkout'])->name('transactions.checkout');
+    Route::get('/pos/checkout/{transaction?}', [TransactionController::class, 'checkout'])->name('transactions.checkout');
     Route::post('/pos/draft', [TransactionController::class, 'saveDraft'])->name('transactions.draft.save');
     Route::delete('/pos/draft/{transaction}', [TransactionController::class, 'destroyDraft'])->name('transactions.draft.destroy');
 });
