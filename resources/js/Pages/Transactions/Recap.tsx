@@ -4,6 +4,7 @@ import {
 } from '@/Components/app-notifications';
 import { Head, Link, router, usePage } from '@inertiajs/react';
 import { route } from 'ziggy-js';
+import { useMemo, useState } from 'react';
 import type { SharedData } from '@/types';
 import { formatRupiah, formatDateTime } from '@/lib/format';
 import { TopBar } from '@/Components/pos/top-bar';
@@ -53,6 +54,24 @@ export default function CashierRecap({
 }) {
     const { auth, flash } = usePage<SharedData>().props;
     const hasOpenSession = Boolean(cashierSession?.id);
+    const [period, setPeriod] = useState('today');
+
+    const filteredTransactions = useMemo(() => {
+        const now = new Date();
+        const startOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+        const startOfWeek = new Date(startOfDay);
+        startOfWeek.setDate(startOfDay.getDate() - startOfDay.getDay());
+        const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+
+        return transactions.filter((t) => {
+            if (period === 'all') return true;
+            const date = new Date(t.created_at);
+            if (period === 'today') return date >= startOfDay;
+            if (period === 'week') return date >= startOfWeek;
+            if (period === 'month') return date >= startOfMonth;
+            return true;
+        });
+    }, [transactions, period]);
 
     return (
         <div className="flex h-screen flex-col bg-white">
@@ -82,7 +101,17 @@ export default function CashierRecap({
                             </div>
                         </div>
 
-                        <div className="flex gap-3">
+                        <div className="flex items-center gap-3">
+                            <select
+                                value={period}
+                                onChange={(e) => setPeriod(e.target.value)}
+                                className="rounded-lg border border-slate-200 bg-white px-3 py-2.5 text-sm font-semibold text-slate-950"
+                            >
+                                <option value="today">Hari Ini</option>
+                                <option value="week">Minggu Ini</option>
+                                <option value="month">Bulan Ini</option>
+                                <option value="all">Semua</option>
+                            </select>
                             <button
                                 onClick={() =>
                                     router.visit(
@@ -130,7 +159,7 @@ export default function CashierRecap({
                     </div>
                     <div className="rounded-lg border border-slate-200 bg-white p-4">
                         <div className="text-[11px] font-bold tracking-widest text-slate-400 uppercase">
-                            Omzet
+                            Total Penjualan
                         </div>
                         <div className="mt-2 text-2xl font-bold text-slate-950">
                             Rp {formatRupiah(summary.revenue_total)}
@@ -170,13 +199,13 @@ export default function CashierRecap({
                             Transaksi Terbaru
                         </div>
                         <div className="mt-4 space-y-2">
-                            {transactions.length === 0 && (
+                            {filteredTransactions.length === 0 && (
                                 <div className="rounded-lg border border-dashed border-slate-200 p-8 text-center text-sm font-semibold text-slate-500">
                                     Belum ada transaksi untuk direkap.
                                 </div>
                             )}
 
-                            {transactions.map((transaction) => (
+                            {filteredTransactions.map((transaction) => (
                                 <div
                                     key={transaction.id}
                                     className="rounded-lg border border-slate-200 p-4"
