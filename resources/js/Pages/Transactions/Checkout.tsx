@@ -10,6 +10,11 @@ import {
     notifyError,
     notifyWarning,
 } from '@/Components/app-notifications';
+import { isNative } from '@/lib/capacitor';
+import { apiClient } from '@/api/client';
+import { useNetwork } from '@/hooks/useNetwork';
+import { offlineQueue } from '@/lib/offline-queue';
+import { usePrintReceipt } from '@/hooks/usePrintReceipt';
 
 interface DraftItem {
     id: number;
@@ -58,6 +63,8 @@ export default function Checkout({ draft, cashierSession }: CheckoutProps) {
     const [paymentMethod, setPaymentMethod] = useState('cash');
     const [cashReceived, setCashReceived] = useState('');
     const [isProcessing, setIsProcessing] = useState(false);
+    const { isOnline } = useNetwork();
+    const { print: printReceipt } = usePrintReceipt();
 
     const hasOpenSession = Boolean(cashierSession?.id);
 
@@ -94,7 +101,7 @@ export default function Checkout({ draft, cashierSession }: CheckoutProps) {
             .slice(0, 6);
     }, [totalAmount]);
 
-    const processPayment = useCallback(() => {
+    const processPayment = useCallback(async () => {
         if (!hasOpenSession) {
             notifyWarning('Buka kasir terlebih dahulu.', 'Sesi kasir tidak aktif');
             return;
@@ -113,39 +120,85 @@ export default function Checkout({ draft, cashierSession }: CheckoutProps) {
         const finalChange =
             paymentMethod === 'cash' ? finalPaid - totalAmount : 0;
 
-        router.post(
-            route('transactions.store'),
-            {
-                draft_id: draft.id,
-                cart: draft.items.map((item) => ({
-                    id: item.product_id,
-                    qty: item.quantity,
-                })),
-                payment_method: paymentMethod,
-                amount_paid: finalPaid,
-                change_amount: finalChange,
-                customer_type: draft.customer_type,
-            },
-            {
-                onSuccess: () => {
-                    router.visit(route('transactions.create'));
+        const transactionData = {
+            draft_id: draft.id,
+            cart: draft.items.map((item) => ({
+                id: item.product_id,
+                qty: item.quantity,
+            })),
+            payment_method: paymentMethod,
+            amount_paid: finalPaid,
+            change_amount: finalChange,
+            customer_type: draft.customer_type,
+        };
+
+        if (isNative()) {
+            // Capacitor mode
+            if (!isOnline) {
+                // Offline: queue transaction
+                await offlineQueue.add(transactionData);
+                notifyWarning(
+                    'Transaksi disimpan offline.',
+                    'Akan dikirim saat online.',
+                );
+                router.visit(route('transactions.create'));
+                return;
+            }
+
+            // Online: submit via API
+            try {
+                const data = await apiClient.post('/transactions', transactionData);
+
+                // Print receipt
+                await printReceipt({
+                    invoice: data.transaction.invoice_number,
+                    date: new Date().toLocaleDateString('id-ID'),
+                    items: draft.items.map((item) => ({
+                        name: item.product_name,
+                        sell_price: item.price_at_time,
+                        qty: item.quantity,
+                    })),
+                    total: totalAmount,
+                    payAmount: finalPaid,
+                    change: finalChange,
+                    paymentMethod,
+                    customerType: draft.customer_type,
+                });
+
+                router.visit(route('transactions.create'));
+            } catch (error: any) {
+                notifyError(error.message || 'Gagal memproses transaksi.');
+            } finally {
+                setIsProcessing(false);
+            }
+        } else {
+            // Web mode: existing Inertia behavior
+            router.post(
+                route('transactions.store'),
+                transactionData,
+                {
+                    onSuccess: () => {
+                        router.visit(route('transactions.create'));
+                    },
+                    onError: (errors: Record<string, string>) => {
+                        const message =
+                            errors?.cart ||
+                            errors?.payment_method ||
+                            errors?.amount_paid ||
+                            'Gagal memproses transaksi.';
+                        notifyError(message);
+                    },
+                    onFinish: () => setIsProcessing(false),
                 },
-                onError: (errors: Record<string, string>) => {
-                    const message =
-                        errors?.cart ||
-                        errors?.payment_method ||
-                        errors?.amount_paid ||
-                        'Gagal memproses transaksi.';
-                    notifyError(message);
-                },
-                onFinish: () => setIsProcessing(false),
-            },
-        );
+            );
+        }
     }, [
         cashReceived,
         draft,
         hasOpenSession,
+        isOnline,
         paymentMethod,
+        printReceipt,
         totalAmount,
     ]);
 
