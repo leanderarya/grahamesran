@@ -69,15 +69,8 @@ export function ProductCard({ product, customerType, onAddToCart, inCartQty = 0,
                 </div>
             )}
 
-            <div className="flex items-center justify-between">
-                <div className="text-[10px] font-semibold tracking-widest text-slate-400 uppercase">
-                    {product.sku || 'NOSKU'}
-                </div>
-                {product.sku && product.sku.includes('-') && (
-                    <span className="rounded-md bg-slate-100 px-2 py-0.5 text-[10px] font-bold text-slate-600">
-                        📍 {product.sku.split('-')[0]}
-                    </span>
-                )}
+            <div className="text-[10px] font-semibold tracking-widest text-slate-400 uppercase">
+                {product.sku || 'NOSKU'}
             </div>
 
             <div className="mt-1 flex-1 text-sm font-semibold leading-snug text-slate-950 line-clamp-2">
