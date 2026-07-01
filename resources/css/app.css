@@ -110,6 +110,36 @@
     animation: cart-flash 0.4s ease-out;
 }
 
+/* Touch tooltip — shows on tap anywhere */
+.touch-tooltip {
+    position: relative;
+}
+.touch-tooltip::after {
+    content: attr(data-tooltip);
+    position: absolute;
+    bottom: 100%;
+    left: 50%;
+    transform: translateX(-50%);
+    background: #1e293b;
+    color: #fff;
+    padding: 6px 10px;
+    border-radius: 6px;
+    font-size: 12px;
+    font-weight: 600;
+    white-space: normal;
+    max-width: 280px;
+    width: max-content;
+    text-align: center;
+    z-index: 50;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.15s;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+}
+.touch-tooltip:active::after {
+    opacity: 1;
+}
+
 :root {
     --background: oklch(1 0 0);
     --foreground: oklch(0.145 0.017 285.823);
