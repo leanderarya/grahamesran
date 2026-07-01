@@ -400,7 +400,7 @@ export default function TabletPOS({ products, cashierSession, activeDraft }: { p
                     <div className="flex-1 overflow-y-auto p-4">
                         <div className={cn(
                             'grid gap-2',
-                            showDesktopCheckout ? 'grid-cols-4' : 'grid-cols-5',
+                            showDesktopCheckout ? 'grid-cols-5' : 'grid-cols-6',
                         )}>
                             {displayProducts.map((product) => {
                                 const cartItem = data.cart.find((item) => item.id === product.id);
