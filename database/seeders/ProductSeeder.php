@@ -14,7 +14,7 @@ class ProductSeeder extends Seeder
 
         $products = [
             [
-                'sku' => 'A1-0001', 'name' => 'Stabilizer Innova', 'category' => 'Kaki-Kaki', 'stock' => 2,                'cost_price' => 75000, 'sell_price' => 85000,
+                'sku' => 'A1-0001', 'name' => 'Stabilizer Innova', 'category' => 'Kaki-Kaki', 'stock' => 2,                'cost_price' => 75000, 'sell_price' => 95000,
                 'vehicles' => [
                     'Toyota|Innova|Gen 1 (2004-2015)',
                     'Toyota|Innova Reborn|Gen 2 (2015-2022)',
@@ -37,7 +37,7 @@ class ProductSeeder extends Seeder
                 'vehicles' => ['Daihatsu|Gran Max|All Gen'],
             ],
             [
-                'sku' => 'A1-0005', 'name' => 'Stabilizer Calya/Sigra', 'category' => 'Kaki-Kaki', 'stock' => 2,                'cost_price' => 85000, 'sell_price' => 95000,
+                'sku' => 'A1-0005', 'name' => 'Stabilizer Calya/Sigra', 'category' => 'Kaki-Kaki', 'stock' => 2,                'cost_price' => 85000, 'sell_price' => 105000,
                 'vehicles' => [
                     'Toyota|Calya|Gen 1 (2016-Now)',
                     'Daihatsu|Sigra|Gen 1 (2016-Now)',
@@ -124,7 +124,7 @@ class ProductSeeder extends Seeder
                 'vehicles' => ['Daihatsu|Gran Max|All Gen'],
             ],
             [
-                'sku' => 'A3-0004', 'name' => 'Break pad L300', 'category' => 'Rem', 'stock' => 2,                'cost_price' => 135000, 'sell_price' => 155000,
+                'sku' => 'A3-0004', 'name' => 'Break pad L300', 'category' => 'Rem', 'stock' => 2,                'cost_price' => 135000, 'sell_price' => 165000,
                 'vehicles' => ['UNIVERSAL|SEMUA MOBIL|-'],
             ],
             [
@@ -206,11 +206,11 @@ class ProductSeeder extends Seeder
                 'vehicles' => ['UNIVERSAL|SEMUA MOBIL|-'],
             ],
             [
-                'sku' => 'B1-0003', 'name' => 'Rotak Futura', 'category' => 'Tools', 'stock' => 2,                'cost_price' => 265000, 'sell_price' => 295000,
+                'sku' => 'B1-0003', 'name' => 'Rotak Futura', 'category' => 'Tools', 'stock' => 2,                'cost_price' => 265000, 'sell_price' => 320000,
                 'vehicles' => ['UNIVERSAL|SEMUA MOBIL|-'],
             ],
             [
-                'sku' => 'B1-0004', 'name' => 'Rotak Zebra', 'category' => 'Tools', 'stock' => 2,                'cost_price' => 145000, 'sell_price' => 165000,
+                'sku' => 'B1-0004', 'name' => 'Rotak Zebra', 'category' => 'Tools', 'stock' => 2,                'cost_price' => 145000, 'sell_price' => 175000,
                 'vehicles' => ['UNIVERSAL|SEMUA MOBIL|-'],
             ],
             [
@@ -276,7 +276,7 @@ class ProductSeeder extends Seeder
                 'vehicles' => ['UNIVERSAL|SEMUA MOBIL|-'],
             ],
             [
-                'sku' => 'A2-0026', 'name' => 'Klakson TIAT Denso', 'category' => 'Kelistrikan', 'stock' => 2,                'cost_price' => 105000, 'sell_price' => 115000,
+                'sku' => 'A2-0026', 'name' => 'Klakson TIAT Denso', 'category' => 'Kelistrikan', 'stock' => 2,                'cost_price' => 105000, 'sell_price' => 130000,
                 'vehicles' => ['UNIVERSAL|SEMUA MOBIL|-'],
             ],
             [
@@ -308,7 +308,7 @@ class ProductSeeder extends Seeder
                 'vehicles' => ['Toyota|Innova|Gen 1 (2004-2015)', 'Toyota|Innova Reborn|Gen 2 (2015-2022)'],
             ],
             [
-                'sku' => 'B1-0009', 'name' => 'Dongkrak Buaya', 'category' => 'Tools', 'stock' => 1,                'cost_price' => 325000, 'sell_price' => 350000,
+                'sku' => 'B1-0009', 'name' => 'Dongkrak Buaya', 'category' => 'Tools', 'stock' => 1,                'cost_price' => 325000, 'sell_price' => 390000,
                 'vehicles' => ['UNIVERSAL|SEMUA MOBIL|-'],
             ],
             [
@@ -332,19 +332,19 @@ class ProductSeeder extends Seeder
                 'vehicles' => ['UNIVERSAL|SEMUA MOBIL|-'],
             ],
             [
-                'sku' => 'A2-0032', 'name' => 'Kabel Accu 125 M', 'category' => 'Kelistrikan', 'stock' => 2,                'cost_price' => 68000, 'sell_price' => 78000,
+                'sku' => 'A2-0032', 'name' => 'Kabel Accu 125 M', 'category' => 'Kelistrikan', 'stock' => 2,                'cost_price' => 68000, 'sell_price' => 85000,
                 'vehicles' => ['UNIVERSAL|SEMUA MOBIL|-'],
             ],
             [
-                'sku' => 'A2-0033', 'name' => 'Kabel Accu 150 M', 'category' => 'Kelistrikan', 'stock' => 2,                'cost_price' => 78000, 'sell_price' => 88000,
+                'sku' => 'A2-0033', 'name' => 'Kabel Accu 150 M', 'category' => 'Kelistrikan', 'stock' => 2,                'cost_price' => 78000, 'sell_price' => 95000,
                 'vehicles' => ['UNIVERSAL|SEMUA MOBIL|-'],
             ],
             [
-                'sku' => 'A2-0034', 'name' => 'Kabel Accu 175 M', 'category' => 'Kelistrikan', 'stock' => 2,                'cost_price' => 88000, 'sell_price' => 98000,
+                'sku' => 'A2-0034', 'name' => 'Kabel Accu 175 M', 'category' => 'Kelistrikan', 'stock' => 2,                'cost_price' => 88000, 'sell_price' => 110000,
                 'vehicles' => ['UNIVERSAL|SEMUA MOBIL|-'],
             ],
             [
-                'sku' => 'A2-0035', 'name' => 'Kabel Accu 200 M', 'category' => 'Kelistrikan', 'stock' => 2,                'cost_price' => 100000, 'sell_price' => 110000,
+                'sku' => 'A2-0035', 'name' => 'Kabel Accu 200 M', 'category' => 'Kelistrikan', 'stock' => 2,                'cost_price' => 100000, 'sell_price' => 125000,
                 'vehicles' => ['UNIVERSAL|SEMUA MOBIL|-'],
             ],
             [
@@ -430,7 +430,7 @@ class ProductSeeder extends Seeder
                 'vehicles' => ['Toyota|Calya|Gen 1 (2016-Now)', 'Daihatsu|Sigra|Gen 1 (2016-Now)'],
             ],
             [
-                'sku' => 'A3-0016', 'name' => 'Brake Shoe Ertiga', 'category' => 'Rem', 'stock' => 2,                'cost_price' => 150000, 'sell_price' => 150000,
+                'sku' => 'A3-0016', 'name' => 'Brake Shoe Ertiga', 'category' => 'Rem', 'stock' => 2,                'cost_price' => 150000, 'sell_price' => 180000,
                 'vehicles' => ['UNIVERSAL|SEMUA MOBIL|-'],
             ],
             [
@@ -528,7 +528,7 @@ class ProductSeeder extends Seeder
                 'vehicles' => ['Toyota|Innova|Gen 1 (2004-2015)'],
             ],
             [
-                'sku' => 'B4-0002', 'name' => 'Pic Filter Solar L 300', 'category' => 'Filter', 'stock' => 3,                'cost_price' => 70000, 'sell_price' => 80000,
+                'sku' => 'B4-0002', 'name' => 'Pic Filter Solar L 300', 'category' => 'Filter', 'stock' => 3,                'cost_price' => 70000, 'sell_price' => 85000,
                 'vehicles' => ['UNIVERSAL|SEMUA MOBIL|-'],
             ],
             [
@@ -588,7 +588,7 @@ class ProductSeeder extends Seeder
                 'vehicles' => ['Daihatsu|Gran Max|All Gen'],
             ],
             [
-                'sku' => 'B4-0006', 'name' => 'Filter Oli PS', 'category' => 'Filter', 'stock' => 5,                'cost_price' => 74000, 'sell_price' => 85000,
+                'sku' => 'B4-0006', 'name' => 'Filter Oli PS', 'category' => 'Filter', 'stock' => 5,                'cost_price' => 74000, 'sell_price' => 90000,
                 'vehicles' => ['UNIVERSAL|SEMUA MOBIL|-'],
             ],
 
