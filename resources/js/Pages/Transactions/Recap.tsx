@@ -206,9 +206,10 @@ export default function CashierRecap({
                             )}
 
                             {filteredTransactions.map((transaction) => (
-                                <div
+                                <Link
                                     key={transaction.id}
-                                    className="rounded-lg border border-slate-200 p-4"
+                                    href={route('transactions.show', transaction.id)}
+                                    className="block rounded-lg border border-slate-200 p-4 transition-colors hover:border-slate-300 hover:bg-slate-50"
                                 >
                                     <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                                         <div>
@@ -239,7 +240,7 @@ export default function CashierRecap({
                                             </div>
                                         </div>
                                     </div>
-                                </div>
+                                </Link>
                             ))}
                         </div>
                     </div>
