@@ -191,7 +191,7 @@ class TransactionController extends Controller
         $today = now()->startOfDay();
 
         $baseQuery = Transaction::query()
-            ->with(['items.product'])
+            ->with(['transactionItems.product'])
             ->where('user_id', auth()->id());
 
         if ($openSession !== null) {
