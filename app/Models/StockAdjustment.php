@@ -25,14 +25,20 @@ class StockAdjustment extends Model
     protected static function booted()
     {
         static::created(function ($adjustment) {
-            $product = $adjustment->product;
-            
-            // Update stok produk menjadi angka fisik terbaru
-            $product->update([
-                'stock' => $adjustment->physical_stock
-            ]);
+            \DB::transaction(function () use ($adjustment) {
+                $product = \App\Models\Product::lockForUpdate()->find($adjustment->product_id);
 
-            \Cache::forget('dashboard_asset_value');
+                if (! $product) {
+                    return;
+                }
+
+                // Update stok produk menjadi angka fisik terbaru
+                $product->update([
+                    'stock' => $adjustment->physical_stock,
+                ]);
+
+                \Cache::forget('dashboard_asset_value');
+            });
         });
     }
 }

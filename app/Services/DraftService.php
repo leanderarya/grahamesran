@@ -23,6 +23,13 @@ class DraftService
     {
         $openSession = $this->sessionService->getOpenSession($user->id);
 
+        if ($openSession === null) {
+            throw new \Illuminate\Validation\ValidationException(
+                validator: null,
+                errors: ['cart' => ['Buka kasir terlebih dahulu.']]
+            );
+        }
+
         return DB::transaction(function () use ($validated, $openSession, $user) {
             $draft = $this->findOrCreateDraft($validated, $openSession->id, $user->id);
             $this->syncDraftItems($draft, $validated['cart'], $validated['customer_type']);
@@ -37,6 +44,13 @@ class DraftService
     public function autoSave(Authenticatable $user, array $validated): Transaction
     {
         $openSession = $this->sessionService->getOpenSession($user->id);
+
+        if ($openSession === null) {
+            throw new \Illuminate\Validation\ValidationException(
+                validator: null,
+                errors: ['cart' => ['Buka kasir terlebih dahulu.']]
+            );
+        }
 
         return DB::transaction(function () use ($validated, $openSession, $user) {
             $draft = $this->findOrCreateDraft($validated, $openSession->id, $user->id, allowMissing: true);
@@ -122,15 +136,20 @@ class DraftService
 
     /**
      * Sync draft items from cart data — recreate all items and recalculate totals.
+     * Returns list of missing product IDs that were skipped.
+     *
+     * @return int[] Array of product IDs that were not found
      */
-    private function syncDraftItems(Transaction $draft, array $cart, string $customerType): void
+    private function syncDraftItems(Transaction $draft, array $cart, string $customerType): array
     {
         $grandTotal = 0;
         $totalProfit = 0;
+        $missingProductIds = [];
 
         foreach ($cart as $item) {
             $product = Product::find($item['id']);
             if (! $product) {
+                $missingProductIds[] = $item['id'];
                 continue;
             }
 
@@ -155,5 +174,7 @@ class DraftService
             'total_profit' => $totalProfit,
             'customer_type' => $customerType,
         ]);
+
+        return $missingProductIds;
     }
 }

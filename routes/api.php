@@ -10,8 +10,8 @@ use Illuminate\Support\Facades\Route;
 // Public routes
 Route::post('/login', [AuthController::class, 'login']);
 
-// Protected routes
-Route::middleware('auth:sanctum')->group(function () {
+// Protected routes — kasir only
+Route::middleware(['auth:sanctum', 'kasir-only'])->group(function () {
     Route::post('/logout', [AuthController::class, 'logout']);
 
     // Products

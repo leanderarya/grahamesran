@@ -1,3 +1,5 @@
+import { isNative } from './capacitor';
+
 const DB_NAME = 'kasir_offline';
 const STORE_NAME = 'transactions';
 const DB_VERSION = 1;
@@ -176,5 +178,33 @@ export const offlineQueue = {
         }
 
         return { sent, failed };
+    },
+
+    /**
+     * Auto-sync pending transactions when device comes back online.
+     * Call this once on app startup.
+     */
+    autoSyncOnNetworkRestore(
+        postFn: (data: {
+            cart: Array<{ id: number; qty: number }>;
+            payment_method: string;
+            amount_paid: number;
+            change_amount: number;
+            customer_type: string;
+            draft_id: number | null;
+        }) => Promise<unknown>,
+    ): void {
+        if (!isNative()) return;
+
+        window.addEventListener('online', async () => {
+            try {
+                const result = await this.sync(postFn);
+                if (result.sent > 0) {
+                    console.log(`[offlineQueue] Synced ${result.sent} queued transactions.`);
+                }
+            } catch (err) {
+                console.error('[offlineQueue] Auto-sync failed:', err);
+            }
+        });
     },
 };
