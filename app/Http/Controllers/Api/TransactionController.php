@@ -7,6 +7,7 @@ use App\Models\CashierSession;
 use App\Models\Product;
 use App\Models\Transaction;
 use App\Models\TransactionItem;
+use App\Models\User;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -134,7 +135,7 @@ class TransactionController extends Controller
 
     public function show(Transaction $transaction): JsonResponse
     {
-        $transaction->load('transactionItems.product');
+        $transaction->load(['transactionItems.product', 'user']);
 
         return response()->json([
             'transaction' => [
@@ -146,6 +147,7 @@ class TransactionController extends Controller
                 'total_amount' => (float) $transaction->total_amount,
                 'amount_paid' => (float) $transaction->amount_paid,
                 'change_amount' => (float) $transaction->change_amount,
+                'cashier_name' => $transaction->user?->name ?? '-',
                 'items' => $transaction->transactionItems->map(function ($item) {
                     return [
                         'id' => $item->id,
@@ -196,6 +198,61 @@ class TransactionController extends Controller
                 'total_amount' => (float) $t->total_amount,
                 'items_count' => $t->transactionItems->sum('quantity'),
             ]),
+        ]);
+    }
+
+    public function history(): JsonResponse
+    {
+        $transactions = Transaction::with('user')
+            ->where('user_id', auth()->id())
+            ->whereIn('status', ['paid', 'voided'])
+            ->orderByDesc('created_at')
+            ->paginate(20);
+
+        return response()->json([
+            'transactions' => $transactions->items(),
+            'current_page' => $transactions->currentPage(),
+            'last_page' => $transactions->lastPage(),
+            'total' => $transactions->total(),
+        ]);
+    }
+
+    public function void(Request $request, Transaction $transaction): JsonResponse
+    {
+        $request->validate([
+            'pin' => ['required', 'digits:4'],
+            'reason' => ['required', 'string', 'max:500'],
+        ]);
+
+        // Verify admin PIN
+        $admin = User::where('pin', $request->pin)
+            ->where('role', 'admin')
+            ->first();
+
+        if (! $admin) {
+            return response()->json(['message' => 'PIN admin salah.'], 422);
+        }
+
+        if ($transaction->status === 'voided') {
+            return response()->json(['message' => 'Transaksi sudah dibatalkan.'], 422);
+        }
+
+        // Restore stock
+        foreach ($transaction->transactionItems as $item) {
+            $item->product->increment('stock', $item->quantity);
+        }
+
+        // Void transaction
+        $transaction->update([
+            'status' => 'voided',
+            'void_reason' => $request->reason,
+            'voided_by' => $admin->id,
+            'voided_at' => now(),
+        ]);
+
+        return response()->json([
+            'message' => 'Transaksi berhasil dibatalkan.',
+            'transaction' => $transaction->fresh(),
         ]);
     }
 

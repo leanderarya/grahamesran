@@ -26,6 +26,8 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/transactions', [TransactionController::class, 'store']);
     Route::get('/transactions/{transaction}', [TransactionController::class, 'show']);
     Route::get('/recap', [TransactionController::class, 'recap']);
+    Route::get('/history', [TransactionController::class, 'history']);
+    Route::post('/transactions/{transaction}/void', [TransactionController::class, 'void']);
 
     // Drafts
     Route::post('/draft', [DraftController::class, 'save']);

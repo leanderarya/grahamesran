@@ -6,6 +6,7 @@ use App\Models\CashierSession;
 use App\Models\Product;
 use App\Models\Transaction;
 use App\Models\TransactionItem;
+use App\Models\User;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -367,7 +368,7 @@ class TransactionController extends Controller
 
     public function show(Transaction $transaction)
     {
-        $transaction->load('transactionItems.product');
+        $transaction->load(['transactionItems.product', 'user']);
 
         return Inertia::render('Transactions/Show', [
             'transaction' => [
@@ -379,6 +380,7 @@ class TransactionController extends Controller
                 'total_amount' => (float) $transaction->total_amount,
                 'amount_paid' => (float) $transaction->amount_paid,
                 'change_amount' => (float) $transaction->change_amount,
+                'cashier_name' => $transaction->user?->name ?? '-',
                 'items' => $transaction->transactionItems->map(function ($item) {
                     return [
                         'id' => $item->id,
@@ -390,6 +392,55 @@ class TransactionController extends Controller
                 }),
             ],
         ]);
+    }
+
+    public function history()
+    {
+        $transactions = Transaction::with('user')
+            ->where('user_id', auth()->id())
+            ->whereIn('status', ['paid', 'voided'])
+            ->orderByDesc('created_at')
+            ->paginate(20);
+
+        return Inertia::render('Transactions/History', [
+            'transactions' => $transactions,
+        ]);
+    }
+
+    public function void(Request $request, Transaction $transaction)
+    {
+        $request->validate([
+            'pin' => ['required', 'digits:4'],
+            'reason' => ['required', 'string', 'max:500'],
+        ]);
+
+        // Verify admin PIN
+        $admin = User::where('pin', $request->pin)
+            ->where('role', 'admin')
+            ->first();
+
+        if (! $admin) {
+            return back()->withErrors(['pin' => 'PIN admin salah.']);
+        }
+
+        if ($transaction->status === 'voided') {
+            return back()->withErrors(['transaction' => 'Transaksi sudah dibatalkan.']);
+        }
+
+        // Restore stock
+        foreach ($transaction->transactionItems as $item) {
+            $item->product->increment('stock', $item->quantity);
+        }
+
+        // Void transaction
+        $transaction->update([
+            'status' => 'voided',
+            'void_reason' => $request->reason,
+            'voided_by' => $admin->id,
+            'voided_at' => now(),
+        ]);
+
+        return back()->with('success', 'Transaksi berhasil dibatalkan.');
     }
 
     public function openSession(Request $request)
