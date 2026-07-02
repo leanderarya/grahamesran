@@ -20,8 +20,8 @@ class BestSellingProducts extends BaseWidget
         return $table
             ->query(
                 Product::query()
-                    // Hitung jumlah qty terjual dari tabel items
-                    ->withSum('transactionItems as total_sold', 'quantity')
+                    // Hitung jumlah qty terjual dari tabel items (hanya transaksi lunas)
+                    ->withSum(['transactionItems as total_sold' => fn ($query) => $query->whereHas('transaction', fn ($q) => $q->where('status', 'paid'))], 'quantity')
                     // Hanya ambil yang sudah pernah laku
                     ->having('total_sold', '>', 0)
                     ->orderByDesc('total_sold')

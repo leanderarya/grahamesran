@@ -80,7 +80,14 @@ export default function PrinterSettings() {
                 {/* Scan */}
                 <div className="mt-3">
                     <button
-                        onClick={scan}
+                        onClick={async () => {
+                            setError(null);
+                            try {
+                                await scan();
+                            } catch (e: any) {
+                                setError(e?.message || 'Gagal scan Bluetooth. Pastikan Bluetooth aktif.');
+                            }
+                        }}
                         disabled={isScanning}
                         className="flex w-full items-center justify-center gap-2 rounded-lg border border-slate-200 bg-white px-3 py-2.5 text-xs font-bold text-slate-700 transition-colors hover:bg-slate-50 disabled:opacity-50"
                     >
@@ -89,11 +96,16 @@ export default function PrinterSettings() {
                     </button>
                 </div>
 
+                {/* Hint */}
+                <div className="mt-2 rounded-lg bg-blue-50 px-3 py-2 text-[11px] text-blue-700">
+                    <span className="font-bold">Tips:</span> Pastikan printer sudah dipasangkan (pair) di pengaturan Bluetooth Android terlebih dahulu.
+                </div>
+
                 {/* Device List */}
                 <div className="mt-3 space-y-1">
                     {devices.length === 0 && !isScanning && (
                         <div className="rounded-lg border border-dashed border-slate-200 py-6 text-center text-xs text-slate-400">
-                            Tekan Scan untuk mencari perangkat.
+                            Belum ada perangkat. Tekan Scan dan pastikan printer sudah dipasangkan di Android.
                         </div>
                     )}
 

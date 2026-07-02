@@ -26,9 +26,7 @@ export default defineConfig({
     },
     build: {
         rollupOptions: {
-            external: [
-                '@candraadiw/capacitor-bluetooth-printer',
-            ],
+            external: [],
         },
     },
 });

@@ -1,11 +1,10 @@
 import { useState } from 'react';
-import { cn } from '@/lib/utils';
 import { X, AlertTriangle } from 'lucide-react';
 
 interface VoidModalProps {
     show: boolean;
     onClose: () => void;
-    onConfirm: (pin: string, reason: string) => void;
+    onConfirm: (reason: string) => void;
     isProcessing: boolean;
     invoiceNumber: string;
 }
@@ -17,18 +16,16 @@ export function VoidModal({
     isProcessing,
     invoiceNumber,
 }: VoidModalProps) {
-    const [pin, setPin] = useState('');
     const [reason, setReason] = useState('');
 
     if (!show) return null;
 
     const handleSubmit = () => {
-        if (pin.length !== 4 || !reason.trim()) return;
-        onConfirm(pin, reason.trim());
+        if (!reason.trim()) return;
+        onConfirm(reason.trim());
     };
 
     const handleClose = () => {
-        setPin('');
         setReason('');
         onClose();
     };
@@ -51,22 +48,8 @@ export function VoidModal({
                     Transaksi <span className="font-bold text-slate-700">{invoiceNumber}</span> akan dibatalkan. Stok produk akan dikembalikan.
                 </p>
 
-                {/* PIN Input */}
-                <div className="mt-3">
-                    <label className="text-[10px] font-bold tracking-wider text-slate-400 uppercase">PIN Admin</label>
-                    <input
-                        type="password"
-                        inputMode="numeric"
-                        maxLength={4}
-                        value={pin}
-                        onChange={(e) => setPin(e.target.value.replace(/\D/g, ''))}
-                        placeholder="4 digit"
-                        className="mt-1 w-full rounded-lg border border-slate-200 px-3 py-2 text-center text-lg font-bold tracking-[0.5em] text-slate-950 focus:border-red-300 focus:ring-0 focus:outline-none"
-                    />
-                </div>
-
                 {/* Reason Input */}
-                <div className="mt-2">
+                <div className="mt-3">
                     <label className="text-[10px] font-bold tracking-wider text-slate-400 uppercase">Alasan Pembatalan</label>
                     <textarea
                         rows={2}
@@ -87,7 +70,7 @@ export function VoidModal({
                     </button>
                     <button
                         onClick={handleSubmit}
-                        disabled={pin.length !== 4 || !reason.trim() || isProcessing}
+                        disabled={!reason.trim() || isProcessing}
                         className="flex-1 rounded-lg bg-red-600 py-2.5 text-xs font-bold text-white transition-colors hover:bg-red-700 disabled:cursor-not-allowed disabled:opacity-40"
                     >
                         {isProcessing ? 'Membatalkan...' : 'Batalkan Transaksi'}

@@ -23,8 +23,9 @@ class MonthlyAnalyticsStatsOverview extends StatsOverviewWidget
         $previousMonthStart = $month->copy()->subMonth()->startOfMonth();
         $previousMonthEnd = $month->copy()->subMonth()->endOfMonth();
 
-        // Query 1: Current month aggregate
+        // Query 1: Current month aggregate (paid only)
         $monthAgg = Transaction::query()
+            ->where('status', 'paid')
             ->whereBetween('created_at', [$monthStart, $monthEnd])
             ->selectRaw('COALESCE(SUM(total_amount), 0) as revenue')
             ->selectRaw('COALESCE(SUM(total_profit), 0) as profit')
@@ -32,20 +33,21 @@ class MonthlyAnalyticsStatsOverview extends StatsOverviewWidget
             ->selectRaw('COUNT(DISTINCT DATE(created_at)) as active_days')
             ->first();
 
-        // Query 2: Best daily revenue for current month
+        // Query 2: Best daily revenue for current month (paid only)
         $bestDaily = Transaction::query()
             ->selectRaw('COALESCE(MAX(daily_rev), 0) as best')
             ->fromSub(
                 Transaction::query()
                     ->selectRaw('SUM(total_amount) as daily_rev')
+                    ->where('status', 'paid')
                     ->whereBetween('created_at', [$monthStart, $monthEnd])
                     ->groupByRaw('DATE(created_at)'),
                 'daily'
             )
             ->value('best');
 
-        // Query 3: Previous month revenue for comparison
-        $previousRevenue = (float) Transaction::whereBetween('created_at', [$previousMonthStart, $previousMonthEnd])
+        // Query 3: Previous month revenue for comparison (paid only)
+        $previousRevenue = (float) Transaction::where('status', 'paid')->whereBetween('created_at', [$previousMonthStart, $previousMonthEnd])
             ->sum('total_amount');
 
         $monthlyRevenue = (float) $monthAgg->revenue;

@@ -7,7 +7,7 @@ const config: CapacitorConfig = {
     server: {
         // For development: point to local Laravel server
         // Change to production URL before release
-        url: 'http://10.0.2.2:8000', // Android emulator localhost
+        url: 'http://192.168.1.16:8000', // Host machine IP for emulator
         cleartext: true,
     },
     android: {

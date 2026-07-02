@@ -194,7 +194,7 @@ class ProductSeeder extends Seeder
                 'vehicles' => ['UNIVERSAL|SEMUA MOBIL|-'],
             ],
             [
-                'sku' => 'A2-0014', 'name' => 'Fitting lampu Plastik', 'category' => 'Kelistrikan', 'stock' => 25,                'cost_price' => 5400, 'sell_price' => 7000,
+                'sku' => 'A2-0014', 'name' => 'Fitting lampu Plastik', 'category' => 'Kelistrikan', 'stock' => 25,                'cost_price' => 5600, 'sell_price' => 7000,
                 'vehicles' => ['UNIVERSAL|SEMUA MOBIL|-'],
             ],
             [
@@ -244,7 +244,7 @@ class ProductSeeder extends Seeder
                 'vehicles' => ['UNIVERSAL|SEMUA MOBIL|-'],
             ],
             [
-                'sku' => 'B2-0001', 'name' => 'Set (4) Spion Avanza', 'category' => 'Body', 'stock' => 2,                'cost_price' => 55000, 'sell_price' => 65000,
+                'sku' => 'B2-0001', 'name' => 'Set (4) Spion Avanza', 'category' => 'Body', 'stock' => 2,                'cost_price' => 110000, 'sell_price' => 65000,
                 'vehicles' => ['Toyota|Avanza|Gen 1 (2003-2011)', 'Toyota|Avanza|Gen 2 (2011-2021)'],
             ],
             [
@@ -252,7 +252,11 @@ class ProductSeeder extends Seeder
                 'vehicles' => ['Toyota|Avanza|Gen 1 (2003-2011)'],
             ],
             [
-                'sku' => 'A2-0022', 'name' => 'Roll Kabel 2m (30 M)', 'category' => 'Kelistrikan', 'stock' => 1,                'cost_price' => 7000, 'sell_price' => 9000,
+                'sku' => 'A2-0022', 'name' => 'Roll Kabel 2mm (30 M)', 'category' => 'Kelistrikan', 'stock' => 30,                'cost_price' => 7000, 'sell_price' => 9000,
+                'vehicles' => ['UNIVERSAL|SEMUA MOBIL|-'],
+            ],
+            [
+                'sku' => 'A2-0050', 'name' => 'Roll Kabel 1.25mm (30 M)', 'category' => 'Kelistrikan', 'stock' => 30,                'cost_price' => 4000, 'sell_price' => 6000,
                 'vehicles' => ['UNIVERSAL|SEMUA MOBIL|-'],
             ],
             [

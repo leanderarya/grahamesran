@@ -27,6 +27,7 @@ class MonthlyAnalyticsDailySalesChart extends ChartWidget
         $rawData = Transaction::query()
             ->selectRaw('DATE(created_at) as sales_date')
             ->selectRaw('SUM(total_amount) as revenue')
+            ->where('status', 'paid')
             ->whereBetween('created_at', [$monthStart, $monthEnd])
             ->groupBy('sales_date')
             ->orderBy('sales_date')

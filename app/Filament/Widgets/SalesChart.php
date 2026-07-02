@@ -22,8 +22,8 @@ class SalesChart extends ChartWidget
 
     protected function getData(): array
     {
-        // Ambil data bulan ini per hari
-        $data = Trend::model(Transaction::class)
+        // Ambil data bulan ini per hari (hanya transaksi lunas)
+        $data = Trend::query(Transaction::query()->where('status', 'paid'))
             ->between(
                 start: now()->startOfMonth(),
                 end: now()->endOfMonth(),

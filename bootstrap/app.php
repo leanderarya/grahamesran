@@ -20,6 +20,7 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->encryptCookies(except: ['appearance', 'sidebar_state']);
         $middleware->alias([
             'prevent-open-cashier-logout' => PreventLogoutWithOpenCashierSession::class,
+            'kasir-only' => \App\Http\Middleware\KasirOnly::class,
         ]);
 
         $middleware->web(append: [

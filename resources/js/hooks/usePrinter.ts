@@ -2,9 +2,14 @@ import { useState, useEffect, useCallback } from 'react';
 import { isNative } from '@/lib/capacitor';
 
 interface BluetoothDevice {
+    id: string;
     name: string;
     address: string;
-    type?: string;
+}
+
+// Access custom BluetoothThermalPrinter plugin via Capacitor
+function getPlugin() {
+    return (window as any).Capacitor?.Plugins?.BluetoothThermalPrinter;
 }
 
 export function usePrinter() {
@@ -28,22 +33,27 @@ export function usePrinter() {
         if (!isNative()) {
             // Web: show mock devices for testing
             setDevices([
-                { name: 'MTP-III', address: '00:11:22:33:44:55' },
-                { name: 'RPP300', address: 'AA:BB:CC:DD:EE:FF' },
+                { id: '00:11:22:33:44:55', name: 'MTP-III', address: '00:11:22:33:44:55' },
+                { id: 'AA:BB:CC:DD:EE:FF', name: 'RPP300', address: 'AA:BB:CC:DD:EE:FF' },
             ]);
             return;
         }
 
         setIsScanning(true);
         try {
-            const plugin = (await import(
-                '@candraadiw/capacitor-bluetooth-printer'
-            )) as unknown as { BluetoothPrinter: { listDevices: () => Promise<{ devices: BluetoothDevice[] }> } };
-            const { BluetoothPrinter } = plugin;
-            const { devices: found } = await BluetoothPrinter.listDevices();
-            setDevices(found || []);
+            const plugin = getPlugin();
+            if (!plugin) throw new Error('Plugin Bluetooth tidak tersedia.');
+
+            const response = await plugin.listPairedDevices();
+            const found = response?.devices ?? [];
+            setDevices(found);
+
+            if (found.length === 0) {
+                console.warn('No paired Bluetooth devices found. Pair your printer in Android Bluetooth settings first.');
+            }
         } catch (error) {
             console.error('Scan failed:', error);
+            throw error;
         } finally {
             setIsScanning(false);
         }
@@ -59,11 +69,10 @@ export function usePrinter() {
         }
 
         try {
-            const plugin = (await import(
-                '@candraadiw/capacitor-bluetooth-printer'
-            )) as unknown as { BluetoothPrinter: { connect: (opts: { address: string }) => Promise<void> } };
-            const { BluetoothPrinter } = plugin;
-            await BluetoothPrinter.connect({ address: device.address });
+            const plugin = getPlugin();
+            if (!plugin) throw new Error('Plugin Bluetooth tidak tersedia.');
+
+            await plugin.connect({ deviceId: device.id || device.address });
             setConnectedDevice(device);
             setIsConnected(true);
             localStorage.setItem('printer_device', JSON.stringify(device));
@@ -84,11 +93,10 @@ export function usePrinter() {
         }
 
         try {
-            const plugin = (await import(
-                '@candraadiw/capacitor-bluetooth-printer'
-            )) as unknown as { BluetoothPrinter: { disconnect: () => Promise<void> } };
-            const { BluetoothPrinter } = plugin;
-            await BluetoothPrinter.disconnect();
+            const plugin = getPlugin();
+            if (!plugin) throw new Error('Plugin Bluetooth tidak tersedia.');
+
+            await plugin.disconnect();
             setConnectedDevice(null);
             setIsConnected(false);
             localStorage.removeItem('printer_device');

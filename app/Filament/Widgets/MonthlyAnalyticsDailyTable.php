@@ -36,6 +36,7 @@ class MonthlyAnalyticsDailyTable extends TableWidget
                     ->selectRaw('SUM(total_amount) as total_revenue')
                     ->selectRaw('SUM(total_profit) as total_profit_amount')
                     ->selectRaw('COUNT(*) as transaction_count')
+                    ->where('status', 'paid')
                     ->whereBetween('created_at', [$monthStart, $monthEnd])
                     ->groupBy('sales_date')
                     ->orderBy('sales_date')

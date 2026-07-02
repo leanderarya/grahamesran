@@ -37,6 +37,7 @@ class MonthlyAnalyticsTopProducts extends TableWidget
                     ->selectRaw('SUM(transaction_items.quantity * transaction_items.price_at_time) as total_revenue')
                     ->join('products', 'products.id', '=', 'transaction_items.product_id')
                     ->join('transactions', 'transactions.id', '=', 'transaction_items.transaction_id')
+                    ->where('transactions.status', 'paid')
                     ->whereBetween('transactions.created_at', [$monthStart, $monthEnd])
                     ->groupBy('products.name')
                     ->orderByDesc('total_sold')

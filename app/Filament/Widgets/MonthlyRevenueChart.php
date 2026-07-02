@@ -20,7 +20,7 @@ class MonthlyRevenueChart extends ChartWidget
 
     protected function getData(): array
     {
-        $data = Trend::model(Transaction::class)
+        $data = Trend::query(Transaction::query()->where('status', 'paid'))
             ->between(
                 start: now()->subMonths(5)->startOfMonth(),
                 end: now()->endOfMonth(),

@@ -12,6 +12,7 @@ use Filament\Forms\Components\FileUpload;
 use Filament\Forms\Components\TextInput;
 use Filament\Notifications\Notification;
 use Filament\Resources\Pages\ListRecords;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\Storage;
 use Livewire\Features\SupportFileUploads\TemporaryUploadedFile;
@@ -21,6 +22,11 @@ use Throwable;
 class ListTransactions extends ListRecords
 {
     protected static string $resource = TransactionResource::class;
+
+    protected function getDefaultTableQuery(): Builder
+    {
+        return parent::getDefaultTableQuery()->where('status', 'paid');
+    }
 
     protected function getHeaderActions(): array
     {

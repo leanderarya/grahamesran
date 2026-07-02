@@ -1,5 +1,9 @@
 import { isNative } from './capacitor';
 
+function getPlugin() {
+    return (window as any).Capacitor?.Plugins?.BluetoothThermalPrinter;
+}
+
 export interface ReceiptData {
     invoice: string;
     date: string;
@@ -53,7 +57,8 @@ function feedLines(n: number): number[] {
 }
 
 function cutPaper(): number[] {
-    return [GS, 0x56, 0x00];
+    // Try partial cut first (more widely supported), then full cut
+    return [GS, 0x56, 0x01];
 }
 
 function hr(width: number = 32): number[] {
@@ -131,13 +136,12 @@ export function generateEscPos(data: ReceiptData, store: StoreInfo): number[] {
         ),
     );
 
-    commands.push(...feedLines(2));
     commands.push(...centerAlign());
     commands.push(...encodeText('*** TERIMA KASIH ***\n'));
     commands.push(
         ...encodeText('Barang yang dibeli tidak dapat ditukar/dikembalikan\n'),
     );
-    commands.push(...feedLines(3));
+    commands.push(...feedLines(1));
     commands.push(...cutPaper());
 
     return commands;
@@ -158,33 +162,35 @@ export async function printReceipt(
     }
 
     try {
-        // Dynamic import to avoid loading native plugin on web
-        const plugin = (await import(
-            '@candraadiw/capacitor-bluetooth-printer'
-        )) as unknown as { BluetoothPrinter: { listDevices: () => Promise<{ devices: Array<{ name: string; address: string; type: string }> }>; connect: (opts: { address: string }) => Promise<void>; print: (opts: { data: string }) => Promise<{ success: boolean }>; disconnect: () => Promise<void> } };
-        const { BluetoothPrinter } = plugin;
+        const plugin = getPlugin();
+        if (!plugin) throw new Error('Plugin Bluetooth tidak tersedia.');
 
-        // List paired devices
-        const { devices } = await BluetoothPrinter.listDevices();
+        // Use saved printer address, or fall back to first paired device
+        let address = localStorage.getItem('printer_address');
 
-        if (!devices || devices.length === 0) {
-            throw new Error(
-                'Tidak ada printer Bluetooth yang terpasang. Silakan pasangkan printer terlebih dahulu.',
-            );
+        if (!address) {
+            const response = await plugin.listPairedDevices();
+            const devices = response?.devices ?? [];
+            if (devices.length === 0) {
+                throw new Error(
+                    'Tidak ada printer Bluetooth yang terpasang. Silakan pasangkan printer terlebih dahulu.',
+                );
+            }
+            address = devices[0].address;
         }
 
-        // Connect to first available printer
-        await BluetoothPrinter.connect({ address: devices[0].address });
+        // Connect to printer
+        await plugin.connect({ deviceId: address });
 
-        // Generate ESC/POS data and convert to string for the plugin
+        // Generate ESC/POS data and send as text
         const escPosBytes = generateEscPos(data, store);
         const escPosString = bytesToString(escPosBytes);
 
         // Send to printer
-        await BluetoothPrinter.print({ data: escPosString });
+        await plugin.printText({ text: escPosString });
 
         // Disconnect
-        await BluetoothPrinter.disconnect();
+        await plugin.disconnect();
     } catch (error: unknown) {
         const message =
             error instanceof Error ? error.message : 'Gagal mencetak struk.';
@@ -283,10 +289,9 @@ export function generateClosingEscPos(data: ClosingReportData, store: StoreInfo)
     }
 
     // Signature
-    commands.push(...feedLines(2));
     commands.push(...encodeText('TTD Kasir: ____________\n'));
     commands.push(...encodeText('TTD Supervisor: ________\n'));
-    commands.push(...feedLines(3));
+    commands.push(...feedLines(1));
     commands.push(...cutPaper());
 
     return commands;

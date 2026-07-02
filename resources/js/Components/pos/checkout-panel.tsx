@@ -1,6 +1,6 @@
 import { cn } from '@/lib/utils';
 import { formatRupiah, getProductLabel } from '@/lib/format';
-import { Trash2, Minus, Plus, X } from 'lucide-react';
+import { Trash2, Minus, Plus } from 'lucide-react';
 
 interface CartItem {
     id: number;
@@ -28,9 +28,6 @@ interface CheckoutPanelProps {
     customerType: string;
     onCustomerTypeChange: (type: string) => void;
     onSaveDraft: () => void;
-    onCloseDesktop?: () => void;
-    showMobileCheckout: boolean;
-    onCloseMobileCheckout: () => void;
 }
 
 export function CheckoutPanel({
@@ -47,17 +44,10 @@ export function CheckoutPanel({
     customerType,
     onCustomerTypeChange,
     onSaveDraft,
-    onCloseDesktop,
-    showMobileCheckout,
-    onCloseMobileCheckout,
 }: CheckoutPanelProps) {
     return (
         <section
-            className={cn(
-                'flex w-[30%] min-w-[300px] flex-col border-l border-slate-200 bg-white',
-                !showMobileCheckout && 'hidden lg:flex',
-                showMobileCheckout && 'fixed inset-0 z-40 lg:static lg:z-auto',
-            )}
+            className="flex w-[30%] min-w-[300px] flex-col border-l border-slate-200 bg-white"
         >
             {/* Header */}
             <div className="flex items-center justify-between border-b border-slate-200 px-4 py-3">
@@ -70,15 +60,6 @@ export function CheckoutPanel({
                     )}
                 </div>
                 <div className="flex items-center gap-1">
-                {onCloseDesktop && (
-                    <button
-                        onClick={onCloseDesktop}
-                        className="rounded-lg p-1.5 text-slate-400 transition-colors hover:bg-slate-100 lg:block"
-                        title="Tutup keranjang"
-                    >
-                        <X className="h-4 w-4" />
-                    </button>
-                )}
                 {cart.length > 0 && (
                     <button
                         onClick={clearCart}
@@ -210,13 +191,6 @@ export function CheckoutPanel({
                 </button>
             </div>
 
-            {/* Mobile: Back to catalog */}
-            <button
-                onClick={onCloseMobileCheckout}
-                className="border-t border-slate-200 px-4 py-3 text-center text-sm font-semibold text-slate-600 lg:hidden"
-            >
-                ← Kembali ke Katalog
-            </button>
         </section>
     );
 }
