@@ -3,11 +3,13 @@ import {
 } from '@/Components/app-notifications';
 import { Head, Link, router, usePage } from '@inertiajs/react';
 import { route } from 'ziggy-js';
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { ArrowLeft } from 'lucide-react';
 import type { SharedData } from '@/types';
 import { formatRupiah, formatDateTime } from '@/lib/format';
 import { TopBar } from '@/Components/pos/top-bar';
+import { isNative } from '@/lib/capacitor';
+import { apiClient } from '@/api/client';
 
 interface CashierSession {
     id?: number;
@@ -53,17 +55,38 @@ export default function CashierRecap({
     topProducts: TopProduct[];
 }) {
     const { auth, flash } = usePage<SharedData>().props;
-    const hasOpenSession = Boolean(cashierSession?.id);
+    const [apiData, setApiData] = useState<any>(null);
+
+    useEffect(() => {
+        if (!isNative()) return;
+
+        apiClient
+            .get('/recap')
+            .then((data) => {
+                setApiData(data);
+            })
+            .catch((err) => {
+                console.error('Failed to load recap:', err);
+            });
+    }, []);
+
+    const activeSession = isNative() ? apiData?.session : cashierSession;
+    const activeSummary = isNative() ? apiData?.summary : summary;
+    const activeTransactions = isNative() ? apiData?.transactions : transactions;
+    const activeTopProducts = isNative() ? (apiData?.topProducts ?? []) : topProducts;
+
+    const hasOpenSession = Boolean(activeSession?.id);
     const [period, setPeriod] = useState('today');
 
     const filteredTransactions = useMemo(() => {
+        const txns: Transaction[] = activeTransactions ?? [];
         const now = new Date();
         const startOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate());
         const startOfWeek = new Date(startOfDay);
         startOfWeek.setDate(startOfDay.getDate() - startOfDay.getDay());
         const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
 
-        return transactions.filter((t) => {
+        return txns.filter((t) => {
             if (period === 'all') return true;
             const date = new Date(t.created_at);
             if (period === 'today') return date >= startOfDay;
@@ -71,7 +94,7 @@ export default function CashierRecap({
             if (period === 'month') return date >= startOfMonth;
             return true;
         });
-    }, [transactions, period]);
+    }, [activeTransactions, period]);
 
     return (
         <div className="flex h-screen flex-col bg-white">
@@ -126,7 +149,7 @@ export default function CashierRecap({
                             Total Transaksi
                         </div>
                         <div className="mt-2 text-2xl font-bold text-slate-950">
-                            {summary.total_transactions}
+                            {activeSummary?.total_transactions ?? 0}
                         </div>
                     </div>
                     <div className="rounded-lg border border-slate-200 bg-white p-4">
@@ -134,7 +157,7 @@ export default function CashierRecap({
                             Total Penjualan
                         </div>
                         <div className="mt-2 text-2xl font-bold text-slate-950">
-                            Rp {formatRupiah(summary.revenue_total)}
+                            Rp {formatRupiah(activeSummary?.revenue_total ?? 0)}
                         </div>
                     </div>
                     <div className="rounded-lg border border-slate-200 bg-white p-4">
@@ -142,7 +165,7 @@ export default function CashierRecap({
                             Profit
                         </div>
                         <div className="mt-2 text-2xl font-bold text-slate-950">
-                            Rp {formatRupiah(summary.profit_total)}
+                            Rp {formatRupiah(activeSummary?.profit_total ?? 0)}
                         </div>
                     </div>
                     <div className="rounded-lg border border-slate-200 bg-white p-4">
@@ -150,7 +173,7 @@ export default function CashierRecap({
                             Tunai
                         </div>
                         <div className="mt-2 text-2xl font-bold text-slate-950">
-                            Rp {formatRupiah(summary.cash_total)}
+                            Rp {formatRupiah(activeSummary?.cash_total ?? 0)}
                         </div>
                     </div>
                     <div className="rounded-lg bg-indigo-600 p-4 text-white">
@@ -158,7 +181,7 @@ export default function CashierRecap({
                             Non Tunai
                         </div>
                         <div className="mt-2 text-2xl font-bold">
-                            Rp {formatRupiah(summary.non_cash_total)}
+                            Rp {formatRupiah(activeSummary?.non_cash_total ?? 0)}
                         </div>
                     </div>
                 </div>
@@ -223,13 +246,13 @@ export default function CashierRecap({
                             Produk Paling Laku
                         </div>
                         <div className="mt-4 space-y-2">
-                            {topProducts.length === 0 && (
+                            {activeTopProducts.length === 0 && (
                                 <div className="rounded-lg border border-dashed border-slate-200 p-8 text-center text-sm font-semibold text-slate-500">
                                     Belum ada data produk laku.
                                 </div>
                             )}
 
-                            {topProducts.map((product, index) => (
+                            {activeTopProducts.map((product: TopProduct, index: number) => (
                                 <div
                                     key={`${product.product_name}-${index}`}
                                     className="flex items-center gap-3 rounded-lg border border-slate-200 p-3"
