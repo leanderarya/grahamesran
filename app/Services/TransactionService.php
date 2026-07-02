@@ -135,6 +135,9 @@ class TransactionService
         }
 
         DB::transaction(function () use ($transaction, $userId, $reason) {
+            // Eager-load items + products to avoid N+1 on stock restore
+            $transaction->load('transactionItems.product');
+
             // Restore stock
             foreach ($transaction->transactionItems as $item) {
                 $item->product->increment('stock', $item->quantity);
@@ -165,23 +168,27 @@ class TransactionService
     {
         $today = now()->startOfDay();
 
-        // Summary uses aggregate query — no limit
+        // Single aggregate query for all summary metrics — no N queries
         $summaryQuery = Transaction::query()
             ->where('user_id', $userId)
-            ->where('status', 'paid');
+            ->where('status', 'paid')
+            ->when($openSession !== null, fn ($q) => $q->where('cashier_session_id', $openSession->id))
+            ->when($openSession === null, fn ($q) => $q->where('created_at', '>=', $today));
 
-        if ($openSession !== null) {
-            $summaryQuery->where('cashier_session_id', $openSession->id);
-        } else {
-            $summaryQuery->where('created_at', '>=', $today);
-        }
+        $agg = (clone $summaryQuery)->selectRaw(
+            'COUNT(*) as total_transactions,
+            COALESCE(SUM(CASE WHEN payment_method = \'cash\' THEN total_amount ELSE 0 END), 0) as cash_total,
+            COALESCE(SUM(CASE WHEN payment_method != \'cash\' THEN total_amount ELSE 0 END), 0) as non_cash_total,
+            COALESCE(SUM(total_amount), 0) as revenue_total,
+            COALESCE(SUM(total_profit), 0) as profit_total'
+        )->first();
 
         $summary = [
-            'total_transactions' => (int) $summaryQuery->count(),
-            'cash_total' => (float) (clone $summaryQuery)->where('payment_method', 'cash')->sum('total_amount'),
-            'non_cash_total' => (float) (clone $summaryQuery)->where('payment_method', '!=', 'cash')->sum('total_amount'),
-            'revenue_total' => (float) (clone $summaryQuery)->sum('total_amount'),
-            'profit_total' => (float) (clone $summaryQuery)->sum('total_profit'),
+            'total_transactions' => (int) $agg->total_transactions,
+            'cash_total' => (float) $agg->cash_total,
+            'non_cash_total' => (float) $agg->non_cash_total,
+            'revenue_total' => (float) $agg->revenue_total,
+            'profit_total' => (float) $agg->profit_total,
         ];
 
         // Transactions list — limited to 20 most recent with eager loading

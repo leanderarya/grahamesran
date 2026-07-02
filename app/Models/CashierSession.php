@@ -51,16 +51,21 @@ class CashierSession extends Model
 
     /**
      * Recalculate session totals from actual paid transactions.
-     * Used after void to keep session aggregates consistent.
+     * Uses SQL aggregates instead of loading all records into memory.
      */
     public function recalculateTotals(): void
     {
-        $paidTransactions = $this->transactions()->where('status', 'paid')->get();
+        $totals = $this->transactions()
+            ->where('status', 'paid')
+            ->selectRaw('COUNT(*) as txn_count')
+            ->selectRaw('COALESCE(SUM(CASE WHEN payment_method = \'cash\' THEN total_amount ELSE 0 END), 0) as cash_total')
+            ->selectRaw('COALESCE(SUM(CASE WHEN payment_method != \'cash\' THEN total_amount ELSE 0 END), 0) as non_cash_total')
+            ->first();
 
         $this->update([
-            'transactions_count' => $paidTransactions->count(),
-            'cash_sales_total' => (float) $paidTransactions->where('payment_method', 'cash')->sum('total_amount'),
-            'non_cash_sales_total' => (float) $paidTransactions->where('payment_method', '!=', 'cash')->sum('total_amount'),
+            'transactions_count' => (int) $totals->txn_count,
+            'cash_sales_total' => (float) $totals->cash_total,
+            'non_cash_sales_total' => (float) $totals->non_cash_total,
         ]);
     }
 }

@@ -97,8 +97,6 @@ class DraftService
 
     /**
      * Find an existing draft by ID or create a new one.
-     *
-     * @param bool $allowMissing If true, creates a new draft when the referenced draft is missing (for auto-save resilience)
      */
     private function findOrCreateDraft(array $validated, int $sessionId, int $userId, bool $allowMissing = false): Transaction
     {
@@ -114,12 +112,9 @@ class DraftService
                 return $draft;
             }
 
-            // If allowMissing is false (manual save), throw 404
             if (! $allowMissing) {
                 abort(404);
             }
-
-            // Otherwise fall through to create a new draft
         }
 
         return Transaction::create([
@@ -136,7 +131,7 @@ class DraftService
 
     /**
      * Sync draft items from cart data — recreate all items and recalculate totals.
-     * Returns list of missing product IDs that were skipped.
+     * Optimized: bulk-loads products in 1 query, batch-inserts items.
      *
      * @return int[] Array of product IDs that were not found
      */
@@ -146,8 +141,14 @@ class DraftService
         $totalProfit = 0;
         $missingProductIds = [];
 
+        // Bulk-load all products in 1 query instead of N individual queries
+        $productIds = array_column($cart, 'id');
+        $products = Product::whereIn('id', $productIds)->get()->keyBy('id');
+
+        $itemsToInsert = [];
+
         foreach ($cart as $item) {
-            $product = Product::find($item['id']);
+            $product = $products->get($item['id']);
             if (! $product) {
                 $missingProductIds[] = $item['id'];
                 continue;
@@ -157,16 +158,23 @@ class DraftService
             $subtotal = $finalPrice * $item['qty'];
             $profit = ($finalPrice - $product->cost_price) * $item['qty'];
 
-            TransactionItem::create([
+            $itemsToInsert[] = [
                 'transaction_id' => $draft->id,
                 'product_id' => $product->id,
                 'quantity' => $item['qty'],
                 'price_at_time' => $finalPrice,
                 'cost_at_time' => $product->cost_price,
-            ]);
+                'created_at' => now(),
+                'updated_at' => now(),
+            ];
 
             $grandTotal += $subtotal;
             $totalProfit += $profit;
+        }
+
+        // Batch insert instead of N individual create() calls
+        if (! empty($itemsToInsert)) {
+            TransactionItem::insert($itemsToInsert);
         }
 
         $draft->update([

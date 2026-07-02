@@ -45,6 +45,17 @@ class Transaction extends Model
             if ($transaction->status === 'draft') {
                 return;
             }
+
+            // Only sync if status or financial fields actually changed.
+            // This prevents the double-trigger on processPayment() where
+            // the transaction is first created with totals=0, then updated.
+            $financialFields = ['status', 'total_amount', 'total_profit'];
+            $dirtyFinancials = array_intersect($financialFields, array_keys($transaction->getDirty()));
+
+            if (empty($dirtyFinancials)) {
+                return;
+            }
+
             $transaction->syncMonthlyReports();
         });
 

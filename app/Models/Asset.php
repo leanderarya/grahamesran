@@ -34,13 +34,19 @@ class Asset extends Model
         });
 
         static::updated(function (Asset $asset): void {
-            if ($asset->expense) {
-                $asset->expense->update([
-                    'date_expense' => $asset->purchase_date,
-                    'name' => 'Pembelian Aset: ' . $asset->name,
-                    'amount' => $asset->price,
-                ]);
+            // Only sync if the relevant fields actually changed
+            $relevantFields = ['name', 'purchase_date', 'price'];
+            $dirty = array_intersect($relevantFields, array_keys($asset->getDirty()));
+
+            if (empty($dirty) || ! $asset->expense) {
+                return;
             }
+
+            $asset->expense->update([
+                'date_expense' => $asset->purchase_date,
+                'name' => 'Pembelian Aset: ' . $asset->name,
+                'amount' => $asset->price,
+            ]);
         });
 
         static::deleted(function (Asset $asset): void {

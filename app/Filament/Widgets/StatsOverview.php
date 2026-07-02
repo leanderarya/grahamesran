@@ -3,13 +3,13 @@
 namespace App\Filament\Widgets;
 
 use App\Models\Transaction;
-use App\Models\Purchase;
 use App\Models\Expense;
-use App\Models\Product; // <--- Import Product buat hitung aset
+use App\Models\Product;
 use Filament\Widgets\StatsOverviewWidget as BaseWidget;
 use Filament\Widgets\StatsOverviewWidget\Stat;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\DB;
 
 class StatsOverview extends BaseWidget
 {
@@ -17,38 +17,51 @@ class StatsOverview extends BaseWidget
 
     protected function getStats(): array
     {
-        // --- 1. SETUP WAKTU ---
         $now = Carbon::now();
         $startOfMonth = $now->copy()->startOfMonth();
         $endOfMonth = $now->copy()->endOfMonth();
-        
         $startOfLastMonth = $now->copy()->subMonth()->startOfMonth();
         $endOfLastMonth = $now->copy()->subMonth()->endOfMonth();
 
-        // --- 2. HITUNG OMSET (Bulan Ini vs Bulan Lalu) ---
-        $omsetThisMonth = Transaction::where('status', 'paid')->whereBetween('created_at', [$startOfMonth, $endOfMonth])->sum('total_amount');
-        $omsetLastMonth = Transaction::where('status', 'paid')->whereBetween('created_at', [$startOfLastMonth, $endOfLastMonth])->sum('total_amount');
-        
-        // Tentukan warna & icon berdasarkan kenaikan/penurunan
+        // --- SINGLE QUERY: All transaction aggregates at once ---
+        $agg = Transaction::query()
+            ->where('status', 'paid')
+            ->selectRaw("
+                COALESCE(SUM(CASE WHEN created_at BETWEEN ? AND ? THEN total_amount ELSE 0 END), 0) as omset_this_month,
+                COALESCE(SUM(CASE WHEN created_at BETWEEN ? AND ? THEN total_amount ELSE 0 END), 0) as omset_last_month,
+                COALESCE(SUM(CASE WHEN created_at BETWEEN ? AND ? THEN total_profit ELSE 0 END), 0) as gross_profit,
+                COALESCE(SUM(CASE WHEN DATE(created_at) = ? THEN total_amount ELSE 0 END), 0) as today_sales,
+                COUNT(CASE WHEN DATE(created_at) = ? THEN 1 END) as today_count
+            ", [
+                $startOfMonth, $endOfMonth,
+                $startOfLastMonth, $endOfLastMonth,
+                $startOfMonth, $endOfMonth,
+                $now->toDateString(),
+                $now->toDateString(),
+            ])
+            ->first();
+
+        $omsetThisMonth = (float) $agg->omset_this_month;
+        $omsetLastMonth = (float) $agg->omset_last_month;
+        $grossProfit = (float) $agg->gross_profit;
+        $todaySales = (float) $agg->today_sales;
+        $todayCount = (int) $agg->today_count;
+
+        // Expenses still separate (different table)
+        $expenses = (float) Expense::whereBetween('date_expense', [$startOfMonth, $endOfMonth])->sum('amount');
+        $netProfit = $grossProfit - $expenses;
+
+        // Omset comparison
         $omsetColor = $omsetThisMonth >= $omsetLastMonth ? 'success' : 'danger';
         $omsetIcon = $omsetThisMonth >= $omsetLastMonth ? 'heroicon-m-arrow-trending-up' : 'heroicon-m-arrow-trending-down';
         $omsetDesc = $omsetThisMonth >= $omsetLastMonth ? 'Naik dari bulan lalu' : 'Turun dari bulan lalu';
 
-        // --- 3. HITUNG PROFIT BERSIH (Bulan Ini) ---
-        // Gross Profit Bulan Ini
-        $grossProfit = Transaction::where('status', 'paid')->whereBetween('created_at', [$startOfMonth, $endOfMonth])->sum('total_profit');
-        // Pengeluaran Operasional Bulan Ini
-        $expenses = Expense::whereBetween('date_expense', [$startOfMonth, $endOfMonth])->sum('amount');
-        // Net Profit
-        $netProfit = $grossProfit - $expenses;
-
-        // --- 4. DATA GRAFIK (Omset 7 Hari Terakhir) ---
-        // Consolidated from 7 queries to 1 grouped query
+        // Chart: 7-day daily totals (single GROUP BY query)
         $dailyTotals = Transaction::query()
             ->selectRaw('DATE(created_at) as sale_date')
             ->selectRaw('SUM(total_amount) as total')
             ->where('status', 'paid')
-            ->whereBetween('created_at', [now()->subDays(6)->startOfDay(), now()->endOfDay()])
+            ->whereBetween('created_at', [$now->copy()->subDays(6)->startOfDay(), $now->endOfDay()])
             ->groupBy('sale_date')
             ->get()
             ->keyBy('sale_date');
@@ -59,45 +72,30 @@ class StatsOverview extends BaseWidget
             $chartData[] = (float) ($dailyTotals[$date]->total ?? 0);
         }
 
-        // --- 5. DATA ASET GUDANG (Snapshot Saat Ini) ---
-        // Hitung nilai stok (Stok * HPP)
-        // Ini uang yang "mati" di rak
-        // Kita pakai native SQL perkalian biar cepat
-        $totalAset = Cache::remember('dashboard_asset_value', 300, fn () => Product::query()->sum(\Illuminate\Support\Facades\DB::raw('stock * cost_price')));
-
-        // --- 6. PENJUALAN HARI INI ---
-        $todaySales = Transaction::where('status', 'paid')
-            ->whereDate('created_at', $now->toDateString())
-            ->sum('total_amount');
-        $todayCount = Transaction::where('status', 'paid')
-            ->whereDate('created_at', $now->toDateString())
-            ->count();
+        // Asset value (cached 5 min)
+        $totalAset = Cache::remember('dashboard_asset_value', 300, fn () => Product::query()->sum(DB::raw('stock * cost_price')));
 
         return [
-            // KOTAK 0: Penjualan Hari Ini
             Stat::make('Penjualan Hari Ini', 'Rp ' . number_format($todaySales, 0, ',', '.'))
                 ->description($todayCount . ' transaksi hari ini')
                 ->descriptionIcon('heroicon-m-shopping-cart')
                 ->color('warning'),
 
-            // KOTAK 1: Omset Bulan Ini (Dengan Komparasi)
             Stat::make('Omset Bulan Ini', 'Rp ' . number_format($omsetThisMonth, 0, ',', '.'))
                 ->description($omsetDesc)
                 ->descriptionIcon($omsetIcon)
-                ->chart($chartData) // Grafik real 7 hari terakhir
+                ->chart($chartData)
                 ->color($omsetColor),
 
-            // KOTAK 2: Profit Bersih Bulan Ini
             Stat::make('Profit Bersih (Bulan Ini)', 'Rp ' . number_format($netProfit, 0, ',', '.'))
                 ->description('Margin - Biaya Ops (Bulan Ini)')
                 ->descriptionIcon($netProfit > 0 ? 'heroicon-m-face-smile' : 'heroicon-m-face-frown')
                 ->color($netProfit >= 0 ? 'success' : 'danger'),
 
-            // KOTAK 3: Valuasi Aset Gudang (PENTING BUAT TOKO)
             Stat::make('Nilai Aset Gudang', 'Rp ' . number_format($totalAset, 0, ',', '.'))
                 ->description('Total modal mandek di barang')
                 ->descriptionIcon('heroicon-m-archive-box')
-                ->color('info'), // Biru netral
+                ->color('info'),
         ];
     }
 }
