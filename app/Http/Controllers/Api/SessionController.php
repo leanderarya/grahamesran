@@ -4,6 +4,8 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Models\CashierSession;
+use App\Models\Transaction;
+use App\Models\TransactionItem;
 use Carbon\Carbon;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -69,7 +71,56 @@ class SessionController extends Controller
             'closed_at' => now(),
         ]);
 
-        return response()->json(['message' => 'Sesi kasir berhasil ditutup.']);
+        // Build closing report data
+        $transactions = Transaction::where('cashier_session_id', $session->id)->get();
+        $paymentBreakdown = $transactions->groupBy('payment_method')->map(fn ($txns) => [
+            'count' => $txns->count(),
+            'total' => (float) $txns->sum('total_amount'),
+        ]);
+
+        $topProducts = TransactionItem::whereHas('transaction', fn ($q) => $q->where('cashier_session_id', $session->id))
+            ->join('products', 'products.id', '=', 'transaction_items.product_id')
+            ->selectRaw('products.name as product_name, products.volume_liter, SUM(transaction_items.quantity) as qty, SUM(transaction_items.quantity * transaction_items.price_at_time) as revenue')
+            ->groupBy('products.id', 'products.name', 'products.volume_liter')
+            ->orderByDesc('qty')
+            ->limit(5)
+            ->get()
+            ->map(function ($item) {
+                $volume = $item->volume_liter ? rtrim(rtrim(number_format((float) $item->volume_liter, 2, '.', ''), '0'), '.') : null;
+                $name = $volume ? "{$item->product_name} ({$volume}L)" : $item->product_name;
+
+                return [
+                    'name' => $name,
+                    'quantity' => (int) $item->qty,
+                    'revenue' => (float) $item->revenue,
+                ];
+            });
+
+        $closingData = [
+            'date' => now()->toLocaleDateString('id-ID'),
+            'cashierName' => auth()->user()->name,
+            'openedAt' => $session->opened_at->format('H:i'),
+            'closedAt' => now()->format('H:i'),
+            'duration' => $session->opened_at->diffForHumans(now(), true),
+            'totalTransactions' => (int) $session->transactions_count,
+            'totalRevenue' => (float) ($session->cash_sales_total + $session->non_cash_sales_total),
+            'totalProfit' => (float) $transactions->sum('total_profit'),
+            'cashTotal' => (float) $session->cash_sales_total,
+            'nonCashTotal' => (float) $session->non_cash_sales_total,
+            'openingCash' => (float) $session->opening_cash,
+            'cashSales' => (float) $session->cash_sales_total,
+            'expectedCash' => $expectedCash,
+            'physicalCash' => $closingCash,
+            'difference' => $closingCash - $expectedCash,
+            'settlementStatus' => ($closingCash - $expectedCash) === 0 ? 'balance' : (($closingCash - $expectedCash) < 0 ? 'minus' : 'over'),
+            'topProducts' => $topProducts->toArray(),
+            'paymentBreakdown' => $paymentBreakdown->toArray(),
+        ];
+
+        return response()->json([
+            'message' => 'Sesi kasir berhasil ditutup.',
+            'closingData' => $closingData,
+        ]);
     }
 
     private function getOpenSession(): ?CashierSession
