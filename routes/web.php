@@ -4,34 +4,42 @@ use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
 use Laravel\Fortify\Features;
 use App\Http\Controllers\TransactionController;
+use App\Http\Controllers\PinLoginController;
 use Illuminate\Support\Facades\Auth;
+
+// --- LOGIN KASIR (PIN) ---
+Route::get('/pin-login', [PinLoginController::class, 'show'])->name('pin.login');
+Route::post('/pin-login', [PinLoginController::class, 'store'])->name('pin.login.store')->middleware('throttle:5,1');
 
 // --- ROUTE UTAMA (ROOT) ---
 Route::get('/', function () {
-    // 1. Cek apakah user sudah login?
     if (!auth()->check()) {
-        // Kalau belum, suruh login dulu
-        return redirect()->route('login');
+        // Kasir ke PIN login, admin ke login biasa
+        return redirect()->route('pin.login');
     }
 
-    // 2. Kalau sudah login, ambil datanya
     $user = auth()->user();
 
-    // 3. Arahkan sesuai jabatan
     if ($user->role === 'admin') {
-        return redirect('/admin'); // Bos ke Kantor
+        return redirect('/admin');
     }
 
-    return redirect()->route('transactions.create'); // Kasir ke Toko
+    return redirect()->route('transactions.create');
 });
 
 Route::post('/logout', function () {
+    $user = auth()->user();
     Auth::guard('web')->logout();
 
     request()->session()->invalidate();
     request()->session()->regenerateToken();
 
-    return redirect('/login');
+    // Admin balik ke login biasa, kasir ke PIN login
+    if ($user && $user->role === 'admin') {
+        return redirect('/login');
+    }
+
+    return redirect()->route('pin.login');
 })->middleware(['auth', 'prevent-open-cashier-logout'])->name('logout');
 
 Route::middleware(['auth', 'verified'])->group(function () {
@@ -54,6 +62,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::post('/pos/session/close', [TransactionController::class, 'closeSession'])->name('transactions.session.close');
     Route::get('/pos/checkout/{transaction?}', [TransactionController::class, 'checkout'])->name('transactions.checkout');
     Route::post('/pos/draft', [TransactionController::class, 'saveDraft'])->name('transactions.draft.save');
+    Route::put('/pos/draft/auto-save', [TransactionController::class, 'autoSaveDraft'])->name('transactions.draft.autoSave');
+    Route::post('/pos/draft/clear', [TransactionController::class, 'clearDraft'])->name('transactions.draft.clear');
     Route::delete('/pos/draft/{transaction}', [TransactionController::class, 'destroyDraft'])->name('transactions.draft.destroy');
 });
 

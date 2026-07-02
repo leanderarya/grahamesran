@@ -200,13 +200,21 @@ export default function Login({ status, canResetPassword }: { status?: string; c
                             </button>
                         </form>
 
-                        <div className="mt-8 border-t border-slate-200 pt-6 text-center">
-                            <p className="mb-4 text-[11px] font-bold tracking-[0.28em] text-slate-400 uppercase">
-                                Butuh bantuan
-                            </p>
-                            <div className="inline-flex items-center justify-center gap-2 text-sm font-semibold text-slate-500">
-                                <HelpCircle className="h-4 w-4" />
-                                Hubungi admin toko
+                        <div className="mt-8 border-t border-slate-200 pt-6 text-center space-y-4">
+                            <a
+                                href="/pin-login"
+                                className="block text-xs font-bold text-slate-400 transition hover:text-slate-600"
+                            >
+                                ← Login Kasir (PIN)
+                            </a>
+                            <div>
+                                <p className="mb-3 text-[11px] font-bold tracking-[0.28em] text-slate-400 uppercase">
+                                    Butuh bantuan
+                                </p>
+                                <div className="inline-flex items-center justify-center gap-2 text-sm font-semibold text-slate-500">
+                                    <HelpCircle className="h-4 w-4" />
+                                    Hubungi admin toko
+                                </div>
                             </div>
                         </div>
                     </div>
