@@ -32,23 +32,29 @@ class Purchase extends Model
     protected static function booted()
     {
         static::created(function ($purchase) {
-            $product = $purchase->product;
-            
-            // 1. Hitung Moving Average Baru
-            // (Nilai Stok Lama + Nilai Belanja Baru) / (Qty Lama + Qty Baru)
-            $oldValue = $product->stock * $product->cost_price;
-            $newValue = $purchase->total_spend;
-            $totalQty = $product->stock + $purchase->quantity;
-            
-            $newAvgCost = ($oldValue + $newValue) / $totalQty;
+            \DB::transaction(function () use ($purchase) {
+                $product = \App\Models\Product::lockForUpdate()->find($purchase->product_id);
 
-            // 2. Update Produk (Stok Nambah, HPP Berubah)
-            $product->update([
-                'stock' => $totalQty,
-                'cost_price' => $newAvgCost
-            ]);
+                if (! $product) {
+                    return;
+                }
 
-            \Cache::forget('dashboard_asset_value');
+                // 1. Hitung Moving Average Baru
+                // (Nilai Stok Lama + Nilai Belanja Baru) / (Qty Lama + Qty Baru)
+                $oldValue = $product->stock * $product->cost_price;
+                $newValue = $purchase->total_spend;
+                $totalQty = $product->stock + $purchase->quantity;
+
+                $newAvgCost = $totalQty > 0 ? ($oldValue + $newValue) / $totalQty : 0;
+
+                // 2. Update Produk (Stok Nambah, HPP Berubah)
+                $product->update([
+                    'stock' => $totalQty,
+                    'cost_price' => $newAvgCost,
+                ]);
+
+                \Cache::forget('dashboard_asset_value');
+            });
         });
     }
 }

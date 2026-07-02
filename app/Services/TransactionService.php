@@ -45,6 +45,7 @@ class TransactionService
                 $transaction->transactionItems()->delete();
 
                 $transaction->update([
+                    'cashier_session_id' => $openSession->id,
                     'payment_method' => $validated['payment_method'],
                     'customer_type' => $validated['customer_type'],
                     'amount_paid' => $validated['amount_paid'],
@@ -117,12 +118,19 @@ class TransactionService
 
     /**
      * Void a paid transaction: restore stock, mark as voided, recalculate session totals.
+     * Only the kasir who created the transaction can void it.
      */
     public function voidTransaction(Transaction $transaction, int $userId, string $reason): void
     {
         if ($transaction->status === 'voided') {
             throw ValidationException::withMessages([
                 'transaction' => 'Transaksi sudah dibatalkan.',
+            ]);
+        }
+
+        if ($transaction->user_id !== $userId) {
+            throw ValidationException::withMessages([
+                'transaction' => 'Anda hanya bisa membatalkan transaksi milik sendiri.',
             ]);
         }
 
@@ -157,26 +165,40 @@ class TransactionService
     {
         $today = now()->startOfDay();
 
-        $baseQuery = Transaction::query()
-            ->with(['transactionItems.product'])
+        // Summary uses aggregate query — no limit
+        $summaryQuery = Transaction::query()
             ->where('user_id', $userId)
             ->where('status', 'paid');
 
         if ($openSession !== null) {
-            $baseQuery->where('cashier_session_id', $openSession->id);
+            $summaryQuery->where('cashier_session_id', $openSession->id);
         } else {
-            $baseQuery->where('created_at', '>=', $today);
+            $summaryQuery->where('created_at', '>=', $today);
         }
 
-        $transactions = $baseQuery->latest()->limit(20)->get();
-
         $summary = [
-            'total_transactions' => $transactions->count(),
-            'cash_total' => (float) $transactions->where('payment_method', 'cash')->sum('total_amount'),
-            'non_cash_total' => (float) $transactions->where('payment_method', '!=', 'cash')->sum('total_amount'),
-            'revenue_total' => (float) $transactions->sum('total_amount'),
-            'profit_total' => (float) $transactions->sum('total_profit'),
+            'total_transactions' => (int) $summaryQuery->count(),
+            'cash_total' => (float) (clone $summaryQuery)->where('payment_method', 'cash')->sum('total_amount'),
+            'non_cash_total' => (float) (clone $summaryQuery)->where('payment_method', '!=', 'cash')->sum('total_amount'),
+            'revenue_total' => (float) (clone $summaryQuery)->sum('total_amount'),
+            'profit_total' => (float) (clone $summaryQuery)->sum('total_profit'),
         ];
+
+        // Transactions list — limited to 20 most recent with eager loading
+        $transactions = Transaction::query()
+            ->with(['transactionItems.product'])
+            ->where('user_id', $userId)
+            ->where('status', 'paid')
+            ->tap(function ($q) use ($openSession, $today) {
+                if ($openSession !== null) {
+                    $q->where('cashier_session_id', $openSession->id);
+                } else {
+                    $q->where('created_at', '>=', $today);
+                }
+            })
+            ->latest()
+            ->limit(20)
+            ->get();
 
         $topProducts = $transactions
             ->flatMap(fn (Transaction $transaction) => $transaction->transactionItems)

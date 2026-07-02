@@ -27,6 +27,7 @@ class MonthlyReportService
 
         $totals = Transaction::query()
             ->whereBetween('created_at', [$monthStart, $monthEnd])
+            ->where('status', 'paid')
             ->selectRaw('COUNT(*) as transaction_count')
             ->selectRaw('COALESCE(SUM(total_amount), 0) as total_amount')
             ->selectRaw('COALESCE(SUM(total_profit), 0) as total_profit')

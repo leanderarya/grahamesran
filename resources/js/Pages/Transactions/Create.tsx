@@ -320,47 +320,20 @@ export default function TabletPOS({ products, cashierSession, activeDraft }: { p
 
         setIsClosingSession(true);
 
-        // Prepare closing data before clearing session
-        const prepareClosingData = () => {
-            const now = new Date();
-            const openedAt = sessionState?.opened_at ? new Date(sessionState.opened_at) : now;
-            const durationMs = now.getTime() - openedAt.getTime();
-            const hours = Math.floor(durationMs / 3600000);
-            const minutes = Math.floor((durationMs % 3600000) / 60000);
-
-            setClosingData({
-                date: now.toLocaleDateString('id-ID'),
-                cashierName: auth?.user?.name || '-',
-                openedAt: openedAt.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' }),
-                closedAt: now.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' }),
-                duration: `${hours}j ${minutes}m`,
-                totalTransactions: sessionState?.transactions_count || 0,
-                totalRevenue: Number(sessionState?.cash_sales_total || 0) + Number(sessionState?.non_cash_sales_total || 0),
-                totalProfit: 0,
-                cashTotal: Number(sessionState?.cash_sales_total || 0),
-                nonCashTotal: Number(sessionState?.non_cash_sales_total || 0),
-                openingCash: Number(sessionState?.opening_cash || 0),
-                cashSales: Number(sessionState?.cash_sales_total || 0),
-                expectedCash: expectedCash,
-                physicalCash: Number(closingCashPhysical || 0),
-                difference: settlementDifference,
-                settlementStatus: settlementStatus,
-                topProducts: [],
-            });
-            setShowClosingReport(true);
-        };
-
         try {
-            await posService.closeSession(
+            const backendClosingData = await posService.closeSession(
                 Number(closingCashPhysical || 0),
                 closingNotes,
             );
-            prepareClosingData();
+            if (backendClosingData) {
+                setClosingData(backendClosingData as unknown as ClosingReportData);
+            }
             setSessionState(null);
             setClosingCashPhysical('');
             setClosingNotes('');
             setShowSettlementModal(false);
             setShowOpenSessionModal(true);
+            setShowClosingReport(true);
             reset();
             setSearch('');
         } catch (error: any) {
