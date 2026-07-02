@@ -2,22 +2,28 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\CashierSession;
 use App\Models\Product;
 use App\Models\Transaction;
-use App\Models\TransactionItem;
-use App\Models\User;
-use Carbon\Carbon;
+use App\Services\CashierSessionService;
+use App\Services\ClosingReportService;
+use App\Services\DraftService;
+use App\Services\TransactionService;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 use Inertia\Inertia;
 
 class TransactionController extends Controller
 {
+    public function __construct(
+        private CashierSessionService $sessionService,
+        private TransactionService $transactionService,
+        private DraftService $draftService,
+    ) {}
+
     public function create()
     {
-        $openSession = $this->getOpenSession();
+        $user = auth()->user();
+        $openSession = $this->sessionService->getOpenSession($user->id);
 
         $categories = Product::where('stock', '>', 0)
             ->whereNotNull('category')
@@ -27,7 +33,7 @@ class TransactionController extends Controller
             ->values();
 
         $activeDraft = Transaction::draft()
-            ->where('user_id', auth()->id())
+            ->where('user_id', $user->id)
             ->latest()
             ->first();
 
@@ -41,7 +47,7 @@ class TransactionController extends Controller
                 ->select('id', 'sku', 'name', 'category', 'image_path', 'volume_liter', 'stock', 'sell_price', 'workshop_price')
                 ->get(),
             'categories' => $categories,
-            'cashierSession' => $openSession ? $this->buildSessionPayload($openSession) : null,
+            'cashierSession' => $openSession ? $this->sessionService->buildSessionPayload($openSession) : null,
             'activeDraft' => $activeDraft ? [
                 'id' => $activeDraft->id,
                 'invoice_number' => $activeDraft->invoice_number,
@@ -80,62 +86,14 @@ class TransactionController extends Controller
             'draft_id' => 'nullable|exists:transactions,id',
         ]);
 
-        $openSession = $this->getOpenSession();
+        $openSession = $this->sessionService->getOpenSession(auth()->id());
         if ($openSession === null) {
             throw ValidationException::withMessages([
                 'cart' => 'Buka kasir terlebih dahulu.',
             ]);
         }
 
-        $draft = DB::transaction(function () use ($validated, $openSession) {
-            if (! empty($validated['draft_id'])) {
-                $draft = Transaction::where('id', $validated['draft_id'])
-                    ->where('status', 'draft')
-                    ->where('user_id', auth()->id())
-                    ->firstOrFail();
-                $draft->transactionItems()->delete();
-            } else {
-                $draft = Transaction::create([
-                    'user_id' => auth()->id(),
-                    'cashier_session_id' => $openSession->id,
-                    'invoice_number' => $this->generateInvoiceNumber(),
-                    'customer_type' => $validated['customer_type'],
-                    'total_amount' => 0,
-                    'total_profit' => 0,
-                    'payment_method' => 'cash',
-                    'status' => 'draft',
-                ]);
-            }
-
-            $grandTotal = 0;
-            $totalProfit = 0;
-
-            foreach ($validated['cart'] as $item) {
-                $product = Product::find($item['id']);
-                $finalPrice = $this->determinePrice($product, $validated['customer_type']);
-                $subtotal = $finalPrice * $item['qty'];
-                $profit = ($finalPrice - $product->cost_price) * $item['qty'];
-
-                TransactionItem::create([
-                    'transaction_id' => $draft->id,
-                    'product_id' => $product->id,
-                    'quantity' => $item['qty'],
-                    'price_at_time' => $finalPrice,
-                    'cost_at_time' => $product->cost_price,
-                ]);
-
-                $grandTotal += $subtotal;
-                $totalProfit += $profit;
-            }
-
-            $draft->update([
-                'total_amount' => $grandTotal,
-                'total_profit' => $totalProfit,
-                'customer_type' => $validated['customer_type'],
-            ]);
-
-            return $draft;
-        });
+        $draft = $this->draftService->save(auth()->user(), $validated);
 
         return redirect()->route('transactions.checkout', ['transaction' => $draft->id]);
     }
@@ -154,6 +112,8 @@ class TransactionController extends Controller
             ->where('user_id', auth()->id())
             ->firstOrFail();
 
+        $openSession = $this->sessionService->getOpenSession(auth()->id());
+
         return Inertia::render('Transactions/Checkout', [
             'draft' => [
                 'id' => $draft->id,
@@ -170,14 +130,10 @@ class TransactionController extends Controller
                     'subtotal' => (float) ($item->quantity * $item->price_at_time),
                 ]),
             ],
-            'cashierSession' => $this->getOpenSession() ? $this->buildSessionPayload($this->getOpenSession()) : null,
+            'cashierSession' => $openSession ? $this->sessionService->buildSessionPayload($openSession) : null,
         ]);
     }
 
-    /**
-     * Auto-save draft — dipanggil otomatis saat keranjang berubah.
-     * Return JSON, bukan redirect.
-     */
     public function autoSaveDraft(Request $request)
     {
         $validated = $request->validate([
@@ -188,77 +144,12 @@ class TransactionController extends Controller
             'draft_id' => 'nullable|exists:transactions,id',
         ]);
 
-        $openSession = $this->getOpenSession();
+        $openSession = $this->sessionService->getOpenSession(auth()->id());
         if ($openSession === null) {
             return response()->json(['message' => 'Buka kasir terlebih dahulu.'], 422);
         }
 
-        $draft = DB::transaction(function () use ($validated, $openSession) {
-            if (! empty($validated['draft_id'])) {
-                $draft = Transaction::where('id', $validated['draft_id'])
-                    ->where('status', 'draft')
-                    ->where('user_id', auth()->id())
-                    ->first();
-
-                // Draft sudah tidak ada (mungkin dihapus), buat baru
-                if (! $draft) {
-                    $draft = Transaction::create([
-                        'user_id' => auth()->id(),
-                        'cashier_session_id' => $openSession->id,
-                        'invoice_number' => $this->generateInvoiceNumber(),
-                        'customer_type' => $validated['customer_type'],
-                        'total_amount' => 0,
-                        'total_profit' => 0,
-                        'payment_method' => 'cash',
-                        'status' => 'draft',
-                    ]);
-                } else {
-                    $draft->transactionItems()->delete();
-                }
-            } else {
-                $draft = Transaction::create([
-                    'user_id' => auth()->id(),
-                    'cashier_session_id' => $openSession->id,
-                    'invoice_number' => $this->generateInvoiceNumber(),
-                    'customer_type' => $validated['customer_type'],
-                    'total_amount' => 0,
-                    'total_profit' => 0,
-                    'payment_method' => 'cash',
-                    'status' => 'draft',
-                ]);
-            }
-
-            $grandTotal = 0;
-            $totalProfit = 0;
-
-            foreach ($validated['cart'] as $item) {
-                $product = Product::find($item['id']);
-                if (! $product) continue;
-
-                $finalPrice = $this->determinePrice($product, $validated['customer_type']);
-                $subtotal = $finalPrice * $item['qty'];
-                $profit = ($finalPrice - $product->cost_price) * $item['qty'];
-
-                TransactionItem::create([
-                    'transaction_id' => $draft->id,
-                    'product_id' => $product->id,
-                    'quantity' => $item['qty'],
-                    'price_at_time' => $finalPrice,
-                    'cost_at_time' => $product->cost_price,
-                ]);
-
-                $grandTotal += $subtotal;
-                $totalProfit += $profit;
-            }
-
-            $draft->update([
-                'total_amount' => $grandTotal,
-                'total_profit' => $totalProfit,
-                'customer_type' => $validated['customer_type'],
-            ]);
-
-            return $draft;
-        });
+        $draft = $this->draftService->autoSave(auth()->user(), $validated);
 
         return response()->json([
             'draft_id' => $draft->id,
@@ -266,92 +157,35 @@ class TransactionController extends Controller
         ]);
     }
 
-    /**
-     * Hapus draft saat keranjang dikosongkan.
-     * Bisa pakai draft_id, atau hapus semua draft milik user.
-     */
     public function clearDraft(Request $request)
     {
-        $query = Transaction::where('status', 'draft')
-            ->where('user_id', auth()->id());
-
-        if ($request->filled('draft_id')) {
-            $query->where('id', $request->draft_id);
-        }
-
-        $drafts = $query->get();
-
-        foreach ($drafts as $draft) {
-            $draft->transactionItems()->delete();
-            $draft->delete();
-        }
+        $this->draftService->clear(
+            $request->filled('draft_id') ? $request->draft_id : null,
+            auth()->id(),
+        );
 
         return response()->json(['message' => 'Draft dihapus.']);
     }
 
     public function destroyDraft(Transaction $transaction)
     {
-        if ($transaction->status !== 'draft' || $transaction->user_id !== auth()->id()) {
+        if (! $this->draftService->destroy($transaction, auth()->id())) {
             abort(403);
         }
-
-        $transaction->transactionItems()->delete();
-        $transaction->delete();
 
         return redirect()->route('transactions.create')->with('success', 'Draft transaksi dibatalkan.');
     }
 
     public function recap()
     {
-        $openSession = $this->getOpenSession();
-        $today = now()->startOfDay();
-
-        $baseQuery = Transaction::query()
-            ->with(['transactionItems.product'])
-            ->where('user_id', auth()->id());
-
-        if ($openSession !== null) {
-            $baseQuery->where('cashier_session_id', $openSession->id);
-        } else {
-            $baseQuery->where('created_at', '>=', $today);
-        }
-
-        $transactions = $baseQuery
-            ->latest()
-            ->limit(20)
-            ->get();
-
-        $summary = [
-            'total_transactions' => $transactions->count(),
-            'cash_total' => (float) $transactions->where('payment_method', 'cash')->sum('total_amount'),
-            'non_cash_total' => (float) $transactions->where('payment_method', '!=', 'cash')->sum('total_amount'),
-            'revenue_total' => (float) $transactions->sum('total_amount'),
-            'profit_total' => (float) $transactions->sum('total_profit'),
-        ];
-
-        $topProducts = $transactions
-            ->flatMap(fn (Transaction $transaction) => $transaction->transactionItems)
-            ->groupBy('product_id')
-            ->map(function ($items) {
-                /** @var \App\Models\TransactionItem $firstItem */
-                $firstItem = $items->first();
-                $product = $firstItem?->product;
-
-                return [
-                    'product_name' => $product?->display_name ?? 'Produk terhapus',
-                    'image_url' => $product?->image_url,
-                    'quantity' => (int) $items->sum('quantity'),
-                    'revenue' => (float) $items->sum(fn ($item) => $item->quantity * $item->price_at_time),
-                ];
-            })
-            ->sortByDesc('quantity')
-            ->take(8)
-            ->values();
+        $user = auth()->user();
+        $openSession = $this->sessionService->getOpenSession($user->id);
+        $recapData = $this->transactionService->getRecap($user->id, $openSession);
 
         return Inertia::render('Transactions/Recap', [
-            'cashierSession' => $openSession ? $this->buildSessionPayload($openSession) : null,
-            'summary' => $summary,
-            'transactions' => $transactions->map(function (Transaction $transaction) {
+            'cashierSession' => $openSession ? $this->sessionService->buildSessionPayload($openSession) : null,
+            'summary' => $recapData['summary'],
+            'transactions' => $recapData['transactions']->map(function (Transaction $transaction) {
                 return [
                     'id' => $transaction->id,
                     'invoice_number' => $transaction->invoice_number,
@@ -362,7 +196,7 @@ class TransactionController extends Controller
                     'items_count' => $transaction->transactionItems->sum('quantity'),
                 ];
             }),
-            'topProducts' => $topProducts,
+            'topProducts' => $recapData['topProducts'],
         ]);
     }
 
@@ -396,11 +230,7 @@ class TransactionController extends Controller
 
     public function history()
     {
-        $transactions = Transaction::with('user')
-            ->where('user_id', auth()->id())
-            ->whereIn('status', ['paid', 'voided'])
-            ->orderByDesc('created_at')
-            ->paginate(20);
+        $transactions = $this->transactionService->getHistory(auth()->id());
 
         return Inertia::render('Transactions/History', [
             'transactions' => $transactions,
@@ -410,53 +240,10 @@ class TransactionController extends Controller
     public function void(Request $request, Transaction $transaction)
     {
         $request->validate([
-            'pin' => ['required', 'digits:4'],
             'reason' => ['required', 'string', 'max:500'],
         ]);
 
-        // Verify admin PIN
-        $admin = User::where('pin', $request->pin)
-            ->where('role', 'admin')
-            ->first();
-
-        if (! $admin) {
-            return back()->withErrors(['pin' => 'PIN admin salah.']);
-        }
-
-        if ($transaction->status === 'voided') {
-            return back()->withErrors(['transaction' => 'Transaksi sudah dibatalkan.']);
-        }
-
-        DB::transaction(function () use ($transaction, $admin, $request) {
-            // Restore stock
-            foreach ($transaction->transactionItems as $item) {
-                $item->product->increment('stock', $item->quantity);
-            }
-
-            // Void transaction
-            $transaction->update([
-                'status' => 'voided',
-                'void_reason' => $request->reason,
-                'voided_by' => $admin->id,
-                'voided_at' => now(),
-            ]);
-
-            // Recalculate session totals from actual paid transactions
-            if ($transaction->cashier_session_id) {
-                $session = CashierSession::find($transaction->cashier_session_id);
-                if ($session && $session->closed_at === null) {
-                    $paidTransactions = Transaction::where('cashier_session_id', $session->id)
-                        ->where('status', 'paid')
-                        ->get();
-
-                    $session->update([
-                        'transactions_count' => $paidTransactions->count(),
-                        'cash_sales_total' => (float) $paidTransactions->where('payment_method', 'cash')->sum('total_amount'),
-                        'non_cash_sales_total' => (float) $paidTransactions->where('payment_method', '!=', 'cash')->sum('total_amount'),
-                    ]);
-                }
-            }
-        });
+        $this->transactionService->voidTransaction($transaction, auth()->id(), $request->reason);
 
         return back()->with('success', 'Transaksi berhasil dibatalkan.');
     }
@@ -468,18 +255,11 @@ class TransactionController extends Controller
             'opening_notes' => 'nullable|string|max:1000',
         ]);
 
-        if ($this->getOpenSession() !== null) {
-            throw ValidationException::withMessages([
-                'opening_cash' => 'Masih ada sesi kasir yang belum ditutup.',
-            ]);
-        }
-
-        CashierSession::create([
-            'user_id' => auth()->id(),
-            'opening_cash' => $validated['opening_cash'],
-            'opened_at' => now(),
-            'opening_notes' => $validated['opening_notes'] ?? null,
-        ]);
+        $this->sessionService->openSession(
+            auth()->id(),
+            $validated['opening_cash'],
+            $validated['opening_notes'] ?? null,
+        );
 
         return redirect()->route('transactions.create')->with('success', 'Kasir berhasil dibuka.');
     }
@@ -491,70 +271,11 @@ class TransactionController extends Controller
             'closing_notes' => 'nullable|string|max:1000',
         ]);
 
-        $session = $this->getOpenSession();
-
-        if ($session === null) {
-            throw ValidationException::withMessages([
-                'closing_cash_physical' => 'Tidak ada sesi kasir yang sedang berjalan.',
-            ]);
-        }
-
-        $expectedCash = (float) $session->opening_cash + (float) $session->cash_sales_total;
-        $closingCash = (float) $validated['closing_cash_physical'];
-
-        $session->update([
-            'closing_cash_physical' => $closingCash,
-            'expected_cash' => $expectedCash,
-            'cash_difference' => $closingCash - $expectedCash,
-            'closing_notes' => $validated['closing_notes'] ?? null,
-            'closed_at' => now(),
-        ]);
-
-        // Build closing report data
-        $transactions = Transaction::where('cashier_session_id', $session->id)->get();
-        $paymentBreakdown = $transactions->groupBy('payment_method')->map(fn ($txns) => [
-            'count' => $txns->count(),
-            'total' => (float) $txns->sum('total_amount'),
-        ]);
-
-        $topProducts = TransactionItem::whereHas('transaction', fn ($q) => $q->where('cashier_session_id', $session->id))
-            ->join('products', 'products.id', '=', 'transaction_items.product_id')
-            ->selectRaw('products.name as product_name, products.volume_liter, SUM(transaction_items.quantity) as qty, SUM(transaction_items.quantity * transaction_items.price_at_time) as revenue')
-            ->groupBy('products.id', 'products.name', 'products.volume_liter')
-            ->orderByDesc('qty')
-            ->limit(5)
-            ->get()
-            ->map(function ($item) {
-                $volume = $item->volume_liter ? rtrim(rtrim(number_format((float) $item->volume_liter, 2, '.', ''), '0'), '.') : null;
-                $name = $volume ? "{$item->product_name} ({$volume}L)" : $item->product_name;
-
-                return [
-                    'name' => $name,
-                    'quantity' => (int) $item->qty,
-                    'revenue' => (float) $item->revenue,
-                ];
-            });
-
-        $closingData = [
-            'date' => now()->toLocaleDateString('id-ID'),
-            'cashierName' => auth()->user()->name,
-            'openedAt' => $session->opened_at->format('H:i'),
-            'closedAt' => now()->format('H:i'),
-            'duration' => $session->opened_at->diffForHumans(now(), true),
-            'totalTransactions' => (int) $session->transactions_count,
-            'totalRevenue' => (float) ($session->cash_sales_total + $session->non_cash_sales_total),
-            'totalProfit' => (float) $transactions->sum('total_profit'),
-            'cashTotal' => (float) $session->cash_sales_total,
-            'nonCashTotal' => (float) $session->non_cash_sales_total,
-            'openingCash' => (float) $session->opening_cash,
-            'cashSales' => (float) $session->cash_sales_total,
-            'expectedCash' => $expectedCash,
-            'physicalCash' => $closingCash,
-            'difference' => $closingCash - $expectedCash,
-            'settlementStatus' => ($closingCash - $expectedCash) === 0 ? 'balance' : (($closingCash - $expectedCash) < 0 ? 'minus' : 'over'),
-            'topProducts' => $topProducts->toArray(),
-            'paymentBreakdown' => $paymentBreakdown->toArray(),
-        ];
+        $closingData = $this->sessionService->closeSession(
+            auth()->id(),
+            $validated['closing_cash_physical'],
+            $validated['closing_notes'] ?? null,
+        );
 
         return back()
             ->with('success', 'Sesi kasir berhasil ditutup.')
@@ -574,157 +295,14 @@ class TransactionController extends Controller
             'draft_id' => 'nullable|exists:transactions,id',
         ]);
 
-        $openSession = $this->getOpenSession();
-
-        if ($openSession === null) {
-            throw ValidationException::withMessages([
-                'cart' => 'Buka kasir terlebih dahulu sebelum memproses transaksi.',
-            ]);
-        }
-
         try {
-            DB::transaction(function () use ($validated, $openSession) {
-
-                if (! empty($validated['draft_id'])) {
-                    $transaction = Transaction::where('id', $validated['draft_id'])
-                        ->where('status', 'draft')
-                        ->where('user_id', auth()->id())
-                        ->firstOrFail();
-
-                    $transaction->transactionItems()->delete();
-
-                    $transaction->update([
-                        'payment_method' => $validated['payment_method'],
-                        'customer_type' => $validated['customer_type'],
-                        'amount_paid' => $validated['amount_paid'],
-                        'change_amount' => $validated['change_amount'],
-                        'status' => 'paid',
-                    ]);
-                } else {
-                    $transaction = Transaction::create([
-                        'user_id' => auth()->id(),
-                        'cashier_session_id' => $openSession->id,
-                        'invoice_number' => $this->generateInvoiceNumber(),
-                        'payment_method' => $validated['payment_method'],
-                        'customer_type' => $validated['customer_type'],
-                        'amount_paid' => $validated['amount_paid'],
-                        'change_amount' => $validated['change_amount'],
-                        'total_amount' => 0,
-                        'total_profit' => 0,
-                        'status' => 'paid',
-                    ]);
-                }
-
-                $grandTotal = 0;
-                $totalProfit = 0;
-
-                foreach ($validated['cart'] as $item) {
-                    $product = Product::lockForUpdate()->find($item['id']);
-
-                    if ($product->stock < $item['qty']) {
-                        throw ValidationException::withMessages([
-                            'cart' => "Stok barang '{$product->name}' tidak mencukupi. Sisa: {$product->stock}",
-                        ]);
-                    }
-
-                    $finalPrice = $this->determinePrice(
-                        $product,
-                        $validated['customer_type']
-                    );
-
-                    $subtotal = $finalPrice * $item['qty'];
-                    $profit = ($finalPrice - $product->cost_price) * $item['qty'];
-
-                    TransactionItem::create([
-                        'transaction_id' => $transaction->id,
-                        'product_id' => $product->id,
-                        'quantity' => $item['qty'],
-                        'price_at_time' => $finalPrice,
-                        'cost_at_time' => $product->cost_price,
-                    ]);
-
-                    $product->decrement('stock', $item['qty']);
-
-                    $grandTotal += $subtotal;
-                    $totalProfit += $profit;
-                }
-
-                $transaction->update([
-                    'total_amount' => $grandTotal,
-                    'total_profit' => $totalProfit,
-                ]);
-
-                $cashSales = $validated['payment_method'] === 'cash' ? $grandTotal : 0;
-                $nonCashSales = $validated['payment_method'] === 'cash' ? 0 : $grandTotal;
-
-                $openSession->increment('transactions_count');
-                $openSession->increment('cash_sales_total', $cashSales);
-                $openSession->increment('non_cash_sales_total', $nonCashSales);
-            });
+            $this->transactionService->processPayment(auth()->user(), $validated);
 
             return redirect()->back()->with('success', 'Transaksi Berhasil Disimpan!');
-
         } catch (ValidationException $e) {
             throw $e;
         } catch (\Exception $e) {
             return redirect()->back()->withErrors(['error' => 'Terjadi kesalahan sistem: '.$e->getMessage()]);
         }
-    }
-
-    /**
-     * Logic Harga: Pilih harga bengkel atau umum.
-     */
-    private function determinePrice(Product $product, string $customerType): float
-    {
-        if ($customerType === 'workshop' && $product->workshop_price > 0) {
-            return $product->workshop_price;
-        }
-
-        return $product->sell_price;
-    }
-
-    /**
-     * Generator Invoice Unik.
-     * Format: INV-YYYYMMDD-TIMESTAMP (Lebih aman dari duplikasi)
-     */
-    private function generateInvoiceNumber(): string
-    {
-        return 'INV-'.date('Ymd').'-'.time();
-    }
-
-    private function getOpenSession(): ?CashierSession
-    {
-        return CashierSession::query()
-            ->where('user_id', auth()->id())
-            ->whereNull('closed_at')
-            ->latest('opened_at')
-            ->first();
-    }
-
-    private function buildSessionPayload(CashierSession $session): array
-    {
-        $expectedCash = (float) $session->opening_cash + (float) $session->cash_sales_total;
-        $difference = $session->cash_difference;
-        $status = 'open';
-
-        if ($session->closed_at !== null) {
-            $status = $difference == 0.0 ? 'balance' : ($difference < 0 ? 'minus' : 'over');
-        }
-
-        return [
-            'id' => $session->id,
-            'opening_cash' => (float) $session->opening_cash,
-            'cash_sales_total' => (float) $session->cash_sales_total,
-            'non_cash_sales_total' => (float) $session->non_cash_sales_total,
-            'transactions_count' => $session->transactions_count,
-            'expected_cash' => $session->closed_at ? (float) $session->expected_cash : $expectedCash,
-            'closing_cash_physical' => $session->closing_cash_physical !== null ? (float) $session->closing_cash_physical : null,
-            'cash_difference' => $difference !== null ? (float) $difference : null,
-            'status' => $status,
-            'opened_at' => Carbon::parse($session->opened_at)->toIso8601String(),
-            'closed_at' => $session->closed_at ? Carbon::parse($session->closed_at)->toIso8601String() : null,
-            'opening_notes' => $session->opening_notes,
-            'closing_notes' => $session->closing_notes,
-        ];
     }
 }

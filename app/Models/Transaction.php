@@ -39,6 +39,12 @@ class Transaction extends Model
     protected static function booted(): void
     {
         static::saved(function (Transaction $transaction): void {
+            // Skip monthly report sync for draft transactions.
+            // Drafts are created/updated every 800ms via auto-save —
+            // syncing would trigger expensive SUM queries on every keystroke.
+            if ($transaction->status === 'draft') {
+                return;
+            }
             $transaction->syncMonthlyReports();
         });
 

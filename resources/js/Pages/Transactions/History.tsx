@@ -1,4 +1,4 @@
-import { AppNotifications, notifyError, notifySuccess } from '@/Components/app-notifications';
+import { AppNotifications, notifyError } from '@/Components/app-notifications';
 import { Head, Link, router, usePage } from '@inertiajs/react';
 import { route } from 'ziggy-js';
 import { useEffect, useMemo, useState } from 'react';
@@ -8,34 +8,15 @@ import { formatRupiah, formatTime } from '@/lib/format';
 import { TopBar } from '@/Components/pos/top-bar';
 import { isNative } from '@/lib/capacitor';
 import { apiClient } from '@/api/client';
+import type { TransactionListItem, PaginatedData } from '@/types/pos';
+import * as posService from '@/services/pos';
 import { VoidModal } from '@/Components/pos/void-modal';
 
-interface Transaction {
-    id: number;
-    invoice_number: string;
-    created_at: string;
-    items_count: number;
-    customer_type: string;
-    total_amount: number;
-    payment_method: string;
-    status: string;
-    void_reason?: string;
-    voided_at?: string;
-    user?: { name: string };
-}
-
-interface PaginatedData {
-    data: Transaction[];
-    current_page: number;
-    last_page: number;
-    total: number;
-}
-
-export default function SalesHistory({ transactions }: { transactions: PaginatedData }) {
+export default function SalesHistory({ transactions }: { transactions: PaginatedData<TransactionListItem> }) {
     const { auth, flash } = usePage<SharedData>().props;
-    const [apiData, setApiData] = useState<PaginatedData | null>(null);
+    const [apiData, setApiData] = useState<PaginatedData<TransactionListItem> | null>(null);
     const [search, setSearch] = useState('');
-    const [voidTarget, setVoidTarget] = useState<Transaction | null>(null);
+    const [voidTarget, setVoidTarget] = useState<TransactionListItem | null>(null);
     const [isVoiding, setIsVoiding] = useState(false);
 
     useEffect(() => {
@@ -63,13 +44,13 @@ export default function SalesHistory({ transactions }: { transactions: Paginated
         );
     }, [activeTransactions, search]);
 
-    const handleVoid = async (pin: string, reason: string) => {
+    const handleVoid = async (reason: string) => {
         if (!voidTarget) return;
         setIsVoiding(true);
 
         if (isNative()) {
             try {
-                await apiClient.post(`/transactions/${voidTarget.id}/void`, { pin, reason });
+                await posService.voidTransaction(voidTarget.id, reason);
                 setApiData((prev) => prev ? {
                     ...prev,
                     data: prev.data.map((t) => t.id === voidTarget.id ? { ...t, status: 'voided', void_reason: reason, voided_at: new Date().toISOString() } : t),
@@ -81,9 +62,9 @@ export default function SalesHistory({ transactions }: { transactions: Paginated
                 setIsVoiding(false);
             }
         } else {
-            router.post(route('transactions.void', voidTarget.id), { pin, reason }, {
+            router.post(route('transactions.void', voidTarget.id), { reason }, {
                 onSuccess: () => setVoidTarget(null),
-                onError: (errors) => notifyError(errors?.pin || errors?.transaction || 'Gagal membatalkan.'),
+                onError: (errors) => notifyError(errors?.transaction || 'Gagal membatalkan.'),
                 onFinish: () => setIsVoiding(false),
             });
         }

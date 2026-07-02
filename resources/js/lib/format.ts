@@ -17,6 +17,25 @@ export function formatCurrency(amount: number): string {
     return `Rp ${formatRupiah(amount)}`;
 }
 
+export function formatTime(isoString: string | null | undefined): string {
+    if (!isoString) return '-';
+    return new Date(isoString).toLocaleTimeString('id-ID', {
+        hour: '2-digit',
+        minute: '2-digit',
+    });
+}
+
+export function formatDuration(startIso: string | null | undefined): string {
+    if (!startIso) return '-';
+    const start = new Date(startIso).getTime();
+    const now = Date.now();
+    const diff = Math.max(0, now - start);
+    const hours = Math.floor(diff / 3600000);
+    const minutes = Math.floor((diff % 3600000) / 60000);
+    if (hours === 0) return `${minutes} menit`;
+    return `${hours}j ${minutes}m`;
+}
+
 export function formatVolume(value: number | string | null | undefined): string | null {
     const numeric = Number(value);
     if (!numeric) return null;
@@ -27,4 +46,12 @@ export function getProductLabel(product: { name: string; volume_liter?: number |
     if (!product) return '';
     const volume = formatVolume(product.volume_liter);
     return volume ? `${product.name} (${volume})` : product.name;
+}
+
+export function formatSignedCurrency(value: number): string {
+    return `${value < 0 ? '-' : ''}Rp ${formatRupiah(Math.abs(value || 0))}`;
+}
+
+export function sanitizeNumericInput(value: string): string {
+    return value.replace(/[^\d]/g, '');
 }

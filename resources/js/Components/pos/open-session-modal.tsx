@@ -1,8 +1,7 @@
 import { cn } from '@/lib/utils';
 import { Link } from '@inertiajs/react';
 import { route } from 'ziggy-js';
-
-const sanitizeNumericInput = (value: string) => value.replace(/[^\d]/g, '');
+import { sanitizeNumericInput } from '@/lib/format';
 
 interface OpenSessionModalProps {
     show: boolean;

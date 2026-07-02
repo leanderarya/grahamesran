@@ -48,4 +48,19 @@ class CashierSession extends Model
     {
         return $this->closed_at === null;
     }
+
+    /**
+     * Recalculate session totals from actual paid transactions.
+     * Used after void to keep session aggregates consistent.
+     */
+    public function recalculateTotals(): void
+    {
+        $paidTransactions = $this->transactions()->where('status', 'paid')->get();
+
+        $this->update([
+            'transactions_count' => $paidTransactions->count(),
+            'cash_sales_total' => (float) $paidTransactions->where('payment_method', 'cash')->sum('total_amount'),
+            'non_cash_sales_total' => (float) $paidTransactions->where('payment_method', '!=', 'cash')->sum('total_amount'),
+        ]);
+    }
 }

@@ -1,22 +1,10 @@
 import { cn } from '@/lib/utils';
-import { formatRupiah, formatTime, formatDuration } from '@/lib/format';
+import { formatRupiah, sanitizeNumericInput, formatTime, formatDuration } from '@/lib/format';
 import { X } from 'lucide-react';
 import { ClosingReport } from './closing-report';
+import type { CashierSession } from '@/types/pos';
 import type { ClosingReportData } from '@/lib/printer';
-
-const sanitizeNumericInput = (value: string) => value.replace(/[^\d]/g, '');
-
-const formatSignedCurrency = (value: number) =>
-    `${value < 0 ? '-' : ''}Rp ${formatRupiah(Math.abs(value || 0))}`;
-
-interface CashierSession {
-    id?: number;
-    opening_cash?: number | string;
-    cash_sales_total?: number | string;
-    non_cash_sales_total?: number | string;
-    transactions_count?: number;
-    opened_at?: string;
-}
+import { formatSignedCurrency } from '@/lib/format';
 
 interface SettlementModalProps {
     show: boolean;

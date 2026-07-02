@@ -1,12 +1,7 @@
 import { useState, useCallback } from 'react';
 import { printReceipt } from '@/lib/printer';
 import type { ReceiptData, StoreInfo } from '@/lib/printer';
-
-const STORE_CONFIG: StoreInfo = {
-    name: 'GRAHA MOTOR',
-    address: 'Jl. Raya Pertamina No. 1',
-    phone: '0812-3456-7890',
-};
+import { STORE_CONFIG } from '@/config/store';
 
 /**
  * React hook for printing receipts.

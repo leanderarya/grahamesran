@@ -54,6 +54,19 @@ class Product extends Model
         return $this->hasMany(StockAdjustment::class);
     }
 
+    /**
+     * Get the effective selling price based on customer type.
+     * Workshop customers get workshop_price if available, otherwise sell_price.
+     */
+    public function getEffectivePrice(string $customerType): float
+    {
+        if ($customerType === 'workshop' && $this->workshop_price > 0) {
+            return (float) $this->workshop_price;
+        }
+
+        return (float) $this->sell_price;
+    }
+
     public function getDisplayNameAttribute(): string
     {
         if (! $this->volume_liter) {

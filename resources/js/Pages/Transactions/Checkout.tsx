@@ -2,55 +2,28 @@ import { Head, router, Link, usePage } from '@inertiajs/react';
 import { useState, useMemo, useCallback } from 'react';
 import { route } from 'ziggy-js';
 import { cn } from '@/lib/utils';
-import { formatRupiah } from '@/lib/format';
+import { formatRupiah, formatSignedCurrency, sanitizeNumericInput } from '@/lib/format';
 import { ArrowLeft, Banknote, QrCode, Building2 } from 'lucide-react';
 import type { SharedData } from '@/types';
+import type { CashierSession, CheckoutDraft } from '@/types/pos';
 import {
     AppNotifications,
     notifyError,
     notifyWarning,
 } from '@/Components/app-notifications';
 import { isNative } from '@/lib/capacitor';
-import { apiClient } from '@/api/client';
+import * as posService from '@/services/pos';
 import { useNetwork } from '@/hooks/useNetwork';
 import { offlineQueue } from '@/lib/offline-queue';
 import { usePrintReceipt } from '@/hooks/usePrintReceipt';
 
-interface DraftItem {
-    id: number;
-    product_id: number;
-    product_name: string;
-    quantity: number;
-    price_at_time: number;
-    subtotal: number;
-}
-
-interface Draft {
-    id: number;
-    invoice_number: string;
-    customer_type: string;
-    total_amount: number;
-    items: DraftItem[];
-}
-
-interface CashierSession {
-    id?: number;
-    opening_cash?: number | string;
-    cash_sales_total?: number | string;
-    non_cash_sales_total?: number | string;
-    transactions_count?: number;
-    opened_at?: string;
-}
-
 interface CheckoutProps {
-    draft: Draft;
+    draft: CheckoutDraft;
     cashierSession: CashierSession | null;
 }
 
 const formSurface =
     'border border-slate-200 bg-white transition-all duration-200 ease-out';
-
-const sanitizeNumericInput = (value: string) => value.replace(/[^\d]/g, '');
 
 const PAYMENT_METHODS = [
     { id: 'cash', label: 'Tunai', icon: Banknote, color: 'bg-emerald-50 text-emerald-700 border-emerald-200' },
@@ -145,13 +118,13 @@ export default function Checkout({ draft, cashierSession }: CheckoutProps) {
                 return;
             }
 
-            // Online: submit via API
+            // Online: submit via posService
             try {
-                const data = await apiClient.post('/transactions', transactionData);
+                const result = await posService.processPayment(transactionData);
 
                 // Print receipt
                 await printReceipt({
-                    invoice: data.transaction.invoice_number,
+                    invoice: result?.transaction?.invoice_number ?? draft.invoice_number,
                     date: new Date().toLocaleDateString('id-ID'),
                     items: draft.items.map((item) => ({
                         name: item.product_name,
@@ -202,45 +175,45 @@ export default function Checkout({ draft, cashierSession }: CheckoutProps) {
         totalAmount,
     ]);
 
-    const formatSignedCurrency = (value: number) =>
-        `${value < 0 ? '-' : ''}Rp ${formatRupiah(Math.abs(value || 0))}`;
-
     return (
         <div className="min-h-screen bg-white text-slate-900">
             <Head title={`Checkout ${draft.invoice_number} - Graha Motor`} />
             <AppNotifications flash={flash} />
 
-            <div className="mx-auto min-h-screen max-w-[1400px] px-4 py-5 sm:px-6 lg:grid lg:grid-cols-[55%_45%] lg:gap-6 lg:px-8">
+            <div className="mx-auto min-h-screen max-w-[1400px] px-3 py-3 sm:px-4 lg:grid lg:grid-cols-[55%_45%] lg:gap-4 lg:px-6">
                 {/* Left Column: Order Summary */}
-                <section className="space-y-5">
+                <section className="space-y-3">
                     {/* Header */}
-                    <div className="flex items-center justify-between gap-4">
+                    <div className="flex items-center justify-between gap-3">
                         <Link
                             href={route('transactions.create')}
-                            className="inline-flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-4 py-3 text-sm font-bold text-slate-700 transition-all duration-200 hover:bg-slate-50"
+                            className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs font-bold text-slate-700 transition-all duration-200 hover:bg-slate-50"
                         >
-                            <ArrowLeft className="h-4 w-4" />
-                            Kembali ke Transaksi
+                            <ArrowLeft className="h-3.5 w-3.5" />
+                            Kembali
                         </Link>
-                        <div className="text-sm font-bold text-slate-500">
-                            {draft.invoice_number}
+                        <div className="flex items-center gap-2">
+                            <span className="text-xs font-bold text-slate-400">{draft.invoice_number}</span>
+                            {hasOpenSession && (
+                                <span className="inline-block h-2 w-2 rounded-full bg-emerald-500" title="Sesi kasir aktif" />
+                            )}
                         </div>
                     </div>
 
                     {/* Order Summary Card */}
-                    <div className="rounded-xl border border-slate-200 bg-white p-5 sm:p-6">
-                        <div className="flex items-start justify-between gap-4">
-                            <div>
-                                <div className="text-xs font-bold tracking-[0.3em] text-slate-400 uppercase">
-                                    Ringkasan Pesanan
+                    <div className="rounded-xl border border-slate-200 bg-white p-3">
+                        <div className="flex items-center justify-between gap-3">
+                            <div className="flex items-center gap-3">
+                                <div className="text-xs font-bold tracking-wider text-slate-400 uppercase">
+                                    Ringkasan
                                 </div>
-                                <div className="mt-2 text-2xl font-bold text-slate-950">
+                                <span className="text-sm font-bold text-slate-950">
                                     {draft.items.length} item
-                                </div>
+                                </span>
                             </div>
-                            <div
+                            <span
                                 className={cn(
-                                    'rounded-lg px-4 py-2 text-sm font-bold',
+                                    'rounded-md px-2 py-1 text-xs font-bold',
                                     draft.customer_type === 'workshop'
                                         ? 'bg-amber-50 text-amber-700'
                                         : 'bg-slate-100 text-slate-600',
@@ -249,55 +222,52 @@ export default function Checkout({ draft, cashierSession }: CheckoutProps) {
                                 {draft.customer_type === 'workshop'
                                     ? 'Bengkel'
                                     : 'Umum'}
-                            </div>
+                            </span>
                         </div>
 
                         {/* Items List */}
-                        <div className="mt-5 space-y-3">
+                        <div className="mt-2.5 space-y-1">
                             {draft.items.map((item) => (
                                 <div
                                     key={item.id}
-                                    className="rounded-lg border border-slate-200 bg-slate-50 p-4"
+                                    className="flex items-center justify-between gap-2 rounded-md bg-slate-50 px-2.5 py-1.5"
                                 >
-                                    <div className="flex items-start justify-between gap-3">
-                                        <div className="min-w-0 flex-1">
-                                            <div className="line-clamp-2 text-sm font-bold text-slate-900">
-                                                {item.product_name}
-                                            </div>
-                                            <div className="mt-1 text-xs font-semibold text-slate-500">
-                                                {item.quantity} x Rp{' '}
-                                                {formatRupiah(item.price_at_time)}
-                                            </div>
+                                    <div className="min-w-0 flex-1">
+                                        <div className="line-clamp-1 text-xs font-bold text-slate-900">
+                                            {item.product_name}
                                         </div>
-                                        <div className="text-base font-bold text-slate-950 whitespace-nowrap">
-                                            Rp {formatRupiah(item.subtotal)}
+                                        <div className="text-[10px] font-semibold text-slate-500">
+                                            {item.quantity} × Rp{formatRupiah(item.price_at_time)}
                                         </div>
+                                    </div>
+                                    <div className="text-xs font-bold text-slate-950 whitespace-nowrap">
+                                        Rp{formatRupiah(item.subtotal)}
                                     </div>
                                 </div>
                             ))}
                         </div>
 
                         {/* Total */}
-                        <div className="mt-5 rounded-xl bg-indigo-600 p-5 text-white">
-                            <div className="text-sm font-semibold text-slate-400">
+                        <div className="mt-3 rounded-lg bg-indigo-600 p-3 text-white">
+                            <div className="text-xs font-semibold text-indigo-200">
                                 Total Tagihan
                             </div>
-                            <div className="mt-2 text-3xl font-bold">
-                                Rp {formatRupiah(totalAmount)}
+                            <div className="text-xl font-bold">
+                                Rp{formatRupiah(totalAmount)}
                             </div>
                         </div>
                     </div>
                 </section>
 
                 {/* Right Column: Payment */}
-                <section className="space-y-5 lg:sticky lg:top-5">
-                    <div className="rounded-xl border border-slate-200 bg-white p-5 sm:p-6">
-                        <div className="text-xs font-bold tracking-[0.3em] text-slate-400 uppercase">
+                <section className="space-y-3 lg:sticky lg:top-3">
+                    <div className="rounded-xl border border-slate-200 bg-white p-3">
+                        <div className="text-xs font-bold tracking-wider text-slate-400 uppercase">
                             Pembayaran
                         </div>
 
                         {/* Payment Method Selection */}
-                        <div className="mt-4 grid grid-cols-3 gap-3">
+                        <div className="mt-2.5 grid grid-cols-3 gap-2">
                             {PAYMENT_METHODS.map((method) => {
                                 const Icon = method.icon;
                                 return (
@@ -307,13 +277,13 @@ export default function Checkout({ draft, cashierSession }: CheckoutProps) {
                                             setPaymentMethod(method.id)
                                         }
                                         className={cn(
-                                            'flex flex-col items-center gap-2 rounded-lg border-2 px-3 py-3 text-sm font-bold transition-all duration-200',
+                                            'flex flex-col items-center gap-1.5 rounded-lg border-2 px-2 py-2 text-xs font-bold transition-all duration-200',
                                             paymentMethod === method.id
                                                 ? 'border-indigo-600 bg-indigo-600 text-white'
                                                 : 'border-slate-200 bg-white text-slate-600',
                                         )}
                                     >
-                                        <Icon className="h-5 w-5" />
+                                        <Icon className="h-4 w-4" />
                                         {method.label}
                                     </button>
                                 );
@@ -322,17 +292,17 @@ export default function Checkout({ draft, cashierSession }: CheckoutProps) {
 
                         {/* Cash Payment UI */}
                         {paymentMethod === 'cash' && (
-                            <div className="mt-5">
-                                <label className="text-xs font-bold tracking-widest text-slate-400 uppercase">
+                            <div className="mt-3">
+                                <label className="text-[10px] font-bold tracking-widest text-slate-400 uppercase">
                                     Uang Diterima
                                 </label>
                                 <div
                                     className={cn(
-                                        'mt-2 flex items-center rounded-lg px-4 py-3',
+                                        'mt-1.5 flex items-center rounded-lg px-3 py-2',
                                         formSurface,
                                     )}
                                 >
-                                    <span className="text-lg font-bold text-slate-500">
+                                    <span className="text-sm font-bold text-slate-500">
                                         Rp
                                     </span>
                                     <input
@@ -347,12 +317,12 @@ export default function Checkout({ draft, cashierSession }: CheckoutProps) {
                                             )
                                         }
                                         placeholder="0"
-                                        className="ml-3 w-full border-0 bg-transparent p-0 text-2xl font-bold text-slate-950 focus:ring-0 focus:outline-none"
+                                        className="ml-2 w-full border-0 bg-transparent p-0 text-lg font-bold text-slate-950 focus:ring-0 focus:outline-none"
                                     />
                                 </div>
 
                                 {/* Quick Buttons */}
-                                <div className="mt-3 grid grid-cols-3 gap-2">
+                                <div className="mt-2 grid grid-cols-3 gap-1.5">
                                     {cashShortcutAmounts.map(
                                         (amount, index) => (
                                             <button
@@ -364,7 +334,7 @@ export default function Checkout({ draft, cashierSession }: CheckoutProps) {
                                                     )
                                                 }
                                                 className={cn(
-                                                    'rounded-lg border px-3 py-3 text-sm font-bold transition-all duration-200',
+                                                    'rounded-md border px-2 py-1.5 text-[11px] font-bold transition-all duration-200',
                                                     Number(
                                                         cashReceived || 0,
                                                     ) === amount
@@ -377,7 +347,7 @@ export default function Checkout({ draft, cashierSession }: CheckoutProps) {
                                             >
                                                 {amount === totalAmount
                                                     ? 'Uang Pas'
-                                                    : `Rp ${formatRupiah(amount)}`}
+                                                    : `Rp${formatRupiah(amount)}`}
                                             </button>
                                         ),
                                     )}
@@ -386,7 +356,7 @@ export default function Checkout({ draft, cashierSession }: CheckoutProps) {
                                 {/* Change Display */}
                                 <div
                                     className={cn(
-                                        'mt-3 rounded-lg p-4 text-sm font-bold',
+                                        'mt-2 rounded-md p-2.5 text-xs font-bold',
                                         change < 0
                                             ? 'bg-red-50 text-red-600'
                                             : 'bg-emerald-50 text-emerald-600',
@@ -394,27 +364,25 @@ export default function Checkout({ draft, cashierSession }: CheckoutProps) {
                                 >
                                     {change < 0
                                         ? `Kurang ${formatSignedCurrency(change)}`
-                                        : `Kembali Rp ${formatRupiah(change)}`}
+                                        : `Kembali Rp${formatRupiah(change)}`}
                                 </div>
                             </div>
                         )}
 
-                        {/* QRIS / Transfer Placeholder */}
+                        {/* QRIS / Transfer Info */}
                         {paymentMethod !== 'cash' && (
-                            <div className="mt-5 rounded-lg bg-slate-50 p-5 text-center">
-                                <div className="text-sm font-semibold text-slate-600">
-                                    Pembayaran non-tunai akan dianggap lunas
-                                    sesuai nominal total.
+                            <div className="mt-3 rounded-md bg-slate-50 p-2.5 text-center">
+                                <div className="text-xs font-semibold text-slate-600">
+                                    Non-tunai dianggap lunas sesuai total.
                                 </div>
-                                <div className="mt-2 text-xs font-bold text-slate-400">
-                                    Konfirmasi manual oleh kasir setelah
-                                    pembayaran diterima.
+                                <div className="text-[10px] font-bold text-slate-400">
+                                    Konfirmasi manual oleh kasir.
                                 </div>
                             </div>
                         )}
 
-                        {/* Action Buttons */}
-                        <div className="mt-6 space-y-3">
+                        {/* Pay Button */}
+                        <div className="mt-3">
                             <button
                                 onClick={processPayment}
                                 disabled={
@@ -423,19 +391,12 @@ export default function Checkout({ draft, cashierSession }: CheckoutProps) {
                                     (paymentMethod === 'cash' &&
                                         change < 0)
                                 }
-                                className="w-full rounded-lg bg-indigo-600 px-4 py-4 text-base font-bold text-white transition-all duration-200 hover:bg-indigo-700 disabled:cursor-not-allowed disabled:opacity-40"
+                                className="w-full rounded-lg bg-indigo-600 px-4 py-3 text-sm font-bold text-white transition-all duration-200 hover:bg-indigo-700 disabled:cursor-not-allowed disabled:opacity-40"
                             >
                                 {isProcessing
                                     ? 'Memproses...'
                                     : 'Bayar Sekarang'}
                             </button>
-
-                            <Link
-                                href={route('transactions.create')}
-                                className="block w-full rounded-lg border border-slate-200 px-4 py-4 text-center text-sm font-bold text-slate-700 transition-all duration-200 hover:bg-slate-50"
-                            >
-                                Kembali ke Transaksi
-                            </Link>
                         </div>
                     </div>
                 </section>

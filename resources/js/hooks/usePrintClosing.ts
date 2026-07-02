@@ -1,13 +1,12 @@
 import { useState, useCallback } from 'react';
-import { generateClosingEscPos, printReceipt } from '@/lib/printer';
+import { generateClosingEscPos } from '@/lib/printer';
 import type { ClosingReportData, StoreInfo } from '@/lib/printer';
 import { isNative } from '@/lib/capacitor';
+import { STORE_CONFIG } from '@/config/store';
 
-const STORE_CONFIG: StoreInfo = {
-    name: 'GRAHA MOTOR',
-    address: 'Jl. Raya Pertamina No. 1',
-    phone: '0812-3456-7890',
-};
+function getPlugin() {
+    return (window as any).Capacitor?.Plugins?.BluetoothThermalPrinter;
+}
 
 export function usePrintClosing() {
     const [isPrinting, setIsPrinting] = useState(false);
@@ -42,21 +41,19 @@ export function usePrintClosing() {
             }
 
             // Capacitor: send to Bluetooth printer
-            const plugin = (await import(
-                '@candraadiw/capacitor-bluetooth-printer'
-            )) as unknown as { BluetoothPrinter: { listDevices: () => Promise<{ devices: Array<{ name: string; address: string }> }>; connect: (opts: { address: string }) => Promise<void>; print: (opts: { data: string }) => Promise<{ success: boolean }>; disconnect: () => Promise<void> } };
-            const { BluetoothPrinter } = plugin;
+            const plugin = getPlugin();
+            if (!plugin) throw new Error('Plugin Bluetooth tidak tersedia.');
 
             const savedAddress = localStorage.getItem('printer_address');
             if (!savedAddress) {
                 throw new Error('Printer belum dikonfigurasi. Buka Pengaturan Printer.');
             }
 
-            await BluetoothPrinter.connect({ address: savedAddress });
+            await plugin.connect({ deviceId: savedAddress });
             const bytes = generateClosingEscPos(data, STORE_CONFIG);
             const dataStr = String.fromCharCode(...bytes);
-            await BluetoothPrinter.print({ data: dataStr });
-            await BluetoothPrinter.disconnect();
+            await plugin.printText({ text: dataStr });
+            await plugin.disconnect();
         } catch (error: unknown) {
             const message = error instanceof Error ? error.message : 'Gagal mencetak closing report.';
             setPrintError(message);
