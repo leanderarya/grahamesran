@@ -19,6 +19,7 @@ class DatabaseSeeder extends Seeder
             AdminSeeder::class,
             VehicleSeeder::class,
             ProductSeeder::class,
+            OilSeeder::class,
         ]);
     }
 }
