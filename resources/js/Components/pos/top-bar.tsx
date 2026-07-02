@@ -1,5 +1,5 @@
 import { cn } from '@/lib/utils';
-import { Search, ChevronDown, BarChart3, Calculator, LogOut, History } from 'lucide-react';
+import { Search, ChevronDown, BarChart3, Calculator, LogOut, History, Settings } from 'lucide-react';
 import { useState, useRef, useEffect } from 'react';
 import { router } from '@inertiajs/react';
 import { route } from 'ziggy-js';
@@ -117,6 +117,16 @@ export function TopBar({
                             >
                                 <History className="h-4 w-4 text-slate-400" />
                                 Riwayat Penjualan
+                            </button>
+                            <button
+                                onClick={() => {
+                                    setDropdownOpen(false);
+                                    router.visit(route('settings.printer'));
+                                }}
+                                className="flex w-full items-center gap-3 px-4 py-2.5 text-sm text-slate-950 hover:bg-slate-50"
+                            >
+                                <Settings className="h-4 w-4 text-slate-400" />
+                                Pengaturan Printer
                             </button>
                             <button
                                 onClick={() => {

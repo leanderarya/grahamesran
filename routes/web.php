@@ -72,6 +72,10 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::delete('/pos/draft/{transaction}', [TransactionController::class, 'destroyDraft'])->name('transactions.draft.destroy');
         Route::get('/pos/history', [TransactionController::class, 'history'])->name('transactions.history');
         Route::post('/pos/transaction/{transaction}/void', [TransactionController::class, 'void'])->name('transactions.void');
+
+        Route::get('/settings/printer', function () {
+            return Inertia::render('settings/Printer');
+        })->name('settings.printer');
     });
 });
 
