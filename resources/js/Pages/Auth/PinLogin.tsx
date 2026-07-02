@@ -28,11 +28,35 @@ export default function PinLogin() {
         setErrors({});
 
         if (isNative()) {
-            // Capacitor: use API with token auth
+            // Capacitor: use API with token auth, then create web session
             apiClient
                 .post('/login', { pin: value })
-                .then((data) => {
+                .then(async (data) => {
                     setToken(data.token);
+                    // Also create web session so Capacitor can load web pages
+                    try {
+                        // Get CSRF token first
+                        await fetch('/sanctum/csrf-cookie', {
+                            credentials: 'same-origin',
+                        });
+                        const csrfToken =
+                            document.cookie
+                                .split('; ')
+                                .find((row) => row.startsWith('XSRF-TOKEN='))
+                                ?.split('=')[1] || '';
+                        await fetch('/pin-login', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                Accept: 'text/html',
+                                'X-XSRF-TOKEN': decodeURIComponent(csrfToken),
+                            },
+                            body: JSON.stringify({ pin: value }),
+                            credentials: 'same-origin',
+                        });
+                    } catch {
+                        // Ignore — API token is primary auth
+                    }
                     window.location.href = '/pos';
                 })
                 .catch((err) => {

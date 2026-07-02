@@ -31,6 +31,9 @@ class AuthController extends Controller
 
         $token = $user->createToken('kasir-android')->plainTextToken;
 
+        // Also create web session so Capacitor can load web pages
+        Auth::login($user);
+
         return response()->json([
             'token' => $token,
             'user' => [
