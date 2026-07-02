@@ -144,7 +144,7 @@ return [
     */
 
     'features' => [
-        Features::registration(),
+        // Features::registration(),  // Disabled — admin creates users via Filament
         Features::resetPasswords(),
         Features::emailVerification(),
         Features::twoFactorAuthentication([

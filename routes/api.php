@@ -7,8 +7,8 @@ use App\Http\Controllers\Api\SessionController;
 use App\Http\Controllers\Api\TransactionController;
 use Illuminate\Support\Facades\Route;
 
-// Public routes
-Route::post('/login', [AuthController::class, 'login']);
+// Public routes — rate limited to prevent brute force on 4-digit PIN
+Route::post('/login', [AuthController::class, 'login'])->middleware('throttle:5,1');
 
 // Protected routes — kasir only
 Route::middleware(['auth:sanctum', 'kasir-only'])->group(function () {
