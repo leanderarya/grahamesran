@@ -24,4 +24,14 @@ export default defineConfig({
     esbuild: {
         jsx: 'automatic',
     },
+    build: {
+        rollupOptions: {
+            external: [
+                '@candraadiw/capacitor-bluetooth-printer',
+                '@capacitor/app',
+                '@capacitor/status-bar',
+                '@capacitor/network',
+            ],
+        },
+    },
 });
