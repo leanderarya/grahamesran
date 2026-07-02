@@ -28,6 +28,17 @@ class UserResource extends Resource
     {
         return $form
             ->schema([
+                Forms\Components\Select::make('role')
+                    ->label('Jabatan')
+                    ->options([
+                        'admin' => 'Administrator',
+                        'staff' => 'Staff',
+                        'kasir' => 'Kasir (Hanya POS)',
+                    ])
+                    ->required()
+                    ->default('kasir')
+                    ->live(),
+
                 Forms\Components\TextInput::make('name')
                     ->label('Nama Lengkap')
                     ->required()
@@ -35,24 +46,26 @@ class UserResource extends Resource
 
                 Forms\Components\TextInput::make('email')
                     ->email()
-                    ->required()
+                    ->required(fn (Forms\Get $get): bool => in_array($get('role'), ['admin', 'staff']))
                     ->maxLength(255)
-                    ->unique(ignoreRecord: true), // Cek unik kecuali punya sendiri
+                    ->unique(ignoreRecord: true)
+                    ->visible(fn (Forms\Get $get): bool => in_array($get('role'), ['admin', 'staff'])),
 
-                Forms\Components\Select::make('role')
-                    ->label('Jabatan')
-                    ->options([
-                        'admin' => 'Administrator (Bisa Masuk Sini)',
-                        'staff' => 'Kasir / Staff (Hanya POS)',
-                    ])
-                    ->required()
-                    ->default('staff'),
+                Forms\Components\TextInput::make('pin')
+                    ->label('PIN Login')
+                    ->numeric()
+                    ->length(4)
+                    ->required(fn (Forms\Get $get): bool => $get('role') === 'kasir')
+                    ->visible(fn (Forms\Get $get): bool => $get('role') === 'kasir')
+                    ->unique(ignoreRecord: true)
+                    ->helperText('4 digit angka untuk login kasir'),
 
                 Forms\Components\TextInput::make('password')
                     ->password()
-                    ->dehydrateStateUsing(fn ($state) => Hash::make($state)) // Otomatis Hash
-                    ->dehydrated(fn ($state) => filled($state)) // Jangan update kalau kosong
-                    ->required(fn (string $context): bool => $context === 'create') // Wajib cuma pas bikin baru
+                    ->dehydrateStateUsing(fn ($state) => Hash::make($state))
+                    ->dehydrated(fn ($state) => filled($state))
+                    ->required(fn (Forms\Get $get, string $context): bool => $context === 'create' && in_array($get('role'), ['admin', 'staff']))
+                    ->visible(fn (Forms\Get $get): bool => in_array($get('role'), ['admin', 'staff']))
                     ->label('Password'),
             ]);
     }
@@ -62,14 +75,24 @@ class UserResource extends Resource
         return $table
             ->columns([
                 Tables\Columns\TextColumn::make('name')
-                    ->searchable(),
+                    ->searchable()
+                    ->weight('bold'),
                 Tables\Columns\TextColumn::make('email')
-                    ->searchable(),
+                    ->searchable()
+                    ->placeholder(fn (User $record): string => $record->role === 'kasir' ? 'PIN: '.$record->pin : '-'),
                 Tables\Columns\TextColumn::make('role')
                     ->badge()
                     ->color(fn (string $state): string => match ($state) {
                         'admin' => 'danger',
                         'staff' => 'info',
+                        'kasir' => 'success',
+                        default => 'gray',
+                    })
+                    ->formatStateUsing(fn (string $state): string => match ($state) {
+                        'admin' => 'Admin',
+                        'staff' => 'Staff',
+                        'kasir' => 'Kasir',
+                        default => $state,
                     }),
                 Tables\Columns\TextColumn::make('created_at')
                     ->dateTime()
