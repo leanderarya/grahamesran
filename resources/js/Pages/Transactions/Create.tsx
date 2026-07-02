@@ -9,6 +9,7 @@ import {
     useDeferredValue,
     useEffect,
     useMemo,
+    useRef,
     useState,
 } from 'react';
 import { route } from 'ziggy-js';
@@ -24,6 +25,9 @@ import { CheckoutPanel } from '@/Components/pos/checkout-panel';
 import { MobileBottomBar } from '@/Components/pos/mobile-bottom-bar';
 import { PrintReceipt } from '@/Components/pos/print-receipt';
 import { ShoppingCart } from 'lucide-react';
+import { isNative } from '@/lib/capacitor';
+import { apiClient } from '@/api/client';
+import { useNetwork } from '@/hooks/useNetwork';
 
 interface Product {
     id: number;
@@ -91,22 +95,148 @@ export default function TabletPOS({ products, cashierSession, activeDraft }: { p
     const [isClosingSession, setIsClosingSession] = useState(false);
     const [sessionState, setSessionState] = useState<CashierSession | null>(cashierSession);
     const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
+    const [draftId, setDraftId] = useState<number | null>(activeDraft?.id ?? null);
     const { data, setData, reset } = useForm<{ cart: CartItem[] }>({ cart: [] });
+    const skipAutoSave = useRef(true); // skip initial render
+    const saveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+    const { isOnline } = useNetwork();
+
+    // API-loaded state for Capacitor mode
+    const [apiProducts, setApiProducts] = useState<Product[]>([]);
+    const [apiCategories, setApiCategories] = useState<string[]>([]);
+    const [apiSession, setApiSession] = useState<CashierSession | null>(null);
+    const [apiDraft, setApiDraft] = useState<ActiveDraft | null>(null);
+    const [apiLoading, setApiLoading] = useState(isNative());
+
+    // Dual-mode data sources
+    const activeProducts = isNative() ? apiProducts : products;
+    const activeCategories = isNative() ? apiCategories : [];
+    const activeSession = isNative() ? apiSession : sessionState;
+    const activeDraftData = isNative() ? apiDraft : activeDraft;
+
+    // Fetch products & session via API when running in Capacitor
+    useEffect(() => {
+        if (!isNative()) return;
+
+        const loadData = async () => {
+            try {
+                const [productData, sessionData] = await Promise.all([
+                    apiClient.get('/products'),
+                    apiClient.get('/session'),
+                ]);
+                setApiProducts(productData.products);
+                setApiCategories(productData.categories);
+                setApiSession(sessionData.session);
+                setSessionState(sessionData.session);
+                setShowOpenSessionModal(!sessionData.session);
+            } catch (error) {
+                console.error('Failed to load POS data:', error);
+            } finally {
+                setApiLoading(false);
+            }
+        };
+
+        loadData();
+    }, []);
 
     useEffect(() => {
+        if (isNative()) return; // Capacitor mode handles session via API effect above
         setSessionState(cashierSession ?? null);
         setShowOpenSessionModal(!cashierSession);
     }, [cashierSession]);
 
     useEffect(() => {
-        if (activeDraft && activeDraft.transaction_items) {
-            const restoredCart = activeDraft.transaction_items.map(item => ({
+        if (activeDraftData && activeDraftData.transaction_items) {
+            const restoredCart = activeDraftData.transaction_items.map(item => ({
                 ...item.product,
                 qty: item.quantity,
             })) as CartItem[];
             setData('cart', restoredCart);
         }
-    }, [activeDraft, setData]);
+        // In Capacitor mode, wait until API loading completes before enabling auto-save
+        if (isNative() && apiLoading) return;
+        // Setelah restore, izinkan auto-save
+        const timer = setTimeout(() => { skipAutoSave.current = false; }, 500);
+        return () => clearTimeout(timer);
+    }, [activeDraftData, apiLoading, setData]);
+
+    // Auto-save draft setiap keranjang berubah (debounce 800ms)
+    useEffect(() => {
+        if (skipAutoSave.current) return;
+        if (!sessionState) return;
+
+        if (saveTimerRef.current) clearTimeout(saveTimerRef.current);
+
+        saveTimerRef.current = setTimeout(async () => {
+            if (data.cart.length === 0) {
+                // Keranjang kosong → hapus draft dari DB
+                if (isNative()) {
+                    try {
+                        await apiClient.post('/draft/clear', { draft_id: draftId });
+                        setDraftId(null);
+                    } catch (_) {}
+                } else {
+                    const csrfToken = decodeURIComponent(
+                        document.cookie
+                            .split('; ')
+                            .find(row => row.startsWith('XSRF-TOKEN='))
+                            ?.split('=')[1] || '',
+                    );
+                    fetch(route('transactions.draft.clear'), {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-XSRF-TOKEN': csrfToken,
+                            'X-Requested-With': 'XMLHttpRequest',
+                        },
+                        body: JSON.stringify({ draft_id: draftId }),
+                    }).then(() => setDraftId(null)).catch(() => {});
+                }
+                return;
+            }
+
+            // Ada item → auto-save
+            if (isNative()) {
+                try {
+                    const json = await apiClient.put('/draft/auto-save', {
+                        cart: data.cart.map(item => ({ id: item.id, qty: item.qty })),
+                        customer_type: customerType,
+                        draft_id: draftId,
+                    });
+                    if (json.draft_id) setDraftId(json.draft_id);
+                } catch (_) {}
+            } else {
+                const csrfToken = decodeURIComponent(
+                    document.cookie
+                        .split('; ')
+                        .find(row => row.startsWith('XSRF-TOKEN='))
+                        ?.split('=')[1] || '',
+                );
+                fetch(route('transactions.draft.autoSave'), {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-XSRF-TOKEN': csrfToken,
+                        'X-Requested-With': 'XMLHttpRequest',
+                    },
+                    body: JSON.stringify({
+                        cart: data.cart.map(item => ({ id: item.id, qty: item.qty })),
+                        customer_type: customerType,
+                        draft_id: draftId,
+                    }),
+                })
+                    .then(res => res.json())
+                    .then(json => {
+                        if (json.draft_id) setDraftId(json.draft_id);
+                    })
+                    .catch(() => {});
+            }
+        }, 800);
+
+        return () => {
+            if (saveTimerRef.current) clearTimeout(saveTimerRef.current);
+        };
+    }, [data.cart, customerType, sessionState]);
 
     const hasOpenSession = Boolean(sessionState?.id);
     const isWorkshop = customerType === 'workshop';
@@ -114,25 +244,25 @@ export default function TabletPOS({ products, cashierSession, activeDraft }: { p
 
     const productById = useMemo(() => {
         const map = new Map();
-        for (const product of products) map.set(product.id, product);
+        for (const product of activeProducts) map.set(product.id, product);
         return map;
-    }, [products]);
+    }, [activeProducts]);
 
     const categoryGroups = useMemo(() => {
         const groups: Record<string, number> = {};
-        products.forEach((p) => {
+        activeProducts.forEach((p) => {
             const cat = p.category || 'Lainnya';
             groups[cat] = (groups[cat] || 0) + 1;
         });
         return Object.entries(groups)
             .sort(([a], [b]) => a.localeCompare(b))
             .map(([name, count]) => ({ name, count }));
-    }, [products]);
+    }, [activeProducts]);
 
     const displayProducts = useMemo(() => {
         const query = deferredSearch.trim().toLowerCase();
 
-        let base = products;
+        let base = activeProducts;
 
         // Filter by category if selected
         if (selectedCategory && !query) {
@@ -155,7 +285,7 @@ export default function TabletPOS({ products, cashierSession, activeDraft }: { p
         }
 
         return base;
-    }, [products, deferredSearch, selectedCategory]);
+    }, [activeProducts, deferredSearch, selectedCategory]);
 
     useEffect(() => {
         if (deferredSearch.trim()) {
@@ -283,41 +413,87 @@ export default function TabletPOS({ products, cashierSession, activeDraft }: { p
 
     const clearCart = useCallback(() => {
         setData('cart', []);
-    }, [setData]);
+        // Langsung hapus draft dari DB, jangan lewat debounce
+        if (isNative()) {
+            apiClient.post('/draft/clear', { draft_id: draftId })
+                .then(() => setDraftId(null))
+                .catch(() => {});
+        } else {
+            const csrfToken = decodeURIComponent(
+                document.cookie
+                    .split('; ')
+                    .find(row => row.startsWith('XSRF-TOKEN='))
+                    ?.split('=')[1] || '',
+            );
+            fetch(route('transactions.draft.clear'), {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-XSRF-TOKEN': csrfToken,
+                    'X-Requested-With': 'XMLHttpRequest',
+                },
+                body: JSON.stringify({ draft_id: draftId }),
+            }).then(() => setDraftId(null)).catch(() => {});
+        }
+    }, [setData, draftId]);
 
-    const handleOpenSession = useCallback(() => {
+    const handleOpenSession = useCallback(async () => {
         setIsOpeningSession(true);
 
-        router.post(
-            route('transactions.session.open'),
-            {
-                opening_cash: Number(openingCash || 0),
-                opening_notes: openingNotes,
-            },
-            {
-                preserveScroll: true,
-                onSuccess: () => {
-                    setSessionState({
-                        id: Date.now(),
-                        opening_cash: Number(openingCash || 0),
-                        cash_sales_total: 0,
-                        non_cash_sales_total: 0,
-                        transactions_count: 0,
-                        opened_at: new Date().toISOString(),
-                    });
-                    setOpeningCash('');
-                    setOpeningNotes('');
-                    setShowOpenSessionModal(false);
+        if (isNative()) {
+            try {
+                await apiClient.post('/session/open', {
+                    opening_cash: Number(openingCash || 0),
+                    opening_notes: openingNotes,
+                });
+                setSessionState({
+                    id: Date.now(),
+                    opening_cash: Number(openingCash || 0),
+                    cash_sales_total: 0,
+                    non_cash_sales_total: 0,
+                    transactions_count: 0,
+                    opened_at: new Date().toISOString(),
+                });
+                setOpeningCash('');
+                setOpeningNotes('');
+                setShowOpenSessionModal(false);
+            } catch (error: any) {
+                notifyError(error?.message || 'Gagal membuka kasir.');
+            } finally {
+                setIsOpeningSession(false);
+            }
+        } else {
+            router.post(
+                route('transactions.session.open'),
+                {
+                    opening_cash: Number(openingCash || 0),
+                    opening_notes: openingNotes,
                 },
-                onError: (errors: Record<string, string>) => {
-                    notifyError(errors?.opening_cash || 'Gagal membuka kasir.');
+                {
+                    preserveScroll: true,
+                    onSuccess: () => {
+                        setSessionState({
+                            id: Date.now(),
+                            opening_cash: Number(openingCash || 0),
+                            cash_sales_total: 0,
+                            non_cash_sales_total: 0,
+                            transactions_count: 0,
+                            opened_at: new Date().toISOString(),
+                        });
+                        setOpeningCash('');
+                        setOpeningNotes('');
+                        setShowOpenSessionModal(false);
+                    },
+                    onError: (errors: Record<string, string>) => {
+                        notifyError(errors?.opening_cash || 'Gagal membuka kasir.');
+                    },
+                    onFinish: () => setIsOpeningSession(false),
                 },
-                onFinish: () => setIsOpeningSession(false),
-            },
-        );
+            );
+        }
     }, [openingCash, openingNotes]);
 
-    const handleCloseSession = useCallback(() => {
+    const handleCloseSession = useCallback(async () => {
         if (data.cart.length > 0) {
             notifyWarning(
                 'Kosongkan keranjang sebelum tutup kasir.',
@@ -328,42 +504,75 @@ export default function TabletPOS({ products, cashierSession, activeDraft }: { p
 
         setIsClosingSession(true);
 
-        router.post(
-            route('transactions.session.close'),
-            {
-                closing_cash_physical: Number(closingCashPhysical || 0),
-                closing_notes: closingNotes,
-            },
-            {
-                preserveScroll: true,
-                onSuccess: () => {
-                    setSessionState(null);
-                    setClosingCashPhysical('');
-                    setClosingNotes('');
-                    setShowSettlementModal(false);
-                    setShowOpenSessionModal(true);
-                    reset();
-                    setSearch('');
+        if (isNative()) {
+            try {
+                await apiClient.post('/session/close', {
+                    closing_cash_physical: Number(closingCashPhysical || 0),
+                    closing_notes: closingNotes,
+                });
+                setSessionState(null);
+                setClosingCashPhysical('');
+                setClosingNotes('');
+                setShowSettlementModal(false);
+                setShowOpenSessionModal(true);
+                reset();
+                setSearch('');
+            } catch (error: any) {
+                notifyError(error?.message || 'Gagal menutup kasir.');
+            } finally {
+                setIsClosingSession(false);
+            }
+        } else {
+            router.post(
+                route('transactions.session.close'),
+                {
+                    closing_cash_physical: Number(closingCashPhysical || 0),
+                    closing_notes: closingNotes,
                 },
-                onError: (errors: Record<string, string>) => {
-                    notifyError(
-                        errors?.closing_cash_physical || 'Gagal menutup kasir.',
-                    );
+                {
+                    preserveScroll: true,
+                    onSuccess: () => {
+                        setSessionState(null);
+                        setClosingCashPhysical('');
+                        setClosingNotes('');
+                        setShowSettlementModal(false);
+                        setShowOpenSessionModal(true);
+                        reset();
+                        setSearch('');
+                    },
+                    onError: (errors: Record<string, string>) => {
+                        notifyError(
+                            errors?.closing_cash_physical || 'Gagal menutup kasir.',
+                        );
+                    },
+                    onFinish: () => setIsClosingSession(false),
                 },
-                onFinish: () => setIsClosingSession(false),
-            },
-        );
+            );
+        }
     }, [closingCashPhysical, closingNotes, data.cart.length, reset]);
 
-    const handleSaveDraft = useCallback(() => {
+    const handleSaveDraft = useCallback(async () => {
         if (data.cart.length === 0) return;
 
-        router.post(route('transactions.draft.save'), {
-            cart: data.cart.map(item => ({ id: item.id, qty: item.qty })),
-            customer_type: customerType,
-            draft_id: activeDraft?.id || null,
-        });
-    }, [data.cart, customerType, activeDraft]);
+        if (isNative()) {
+            try {
+                const result = await apiClient.post('/draft', {
+                    cart: data.cart.map(item => ({ id: item.id, qty: item.qty })),
+                    customer_type: customerType,
+                    draft_id: draftId,
+                });
+                window.location.href = `/pos/checkout/${result.draft_id}`;
+            } catch (error: any) {
+                notifyError(error?.message || 'Gagal menyimpan draft.');
+            }
+        } else {
+            router.post(route('transactions.draft.save'), {
+                cart: data.cart.map(item => ({ id: item.id, qty: item.qty })),
+                customer_type: customerType,
+                draft_id: draftId,
+            });
+        }
+    }, [data.cart, customerType, draftId]);
 
     return (
         <div className="flex h-screen flex-col bg-white">
