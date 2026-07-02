@@ -14,20 +14,18 @@ import {
 } from 'react';
 import { route } from 'ziggy-js';
 import type { SharedData } from '@/types';
-import { cn } from '@/lib/utils';
 import { ProductCard } from '@/Components/pos/product-card';
 import { CategoryChips } from '@/Components/pos/category-chips';
 import { TopBar } from '@/Components/pos/top-bar';
 import { OpenSessionModal } from '@/Components/pos/open-session-modal';
 import { SettlementModal } from '@/Components/pos/settlement-modal';
-import { getProductLabel, formatRupiah } from '@/lib/format';
+import { getProductLabel } from '@/lib/format';
 import { CheckoutPanel } from '@/Components/pos/checkout-panel';
-import { MobileBottomBar } from '@/Components/pos/mobile-bottom-bar';
 import { PrintReceipt } from '@/Components/pos/print-receipt';
-import { ShoppingCart } from 'lucide-react';
 import { isNative } from '@/lib/capacitor';
 import { apiClient } from '@/api/client';
 import { useNetwork } from '@/hooks/useNetwork';
+import type { ClosingReportData } from '@/lib/printer';
 
 interface Product {
     id: number;
@@ -81,8 +79,6 @@ const STORE_CONFIG = {
 export default function TabletPOS({ products, cashierSession, activeDraft }: { products: Product[]; cashierSession: CashierSession | null; activeDraft?: ActiveDraft | null }) {
     const { auth, flash } = usePage<SharedData>().props;
     const [search, setSearch] = useState('');
-    const [showMobileCheckout, setShowMobileCheckout] = useState(false);
-    const [showDesktopCheckout, setShowDesktopCheckout] = useState(true);
     const [customerType, setCustomerType] = useState('general');
     const [showOpenSessionModal, setShowOpenSessionModal] =
         useState(!cashierSession);
@@ -100,6 +96,8 @@ export default function TabletPOS({ products, cashierSession, activeDraft }: { p
     const skipAutoSave = useRef(true); // skip initial render
     const saveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
     const { isOnline } = useNetwork();
+    const [closingData, setClosingData] = useState<ClosingReportData | null>(null);
+    const [showClosingReport, setShowClosingReport] = useState(false);
 
     // API-loaded state for Capacitor mode
     const [apiProducts, setApiProducts] = useState<Product[]>([]);
@@ -504,12 +502,43 @@ export default function TabletPOS({ products, cashierSession, activeDraft }: { p
 
         setIsClosingSession(true);
 
+        // Prepare closing data before clearing session
+        const prepareClosingData = () => {
+            const now = new Date();
+            const openedAt = sessionState?.opened_at ? new Date(sessionState.opened_at) : now;
+            const durationMs = now.getTime() - openedAt.getTime();
+            const hours = Math.floor(durationMs / 3600000);
+            const minutes = Math.floor((durationMs % 3600000) / 60000);
+
+            setClosingData({
+                date: now.toLocaleDateString('id-ID'),
+                cashierName: auth?.user?.name || '-',
+                openedAt: openedAt.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' }),
+                closedAt: now.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' }),
+                duration: `${hours}j ${minutes}m`,
+                totalTransactions: sessionState?.transactions_count || 0,
+                totalRevenue: Number(sessionState?.cash_sales_total || 0) + Number(sessionState?.non_cash_sales_total || 0),
+                totalProfit: 0,
+                cashTotal: Number(sessionState?.cash_sales_total || 0),
+                nonCashTotal: Number(sessionState?.non_cash_sales_total || 0),
+                openingCash: Number(sessionState?.opening_cash || 0),
+                cashSales: Number(sessionState?.cash_sales_total || 0),
+                expectedCash: expectedCash,
+                physicalCash: Number(closingCashPhysical || 0),
+                difference: settlementDifference,
+                settlementStatus: settlementStatus,
+                topProducts: [],
+            });
+            setShowClosingReport(true);
+        };
+
         if (isNative()) {
             try {
                 await apiClient.post('/session/close', {
                     closing_cash_physical: Number(closingCashPhysical || 0),
                     closing_notes: closingNotes,
                 });
+                prepareClosingData();
                 setSessionState(null);
                 setClosingCashPhysical('');
                 setClosingNotes('');
@@ -532,6 +561,7 @@ export default function TabletPOS({ products, cashierSession, activeDraft }: { p
                 {
                     preserveScroll: true,
                     onSuccess: () => {
+                        prepareClosingData();
                         setSessionState(null);
                         setClosingCashPhysical('');
                         setClosingNotes('');
@@ -549,7 +579,7 @@ export default function TabletPOS({ products, cashierSession, activeDraft }: { p
                 },
             );
         }
-    }, [closingCashPhysical, closingNotes, data.cart.length, reset]);
+    }, [closingCashPhysical, closingNotes, data.cart.length, reset, sessionState, expectedCash, settlementDifference, settlementStatus, auth?.user?.name]);
 
     const handleSaveDraft = useCallback(async () => {
         if (data.cart.length === 0) return;
@@ -607,10 +637,7 @@ export default function TabletPOS({ products, cashierSession, activeDraft }: { p
 
                     {/* Product Grid */}
                     <div className="flex-1 overflow-y-auto p-4">
-                        <div className={cn(
-                            'grid gap-2',
-                            showDesktopCheckout ? 'grid-cols-5' : 'grid-cols-6',
-                        )}>
+                        <div className="grid grid-cols-3 gap-2 sm:grid-cols-4 lg:grid-cols-5">
                             {displayProducts.map((product) => {
                                 const cartItem = data.cart.find((item) => item.id === product.id);
                                 return (
@@ -633,8 +660,8 @@ export default function TabletPOS({ products, cashierSession, activeDraft }: { p
                     </div>
                 </main>
 
-                {/* Right Panel: Checkout — collapsible on desktop */}
-                {showDesktopCheckout && <CheckoutPanel
+                {/* Right Panel: Checkout — always visible */}
+                <CheckoutPanel
                     cart={data.cart}
                     productById={productById}
                     getProductPrice={getProductPrice}
@@ -648,35 +675,8 @@ export default function TabletPOS({ products, cashierSession, activeDraft }: { p
                     customerType={customerType}
                     onCustomerTypeChange={setCustomerType}
                     onSaveDraft={handleSaveDraft}
-                    onCloseDesktop={() => setShowDesktopCheckout(false)}
-                    showMobileCheckout={showMobileCheckout}
-                    onCloseMobileCheckout={() => setShowMobileCheckout(false)}
-                />}
+                />
             </div>
-
-            {/* Floating Cart Button — visible when desktop checkout is hidden */}
-            {!showDesktopCheckout && data.cart.length > 0 && (
-                <button
-                    onClick={() => setShowDesktopCheckout(true)}
-                    className="fixed bottom-6 right-6 z-30 flex items-center gap-2 rounded-lg bg-indigo-600 px-4 py-3 text-sm font-bold text-white shadow-lg transition-colors hover:bg-indigo-700"
-                >
-                    <ShoppingCart className="h-4 w-4" />
-                    {data.cart.length} item · Rp {formatRupiah(totalAmount)}
-                </button>
-            )}
-
-            {/* Mobile Bottom Bar */}
-            <MobileBottomBar
-                cartCount={data.cart.length}
-                totalAmount={totalAmount}
-                hasOpenSession={hasOpenSession}
-                onToggleCheckout={() => setShowMobileCheckout((current) => !current)}
-                onSessionButtonClick={() =>
-                    hasOpenSession
-                        ? setShowSettlementModal(true)
-                        : setShowOpenSessionModal(true)
-                }
-            />
 
             {/* Modals */}
             <OpenSessionModal
@@ -703,6 +703,9 @@ export default function TabletPOS({ products, cashierSession, activeDraft }: { p
                 expectedCash={expectedCash}
                 settlementDifference={settlementDifference}
                 settlementStatus={settlementStatus}
+                closingData={closingData}
+                showClosingReport={showClosingReport}
+                onCloseClosingReport={() => setShowClosingReport(false)}
             />
 
             <PrintReceipt
