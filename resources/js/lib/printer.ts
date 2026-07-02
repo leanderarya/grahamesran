@@ -191,3 +191,103 @@ export async function printReceipt(
         throw new Error(message);
     }
 }
+
+export interface ClosingReportData {
+    date: string;
+    cashierName: string;
+    openedAt: string;
+    closedAt: string;
+    duration: string;
+    totalTransactions: number;
+    totalRevenue: number;
+    totalProfit: number;
+    cashTotal: number;
+    nonCashTotal: number;
+    openingCash: number;
+    cashSales: number;
+    expectedCash: number;
+    physicalCash: number;
+    difference: number;
+    settlementStatus: 'balance' | 'minus' | 'over';
+    topProducts: Array<{ name: string; quantity: number; revenue: number }>;
+}
+
+export function generateClosingEscPos(data: ClosingReportData, store: StoreInfo): number[] {
+    const commands: number[] = [];
+
+    // Header
+    commands.push(...centerAlign(), ...boldOn());
+    commands.push(...encodeText(store.name + '\n'));
+    commands.push(...boldOff());
+    commands.push(...encodeText(store.address + '\n'));
+    commands.push(...encodeText(store.phone + '\n'));
+    commands.push(...leftAlign());
+    commands.push(...hr());
+
+    // Title
+    commands.push(...centerAlign(), ...boldOn());
+    commands.push(...encodeText('LAPORAN CLOSING KASIR\n'));
+    commands.push(...boldOff());
+    commands.push(...leftAlign());
+    commands.push(...hr());
+
+    // Session info
+    commands.push(...encodeText(`Tanggal : ${data.date}\n`));
+    commands.push(...encodeText(`Kasir   : ${data.cashierName}\n`));
+    commands.push(...encodeText(`Buka    : ${data.openedAt}\n`));
+    commands.push(...encodeText(`Tutup   : ${data.closedAt}\n`));
+    commands.push(...encodeText(`Durasi  : ${data.duration}\n`));
+    commands.push(...hr());
+
+    // Summary
+    commands.push(...boldOn());
+    commands.push(...encodeText('RINGKASAN TRANSAKSI\n'));
+    commands.push(...boldOff());
+    commands.push(...encodeText(`Total Transaksi : ${data.totalTransactions}\n`));
+    commands.push(...encodeText(`Total Penjualan : Rp ${data.totalRevenue.toLocaleString('id-ID')}\n`));
+    commands.push(...encodeText(`Total Profit    : Rp ${data.totalProfit.toLocaleString('id-ID')}\n`));
+    commands.push(...hr());
+
+    // Payment breakdown
+    commands.push(...boldOn());
+    commands.push(...encodeText('BREAKDOWN PEMBAYARAN\n'));
+    commands.push(...boldOff());
+    commands.push(...encodeText(`Tunai    : Rp ${data.cashTotal.toLocaleString('id-ID')}\n`));
+    commands.push(...encodeText(`Non Tunai: Rp ${data.nonCashTotal.toLocaleString('id-ID')}\n`));
+    commands.push(...hr());
+
+    // Settlement
+    commands.push(...boldOn());
+    commands.push(...encodeText('SETTLEMENT\n'));
+    commands.push(...boldOff());
+    commands.push(...encodeText(`Saldo Awal    : Rp ${data.openingCash.toLocaleString('id-ID')}\n`));
+    commands.push(...encodeText(`Cash Sales    : Rp ${data.cashSales.toLocaleString('id-ID')}\n`));
+    commands.push(...encodeText(`Expected Cash : Rp ${data.expectedCash.toLocaleString('id-ID')}\n`));
+    commands.push(...encodeText(`Uang Fisik    : Rp ${data.physicalCash.toLocaleString('id-ID')}\n`));
+    commands.push(...boldOn());
+    commands.push(...encodeText(`Selisih       : Rp ${data.difference.toLocaleString('id-ID')}\n`));
+    commands.push(...encodeText(`Status        : ${data.settlementStatus.toUpperCase()}\n`));
+    commands.push(...boldOff());
+    commands.push(...hr());
+
+    // Top products
+    if (data.topProducts.length > 0) {
+        commands.push(...boldOn());
+        commands.push(...encodeText('PRODUK TERLARIS\n'));
+        commands.push(...boldOff());
+        data.topProducts.slice(0, 5).forEach((p, i) => {
+            commands.push(...encodeText(`${i + 1}. ${p.name}\n`));
+            commands.push(...encodeText(`   ${p.quantity}x Rp ${p.revenue.toLocaleString('id-ID')}\n`));
+        });
+        commands.push(...hr());
+    }
+
+    // Signature
+    commands.push(...feedLines(2));
+    commands.push(...encodeText('TTD Kasir: ____________\n'));
+    commands.push(...encodeText('TTD Supervisor: ________\n'));
+    commands.push(...feedLines(3));
+    commands.push(...cutPaper());
+
+    return commands;
+}
