@@ -37,6 +37,9 @@ class LowStockAlert extends BaseWidget
                 Tables\Columns\TextColumn::make('cost_price')
                     ->label('HPP')
                     ->money('IDR'),
+                Tables\Columns\TextColumn::make('sell_price')
+                    ->label('Harga Jual')
+                    ->money('IDR'),
             ])
             ->emptyStateHeading('Gudang Aman')
             ->emptyStateDescription('Tidak ada barang yang stoknya kritis.')

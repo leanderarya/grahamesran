@@ -77,9 +77,12 @@ class PurchaseResource extends Resource
     {
         return $table
             ->columns([
-                \Filament\Tables\Columns\TextColumn::make('date')->date(),
+                \Filament\Tables\Columns\TextColumn::make('date')->label('Tanggal')->date('d M Y')->sortable(),
                 \Filament\Tables\Columns\TextColumn::make('product.name')->label('Barang'),
                 \Filament\Tables\Columns\TextColumn::make('quantity')->label('Qty'),
+                \Filament\Tables\Columns\TextColumn::make('buy_price_per_unit')
+                    ->label('Harga Satuan')
+                    ->money('IDR'),
                 \Filament\Tables\Columns\TextColumn::make('total_spend')
                     ->label('Modal Keluar')
                     ->money('IDR')

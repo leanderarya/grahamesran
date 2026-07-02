@@ -23,7 +23,7 @@ class MonthlyAnalytics extends Dashboard
 
     protected static ?string $navigationLabel = 'Analitik Bulanan';
 
-    protected static ?string $navigationGroup = 'Laporan';
+    protected static ?string $navigationGroup = 'Pelaporan';
 
     protected static ?int $navigationSort = 2;
 

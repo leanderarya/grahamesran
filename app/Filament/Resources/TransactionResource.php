@@ -169,7 +169,25 @@ class TransactionResource extends Resource
                     ->copyable()
                     ->weight('bold'),
 
-                // 2. Siapa Kasirnya?
+                // 2. Status
+                TextColumn::make('status')
+                    ->label('Status')
+                    ->badge()
+                    ->color(fn (string $state): string => match ($state) {
+                        'paid' => 'success',
+                        'voided' => 'danger',
+                        'draft' => 'gray',
+                        default => 'gray',
+                    })
+                    ->formatStateUsing(fn (string $state): string => match ($state) {
+                        'paid' => 'LUNAS',
+                        'voided' => 'VOID',
+                        'draft' => 'DRAFT',
+                        default => strtoupper($state),
+                    })
+                    ->sortable(),
+
+                // 3. Siapa Kasirnya?
                 TextColumn::make('user.name')
                     ->label('Kasir')
                     ->sortable()
@@ -193,7 +211,14 @@ class TransactionResource extends Resource
                         'import_excel' => 'gray',
                         default => 'gray',
                     })
-                    ->formatStateUsing(fn (string $state): string => strtoupper($state))
+                    ->formatStateUsing(fn (string $state): string => match ($state) {
+                        'cash' => 'Tunai',
+                        'qris' => 'QRIS',
+                        'bca' => 'BCA',
+                        'mandiri' => 'Mandiri',
+                        'import_excel' => 'Impor Excel',
+                        default => strtoupper($state),
+                    })
                     ->sortable(),
 
                 // 5. TOTAL OMSET
@@ -269,8 +294,17 @@ class TransactionResource extends Resource
                     ->options([
                         'cash' => 'Tunai',
                         'qris' => 'QRIS',
-                        'bank' => 'Transfer Bank',
-                        'import_excel' => 'Import Excel',
+                        'bca' => 'BCA',
+                        'mandiri' => 'Mandiri',
+                        'import_excel' => 'Impor Excel',
+                    ]),
+
+                // C. Filter Status (Paid / Voided)
+                SelectFilter::make('status')
+                    ->label('Status')
+                    ->options([
+                        'paid' => 'Lunas',
+                        'voided' => 'Void',
                     ]),
             ])
 
@@ -283,7 +317,7 @@ class TransactionResource extends Resource
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([
                     BulkAction::make('deleteAll')
-                        ->label('Delete All')
+                        ->label('Hapus Terpilih')
                         ->icon('heroicon-o-trash')
                         ->color('danger')
                         ->requiresConfirmation()

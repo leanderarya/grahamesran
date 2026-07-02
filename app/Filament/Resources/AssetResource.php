@@ -80,7 +80,17 @@ class AssetResource extends Resource
                         'good' => 'success',
                         'repair' => 'warning',
                         'broken' => 'danger',
+                    })
+                    ->formatStateUsing(fn (string $state): string => match ($state) {
+                        'good' => 'Baik',
+                        'repair' => 'Butuh Servis',
+                        'broken' => 'Rusak',
+                        default => $state,
                     }),
+                Tables\Columns\TextColumn::make('location')
+                    ->label('Lokasi')
+                    ->searchable()
+                    ->toggleable(),
             ])
             ->defaultSort('purchase_date', 'desc');
     }

@@ -26,8 +26,8 @@ class StatsOverview extends BaseWidget
         $endOfLastMonth = $now->copy()->subMonth()->endOfMonth();
 
         // --- 2. HITUNG OMSET (Bulan Ini vs Bulan Lalu) ---
-        $omsetThisMonth = Transaction::whereBetween('created_at', [$startOfMonth, $endOfMonth])->sum('total_amount');
-        $omsetLastMonth = Transaction::whereBetween('created_at', [$startOfLastMonth, $endOfLastMonth])->sum('total_amount');
+        $omsetThisMonth = Transaction::where('status', 'paid')->whereBetween('created_at', [$startOfMonth, $endOfMonth])->sum('total_amount');
+        $omsetLastMonth = Transaction::where('status', 'paid')->whereBetween('created_at', [$startOfLastMonth, $endOfLastMonth])->sum('total_amount');
         
         // Tentukan warna & icon berdasarkan kenaikan/penurunan
         $omsetColor = $omsetThisMonth >= $omsetLastMonth ? 'success' : 'danger';
@@ -36,7 +36,7 @@ class StatsOverview extends BaseWidget
 
         // --- 3. HITUNG PROFIT BERSIH (Bulan Ini) ---
         // Gross Profit Bulan Ini
-        $grossProfit = Transaction::whereBetween('created_at', [$startOfMonth, $endOfMonth])->sum('total_profit');
+        $grossProfit = Transaction::where('status', 'paid')->whereBetween('created_at', [$startOfMonth, $endOfMonth])->sum('total_profit');
         // Pengeluaran Operasional Bulan Ini
         $expenses = Expense::whereBetween('date_expense', [$startOfMonth, $endOfMonth])->sum('amount');
         // Net Profit
@@ -47,6 +47,7 @@ class StatsOverview extends BaseWidget
         $dailyTotals = Transaction::query()
             ->selectRaw('DATE(created_at) as sale_date')
             ->selectRaw('SUM(total_amount) as total')
+            ->where('status', 'paid')
             ->whereBetween('created_at', [now()->subDays(6)->startOfDay(), now()->endOfDay()])
             ->groupBy('sale_date')
             ->get()
@@ -64,7 +65,21 @@ class StatsOverview extends BaseWidget
         // Kita pakai native SQL perkalian biar cepat
         $totalAset = Cache::remember('dashboard_asset_value', 300, fn () => Product::query()->sum(\Illuminate\Support\Facades\DB::raw('stock * cost_price')));
 
+        // --- 6. PENJUALAN HARI INI ---
+        $todaySales = Transaction::where('status', 'paid')
+            ->whereDate('created_at', $now->toDateString())
+            ->sum('total_amount');
+        $todayCount = Transaction::where('status', 'paid')
+            ->whereDate('created_at', $now->toDateString())
+            ->count();
+
         return [
+            // KOTAK 0: Penjualan Hari Ini
+            Stat::make('Penjualan Hari Ini', 'Rp ' . number_format($todaySales, 0, ',', '.'))
+                ->description($todayCount . ' transaksi hari ini')
+                ->descriptionIcon('heroicon-m-shopping-cart')
+                ->color('warning'),
+
             // KOTAK 1: Omset Bulan Ini (Dengan Komparasi)
             Stat::make('Omset Bulan Ini', 'Rp ' . number_format($omsetThisMonth, 0, ',', '.'))
                 ->description($omsetDesc)

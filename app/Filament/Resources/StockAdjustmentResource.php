@@ -132,11 +132,20 @@ class StockAdjustmentResource extends Resource
                 Tables\Columns\TextColumn::make('type')
                     ->label('Alasan')
                     ->badge()
-                    ->colors([
-                        'warning' => 'damage',
-                        'danger' => 'loss',
-                        'info' => 'correction',
-                    ]),
+                    ->color(fn (string $state): string => match ($state) {
+                        'damage' => 'warning',
+                        'loss' => 'danger',
+                        'correction' => 'info',
+                        'bonus' => 'success',
+                        default => 'gray',
+                    })
+                    ->formatStateUsing(fn (string $state): string => match ($state) {
+                        'correction' => 'Koreksi',
+                        'damage' => 'Barang Rusak',
+                        'loss' => 'Barang Hilang',
+                        'bonus' => 'Bonus Supplier',
+                        default => $state,
+                    }),
 
                 Tables\Columns\TextColumn::make('user.name')->label('Auditor')->toggleable(),
             ])

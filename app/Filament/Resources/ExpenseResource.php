@@ -62,7 +62,7 @@ class ExpenseResource extends Resource
     {
         return $table
             ->columns([
-                \Filament\Tables\Columns\TextColumn::make('date_expense')->date('d M Y')->sortable(),
+                \Filament\Tables\Columns\TextColumn::make('date_expense')->label('Tanggal')->date('d M Y')->sortable(),
                 \Filament\Tables\Columns\TextColumn::make('name')->searchable(),
                 \Filament\Tables\Columns\TextColumn::make('category')
                     ->badge()

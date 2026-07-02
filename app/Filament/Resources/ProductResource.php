@@ -175,11 +175,12 @@ class ProductResource extends Resource
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),
 
-                // HPP (Hanya Owner yang boleh lihat, tapi di sini kita buka dulu)
+                // HPP
                 TextColumn::make('cost_price')
                     ->label('HPP')
                     ->money('IDR')
-                    ->toggleable(isToggledHiddenByDefault: true), // Default tersembunyi biar aman
+                    ->sortable()
+                    ->toggleable(),
 
                 // List Mobil yang Cocok (Ditampilkan sebagai Tag)
                 TextColumn::make('vehicles.model')
@@ -190,7 +191,25 @@ class ProductResource extends Resource
             ])
             ->defaultSort('created_at', 'desc')
             ->filters([
-                //
+                \Filament\Tables\Filters\SelectFilter::make('stock')
+                    ->label('Level Stok')
+                    ->options([
+                        'low' => 'Stok Rendah (≤5)',
+                        'out' => 'Habis (0)',
+                        'ok' => 'Stok Aman',
+                    ])
+                    ->query(function ($query, array $data) {
+                        if ($data['value'] === 'low') {
+                            return $query->where('stock', '<=', 5)->where('stock', '>', 0);
+                        } elseif ($data['value'] === 'out') {
+                            return $query->where('stock', 0);
+                        } elseif ($data['value'] === 'ok') {
+                            return $query->where('stock', '>', 5);
+                        }
+                        return $query;
+                    }),
+                \Filament\Tables\Filters\SelectFilter::make('category')
+                    ->label('Kategori'),
             ])
             ->actions([
                 Tables\Actions\EditAction::make(),
