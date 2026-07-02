@@ -1,5 +1,5 @@
 import { cn } from '@/lib/utils';
-import { Search, ChevronDown, BarChart3, Calculator, LogOut } from 'lucide-react';
+import { Search, ChevronDown, BarChart3, Calculator, LogOut, History } from 'lucide-react';
 import { useState, useRef, useEffect } from 'react';
 import { router } from '@inertiajs/react';
 import { route } from 'ziggy-js';
@@ -107,6 +107,16 @@ export function TopBar({
                             >
                                 <BarChart3 className="h-4 w-4 text-slate-400" />
                                 Rekap Penjualan
+                            </button>
+                            <button
+                                onClick={() => {
+                                    setDropdownOpen(false);
+                                    router.visit(route('transactions.history'));
+                                }}
+                                className="flex w-full items-center gap-3 px-4 py-2.5 text-sm text-slate-950 hover:bg-slate-50"
+                            >
+                                <History className="h-4 w-4 text-slate-400" />
+                                Riwayat Penjualan
                             </button>
                             <button
                                 onClick={() => {
