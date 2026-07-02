@@ -42,6 +42,15 @@ Route::post('/logout', function () {
     return redirect()->route('pin.login');
 })->middleware(['auth', 'prevent-open-cashier-logout'])->name('logout');
 
+// Switch user — force logout without session check, redirect to PIN login
+Route::post('/switch-user', function () {
+    Auth::guard('web')->logout();
+    request()->session()->invalidate();
+    request()->session()->regenerateToken();
+
+    return redirect()->route('pin.login');
+})->middleware(['auth'])->name('switch-user');
+
 Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/dashboard', function () {
         $user = auth()->user();

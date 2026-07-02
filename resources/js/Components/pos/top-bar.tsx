@@ -172,6 +172,15 @@ export function TopBar({
                                 <LogOut className="h-4 w-4" />
                                 Keluar
                             </button>
+                            <button
+                                onClick={() => {
+                                    setDropdownOpen(false);
+                                    router.post(route('switch-user'));
+                                }}
+                                className="flex w-full items-center gap-3 px-4 py-2.5 text-xs text-slate-500 hover:bg-slate-50"
+                            >
+                                Ganti Akun
+                            </button>
                         </div>
                     )}
                 </div>
