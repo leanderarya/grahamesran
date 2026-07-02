@@ -5,6 +5,9 @@ import { resolvePageComponent } from 'laravel-vite-plugin/inertia-helpers';
 import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
 import { initializeTheme } from './hooks/use-appearance';
+import { useAndroidBackButton } from './hooks/useAndroidBackButton';
+import { useStatusBar } from './hooks/useStatusBar';
+import { useAppLifecycle } from './hooks/useAppLifecycle';
 import { Ziggy } from './ziggy'; // <--- Import file hasil generate
 globalThis.Ziggy = Ziggy;
 
@@ -20,9 +23,16 @@ createInertiaApp({
     setup({ el, App, props }) {
         const root = createRoot(el);
 
+        function AppWithAndroidOptimizations() {
+            useAndroidBackButton();
+            useStatusBar();
+            useAppLifecycle();
+            return <App {...props} />;
+        }
+
         root.render(
             <StrictMode>
-                <App {...props} />
+                <AppWithAndroidOptimizations />
             </StrictMode>,
         );
     },

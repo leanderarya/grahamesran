@@ -13,6 +13,17 @@ const config: CapacitorConfig = {
     android: {
         allowMixedContent: true,
     },
+    plugins: {
+        SplashScreen: {
+            launchShowDuration: 2000,
+            backgroundColor: '#1f2937', // dark gray matching POS theme
+            showSpinner: false,
+            androidSplashResourceName: 'splash',
+            androidScaleType: 'CENTER_CROP',
+            splashFullScreen: true,
+            launchAutoHide: true,
+        },
+    },
 };
 
 export default config;
