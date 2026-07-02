@@ -1,7 +1,7 @@
 import { cn } from '@/lib/utils';
-import { Search, ChevronDown, BarChart3, Calculator, LogOut, History, Settings } from 'lucide-react';
+import { Search, ChevronDown, BarChart3, Calculator, LogOut, History, Settings, Printer } from 'lucide-react';
 import { useState, useRef, useEffect } from 'react';
-import { router } from '@inertiajs/react';
+import { router, Link } from '@inertiajs/react';
 import { route } from 'ziggy-js';
 import { notifyWarning } from '@/Components/app-notifications';
 
@@ -21,6 +21,7 @@ export function TopBar({
     onSettlementClick,
 }: TopBarProps) {
     const [dropdownOpen, setDropdownOpen] = useState(false);
+    const [hasSavedPrinter, setHasSavedPrinter] = useState(false);
     const dropdownRef = useRef<HTMLDivElement>(null);
 
     useEffect(() => {
@@ -31,6 +32,11 @@ export function TopBar({
         }
         document.addEventListener('mousedown', handleClickOutside);
         return () => document.removeEventListener('mousedown', handleClickOutside);
+    }, []);
+
+    useEffect(() => {
+        const saved = localStorage.getItem('printer_device');
+        setHasSavedPrinter(!!saved);
     }, []);
 
     return (
@@ -74,6 +80,16 @@ export function TopBar({
                     )}
                     title={hasOpenSession ? 'Sesi aktif — tap untuk settlement' : 'Belum buka kasir'}
                 />
+
+                {/* Printer Status */}
+                <Link
+                    href={route('settings.printer')}
+                    className="relative"
+                    title={hasSavedPrinter ? 'Printer terkonfigurasi' : 'Printer belum dikonfigurasi'}
+                >
+                    <Printer className="h-4 w-4 text-slate-400" />
+                    <span className={`absolute -right-0.5 -top-0.5 h-2 w-2 rounded-full ${hasSavedPrinter ? 'bg-emerald-500' : 'bg-slate-300'}`} />
+                </Link>
 
                 {/* Avatar Dropdown */}
                 <div className="relative" ref={dropdownRef}>
