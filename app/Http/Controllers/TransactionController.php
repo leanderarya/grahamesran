@@ -427,18 +427,36 @@ class TransactionController extends Controller
             return back()->withErrors(['transaction' => 'Transaksi sudah dibatalkan.']);
         }
 
-        // Restore stock
-        foreach ($transaction->transactionItems as $item) {
-            $item->product->increment('stock', $item->quantity);
-        }
+        DB::transaction(function () use ($transaction, $admin, $request) {
+            // Restore stock
+            foreach ($transaction->transactionItems as $item) {
+                $item->product->increment('stock', $item->quantity);
+            }
 
-        // Void transaction
-        $transaction->update([
-            'status' => 'voided',
-            'void_reason' => $request->reason,
-            'voided_by' => $admin->id,
-            'voided_at' => now(),
-        ]);
+            // Void transaction
+            $transaction->update([
+                'status' => 'voided',
+                'void_reason' => $request->reason,
+                'voided_by' => $admin->id,
+                'voided_at' => now(),
+            ]);
+
+            // Recalculate session totals from actual paid transactions
+            if ($transaction->cashier_session_id) {
+                $session = CashierSession::find($transaction->cashier_session_id);
+                if ($session && $session->closed_at === null) {
+                    $paidTransactions = Transaction::where('cashier_session_id', $session->id)
+                        ->where('status', 'paid')
+                        ->get();
+
+                    $session->update([
+                        'transactions_count' => $paidTransactions->count(),
+                        'cash_sales_total' => (float) $paidTransactions->where('payment_method', 'cash')->sum('total_amount'),
+                        'non_cash_sales_total' => (float) $paidTransactions->where('payment_method', '!=', 'cash')->sum('total_amount'),
+                    ]);
+                }
+            }
+        });
 
         return back()->with('success', 'Transaksi berhasil dibatalkan.');
     }
