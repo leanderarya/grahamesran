@@ -22,6 +22,9 @@ class Transaction extends Model
         'payment_method',
         'amount_paid',
         'change_amount',
+        'void_reason',
+        'voided_by',
+        'voided_at',
     ];
 
     protected $casts = [
@@ -30,6 +33,7 @@ class Transaction extends Model
         'amount_paid' => 'decimal:2',
         'change_amount' => 'decimal:2',
         'created_at' => 'datetime',
+        'voided_at' => 'datetime',
     ];
 
     protected static function booted(): void
@@ -91,6 +95,16 @@ class Transaction extends Model
     public function isPaid(): bool
     {
         return $this->status === 'paid';
+    }
+
+    public function scopeVoided($query)
+    {
+        return $query->where('status', 'voided');
+    }
+
+    public function isVoided(): bool
+    {
+        return $this->status === 'voided';
     }
 
     private function syncMonthlyReports(): void
